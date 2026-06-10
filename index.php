@@ -45,18 +45,6 @@ $nama = $_SESSION['nama'];
           </button>
         </div>
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
-          <ul class="navbar-nav mr-lg-2">
-            <li class="nav-item  d-none d-lg-flex">
-              <a class="nav-link active" href="#">
-                Statistic
-              </a>
-            </li>
-            <li class="nav-item  d-none d-lg-flex">
-              <?php if ($_SESSION['role'] == 'Admin'): ?>
-              <a class="nav-link" href="pages/employee.php">Employee</a>
-              <?php endif ?>
-            </li>
-          </ul>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item d-none d-lg-flex  mr-2">
               <a class="nav-link" href="#">
@@ -235,7 +223,8 @@ $nama = $_SESSION['nama'];
                 </div>
               </div>
             </div>
-            <p class="sidebar-menu-title">Dash menu</p>
+            <!-- SIDEBAR MODUL ADMIN -->
+            <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="index.php">
@@ -243,7 +232,99 @@ $nama = $_SESSION['nama'];
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="pages/employee.php">
+              <i class="typcn typcn-user menu-icon"></i>
+              <span class="menu-title">Employee</span>
+            </a>
+          </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="pages/employee.php">
+              <i class="typcn typcn-user menu-icon"></i>
+              <span class="menu-title">Log Aktivitas</span>
+            </a>
+          </li>
           <li class="nav-item">
+            <a class="nav-link" data-toggle="collapse" href="#laporan" aria-expanded="false" aria-controls="laporan">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Laporan</span>
+              <i class="menu-arrow"></i>
+            </a>
+          <div class="collapse" id="laporan">
+            <ul class="nav flex-column sub-menu">
+              <li class="nav-item">
+                <a class="nav-link" href="#">Laporan Penjualan</a>
+              </li>
+              
+              <li class="nav-item">
+                <a class="nav-link" href="#">Laporan Keuangan</a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link" href="#">Arus Kas</a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link" href="#">Laba Rugi</a>
+              </li>
+            </ul>
+          </div>
+        </li>
+          <!-- SIDEBAR MODUL PENJUALAN -->
+          <p class = "sidebar-menu-title"> Sales Modules</p>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="typcn typcn-shopping-cart menu-icon"></i>
+              <span class="menu-title"> Transaksi Penjualan</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="typcn typcn-chart-bar menu-icon"></i>
+              <span class="menu-title"> Data Penjualan</span>
+            </a>
+          </li>
+           <!-- SIDEBAR MODUL STOK  -->
+            <p class = "sidebar-menu-title"> Stock Modules</p>
+            <li class = "nav-item">
+              <a class="nav-link" href="#">
+                <i class="typcn typcn-th-large menu-icon"></i>
+                <span class="menu-title"> Bahan Baku</span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="#">
+                <i class="typcn typcn-gift menu-icon"></i>
+                <span class="menu-title"> Produk</span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="#">
+                <i class="typcn typcn-document-text menu-icon"></i>
+                <span class="menu-title"> Resep </span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="#">
+                <i class="typcn typcn-group menu-icon"></i>
+                <span class="menu-title"> Supplier </span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="#">
+                <i class="typcn typcn-arrow-down menu-icon"></i>
+                <span class="menu-title"> Barang Masuk </span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="#">
+                <i class="typcn typcn-arrow-up menu-icon"></i>
+                <span class="menu-title"> Barang Keluar</span>
+              </a>
+            </li>
+            <!-- TEMPLATE -->
+            <p class = "sidebar-menu-title" align = "Center">-- Template --</p>
+            <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
               <i class="typcn typcn-briefcase menu-icon"></i>
               <span class="menu-title">UI Elements</span>

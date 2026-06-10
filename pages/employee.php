@@ -61,16 +61,6 @@ $nama = $_SESSION['nama'];
           </button>
         </div>
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
-          <ul class="navbar-nav mr-lg-2">
-            <li class="nav-item  d-none d-lg-flex">
-              <a class="nav-link" href="../index.php"> Statistic</a>
-            </li>
-            <li class="nav-item d-none d-lg-flex">
-              <a class="nav-link active" href="employee.php">
-                Employee
-              </a>
-            </li>
-          </ul>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item d-none d-lg-flex  mr-2">
               <a class="nav-link" href="#">
@@ -251,7 +241,7 @@ $nama = $_SESSION['nama'];
             <p class="sidebar-menu-title">Dash menu</p>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="index.php">
+            <a class="nav-link" href="../index.php">
               <i class="typcn typcn-device-desktop menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
@@ -357,7 +347,7 @@ $nama = $_SESSION['nama'];
           </li>
           <li class="nav-item"><a href="#" class="nav-link">#Sales</a></li>
           <li class="nav-item"><a href="#" class="nav-link">#Marketing</a></li>
-          <li class="nav-item"><a href="#" class="nav-link">#Growth</a></li>
+          <li class="nav-item"><a href="#" class="nav-link">#Growth </a></li>
         </ul>
       </nav>
         <!-- partial -->
