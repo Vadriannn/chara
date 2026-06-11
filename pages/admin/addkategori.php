@@ -9,6 +9,7 @@ $pesan = "";
 $error = "";
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nama = trim($_POST['nama']);
+    $status = $_POST['status'];
     try {
         // Cek kategori sudah ada atau belum
         $cek = $koneksi->prepare("
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
     <!-- endinject -->
-    <link rel="shortcut icon" href="../../images/favicon.png" />
+    <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">

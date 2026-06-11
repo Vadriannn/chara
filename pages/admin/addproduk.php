@@ -1,57 +1,72 @@
-<?php 
+<?php
 session_start();
 require_once '../../koneksi.php';
-$pesan = '';
+
+if (!isset($_SESSION['is_auth']) || $_SESSION['is_auth'] !== true) {
+    header("Location: ../../login.php");
+    exit;
+}
+$error = "";
 try {
+    // Ambil data kategori
+    $kategori = $koneksi->query("
+        SELECT *
+        FROM tkategori
+        ORDER BY nama
+    ");
+    // Ambil kode produk terakhir
+    $stmtLast = $koneksi->query("
+      SELECT kode
+      FROM tproduct
+      ORDER BY kode DESC
+      LIMIT 1
+    ");
+    $lastProduct = $stmtLast->fetch(PDO::FETCH_ASSOC);
+    $kodeTerakhir = $lastProduct ? $lastProduct['kode'] : '-';
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $kode       = trim($_POST['kode']);
+        $kode       = strtoupper(trim($_POST['kode']));
         $nama       = trim($_POST['nama']);
-        $kategori   = $_POST['kategori'];
-        $hargajual  = $_POST['hargajual'];
-        // cek kode produk sudah ada atau belum
+        $hargaJual  = $_POST['hargajual'];
+        $kategoriId = $_POST['kategori'];
+        $status     = $_POST['status'];
+        // Cek kode produk
         $cek = $koneksi->prepare("
             SELECT COUNT(*)
-            FROM tProduct
+            FROM tproduct
             WHERE kode = ?
         ");
         $cek->execute([$kode]);
         if ($cek->fetchColumn() > 0) {
-            $pesan = "Kode produk sudah digunakan!";
+            $error = "Kode produk sudah digunakan.";
         } else {
             $sql = "
-                INSERT INTO tProduct
+                INSERT INTO tproduct
                 (
                     kode,
                     nama,
+                    hargaJual,
                     tKategori_id,
-                    hargajual
+                    status
                 )
                 VALUES
                 (
-                    ?, ?, ?, ?
+                    ?, ?, ?, ?, ?
                 )
             ";
             $stmt = $koneksi->prepare($sql);
             $stmt->execute([
                 $kode,
                 $nama,
-                $kategori,
-                $hargajual
+                $hargaJual,
+                $kategoriId,
+                $status
             ]);
-            header("Location: produk.php");
+            header("Location: produk.php?success=add");
             exit;
         }
     }
-
-    $kategori = $koneksi->query("
-        SELECT *
-        FROM tKategori
-        ORDER BY nama
-    ");
-
-}
-catch(PDOException $e){
-    $pesan = $e->getMessage();
+} catch(PDOException $e) {
+    $error = $e->getMessage();
 }
 ?>
 
@@ -71,7 +86,7 @@ catch(PDOException $e){
     <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
     <!-- endinject -->
-    <link rel="shortcut icon" href="../../images/favicon.png" />
+    <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">
@@ -405,90 +420,95 @@ catch(PDOException $e){
                     <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h4 class="card-title mb-0">
-                                        Tambah Produk
-                                    </h4>
-                                    <a href="produk.php" class="btn btn-secondary">
-                                        Kembali
-                                    </a>
-                                </div>
-                                <?php if(!empty($pesan)): ?>
-                                    <div class="alert alert-danger">
-                                        <?= $pesan ?>
-                                    </div>
-                                <?php endif; ?>
-                                <form method="POST">
-                                    <div class="form-group">
-                                        <label>Kode Produk</label>
-                                        <input
-                                            type="text"
-                                            name="kode"
-                                            class="form-control"
-                                            required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Nama Produk</label>
-                                        <input
-                                            type="text"
-                                            name="nama"
-                                            class="form-control"
-                                            required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Kategori</label>
-
-                                        <select
-                                            name="kategori"
-                                            class="form-control"
-                                            required>
-
-                                            <option value="">
-                                                -- Pilih Kategori --
-                                            </option>
-
-                                            <?php while($kat = $kategori->fetch(PDO::FETCH_ASSOC)): ?>
-
-                                                <option value="<?= $kat['id']; ?>">
-                                                    <?= $kat['nama']; ?>
-                                                </option>
-
-                                            <?php endwhile; ?>
-
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Harga Jual</label>
-
-                                        <input
-                                            type="number"
-                                            name="hargajual"
-                                            class="form-control"
-                                            required>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-primary">
-                                        Simpan
-                                    </button>
-
-                                    <a
-                                        href="produk.php"
-                                        class="btn btn-light">
-                                        Batal
-                                    </a>
-                                </form>
-                            </div>
+                              <div class="d-flex justify-content-between align-items-center mb-4">
+                                  <h4 class="card-title mb-0">
+                                      Tambah Produk
+                                  </h4>
+                                  <a href="produk.php" class="btn btn-secondary">
+                                      Kembali
+                                  </a>
+                              </div>
+                              <?php if($error != "") : ?>
+                                  <div class="alert alert-danger">
+                                      <?= $error ?>
+                                  </div>
+                              <?php endif; ?>
+                              <form method="POST">
+                                  <div class="form-group">
+                                      <label>Kode Produk</label>
+                                      <input
+                                          type="text"
+                                          name="kode"
+                                          maxlength="4"
+                                          class="form-control"
+                                          placeholder="Contoh: P001 - Kode Terakhir: <?= $kodeTerakhir ?>"
+                                          required>
+                                  </div>
+                                  <div class="form-group">
+                                      <label>Nama Produk</label>
+                                      <input
+                                          type="text"
+                                          name="nama"
+                                          class="form-control"
+                                          placeholder="Masukkan nama produk"
+                                          required>
+                                  </div>
+                                  <div class="form-group">
+                                      <label>Kategori</label>
+                                      <select
+                                          name="kategori"
+                                          class="form-control"
+                                          required>
+                                          <option value="">
+                                              -- Pilih Kategori --
+                                          </option>
+                                          <?php while($kat = $kategori->fetch(PDO::FETCH_ASSOC)): ?>
+                                              <option value="<?= $kat['id']; ?>">
+                                                  <?= $kat['nama']; ?>
+                                              </option>
+                                          <?php endwhile; ?>
+                                      </select>
+                                  </div>
+                                  <div class="form-group">
+                                      <label>Harga Jual</label>
+                                      <input
+                                          type="number"
+                                          name="hargajual"
+                                          class="form-control"
+                                          min="0"
+                                          placeholder="Masukkan harga jual"
+                                          required>
+                                  </div>
+                                  <div class="form-group">
+                                      <label>Status</label>
+                                      <select
+                                          name="status"
+                                          class="form-control"
+                                          required>
+                                          <option value="Aktif">
+                                              Aktif
+                                          </option>
+                                          <option value="Nonaktif">
+                                              Nonaktif
+                                          </option>
+                                      </select>
+                                  </div>
+                                  <button
+                                      type="submit"
+                                      class="btn btn-primary">
+                                      Simpan
+                                  </button>
+                                  <a
+                                      href="produk.php"
+                                      class="btn btn-light">
+                                      Batal
+                                  </a>
+                              </form>
+                          </div>
                         </div>
                     </div>
                 </div>
-            </div>  
-
-                    
+            </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">

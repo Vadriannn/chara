@@ -405,9 +405,9 @@ try {
                                     <table class="table table-bordered table-hover">
                                         <thead>
                                             <tr>
-                                                <th width="5%">No</th>
-                                                <th width="25%">Nama Kategori</th>
-                                                <th width="20%">Aksi</th>
+                                                <th >No</th>
+                                                <th >Nama Kategori</th>
+                                                <th >Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>

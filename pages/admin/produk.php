@@ -43,7 +43,7 @@ try {
     <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
     <!-- endinject -->
-    <link rel="shortcut icon" href="../../images/favicon.png" />
+    <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">
@@ -68,7 +68,7 @@ try {
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
                 <a class="dropdown-item preview-item">
                   <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
+                    <img src="../../images/faces/face4.jpg" alt="image" class="profile-pic">
                   </div>
                   <div class="preview-item-content flex-grow">
                     <h6 class="preview-subject ellipsis font-weight-normal">David Grey
@@ -417,13 +417,9 @@ try {
                                                         <th width="20%">Aksi</th>
                                                     </tr>
                                                 </thead>
-
                                                 <tbody>
-
                                                 <?php if(count($produk) > 0): ?>
-
                                                     <?php $no = 1; ?>
-
                                                     <?php foreach($produk as $row): ?>
                                                     <tr>
                                                         <td><?= $no++ ?></td>
@@ -439,7 +435,6 @@ try {
                                                             class="btn btn-warning btn-sm">
                                                                 Edit
                                                             </a>
-
                                                             <a href="delproduk.php?kode=<?= $row['kode'] ?>"
                                                             class="btn btn-danger btn-sm"
                                                             onclick="return confirm('Apakah anda yakin ingin menghapus produk ini?')">
@@ -447,11 +442,8 @@ try {
                                                             </a>
                                                         </td>
                                                     </tr>
-
                                                     <?php endforeach; ?>
-
                                                 <?php else: ?>
-
                                                     <tr>
                                                         <td colspan="6" class="text-center text-muted">
                                                             Belum ada produk
@@ -465,8 +457,6 @@ try {
                 </div>
             </div>
         </div>
-    </div>
-</div>
                                 
 
                     
@@ -501,7 +491,6 @@ try {
     <script src="../../vendors/chart.js/Chart.min.js"></script>
     <!-- End plugin js for this page -->
     <!-- Custom js for this page-->
-    <script src="../../js/dashboard.js"></script>
     <!-- End custom js for this page-->
   </body>
 </html>
