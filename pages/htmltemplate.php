@@ -1,59 +1,24 @@
 <?php 
-session_start();
+session_start(); 
 require_once '../../koneksi.php';
 if (!isset($_SESSION['is_auth']) || $_SESSION['is_auth'] !== true) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit;
 }
-$pesan = "";
-$error = "";
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-    $password_lama = $_POST['password_lama'];
-    $password_baru = $_POST['password_baru'];
-    $konfirmasi = $_POST['konfirmasi'];
+try {
 
-    $id_user = $_SESSION['id_user'];
+    $sql = "SELECT *
+            FROM tkategori
+            ORDER BY nama ASC";
 
-    try {
+    $stmt = $koneksi->prepare($sql);
+    $stmt->execute();
 
-        // Ambil password user saat ini
-        $sql = "SELECT password FROM tUser WHERE id = ?";
-        $stmt = $koneksi->prepare($sql);
-        $stmt->execute([$id_user]);
+    $kategori = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$user) {
-            $error = "User tidak ditemukan.";
-        }
-
-        elseif ($user['password'] != sha1($password_lama)) {
-            $error = "Password lama salah.";
-        }
-
-        elseif ($password_baru != $konfirmasi) {
-            $error = "Konfirmasi password tidak cocok.";
-        }
-
-        else {
-
-            $sqlUpdate = "UPDATE tUser
-                          SET password = ?
-                          WHERE id = ?";
-
-            $stmtUpdate = $koneksi->prepare($sqlUpdate);
-            $stmtUpdate->execute([
-                sha1($password_baru),
-                $id_user
-            ]);
-
-            $pesan = "Password berhasil diubah.";
-        }
-
-    } catch (PDOException $e) {
-        $error = $e->getMessage();
-    }
+} catch (PDOException $e) {
+    die("Error: " . $e->getMessage());
 }
 ?>
 
@@ -63,11 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <?php if ($_SESSION['role'] == 'Admin'): ?>
-      <title>CHARA - Admin Dashboard</title>
-    <?php else: ?>
-      <title>CHARA - Staff </title>
-    <?php endif; ?>
+    <title> CHARA - Employees</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -81,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </head>
   <body>
     <div class="container-scroller">
+      <div class="container-scroller">
       <!-- partial:partials/_navbar.html -->
       <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
@@ -101,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
                 <a class="dropdown-item preview-item">
                   <div class="preview-thumbnail">
-                    <img src="../../images/faces/face4.jpg" alt="image" class="profile-pic">
+                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
                   </div>
                   <div class="preview-item-content flex-grow">
                     <h6 class="preview-subject ellipsis font-weight-normal">David Grey
@@ -269,19 +231,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="../admin/dashboard.php">
+            <a class="nav-link" href="dashboard.php">
               <i class="typcn typcn-device-desktop menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="../admin/employee.php">
+            <a class="nav-link" href="employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="../admin/logaktivitas.php">
+            <a class="nav-link" href="logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
             </a>
@@ -295,15 +257,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="collapse" id="stok">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a>
+                <a class="nav-link" href="bahanbaku.php">Bahan Baku</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="../admin/produk.php">Produk</a>
+                <a class="nav-link" href="produk.php">Produk</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/resep.php">Resep</a>
+                <a class="nav-link" href="kategori.php">Kategori</a>
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link" href="resep.php">Resep</a>
               </li>
             </ul>
           </div>
@@ -317,10 +283,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="../admin/pengajuanpembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pengajuanpembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a>
+                <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
               </li>
             </ul>
           </div>
@@ -334,41 +300,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="collapse" id="laporan">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="../admin/laporanpenjualan.php">Laporan Penjualan</a>
+                <a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="../admin/laporankeuangan.php">Laporan Keuangan</a>
+                <a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/aruskas.php">Arus Kas</a>
+                <a class="nav-link" href="aruskas.php">Arus Kas</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/labarugi.php">Laba Rugi</a>
+                <a class="nav-link" href="labarugi.php">Laba Rugi</a>
               </li>
             </ul>
           </div>
           </li>
           <?php endif; ?>
-          <?php if ($_SESSION['role'] == 'Kasir' || $_SESSION['role'] == 'Admin'): ?>
+          <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
           <!-- SIDEBAR MODUL KASIR -->
             <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
-              <a class="nav-link" href="../kasir/transaksipenjualan.php">
+              <a class="nav-link" href="pages/kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
                 <span class="menu-title"> Transaksi Penjualan</span>
               </a>
             </li>
           <li class="nav-item">
-            <a class="nav-link" href="../kasir/datapenjualan.php">
+            <a class="nav-link" href="pages/kasir/datapenjualan.php">
               <i class="typcn typcn-chart-bar menu-icon"></i>
               <span class="menu-title"> Data Penjualan</span>
             </a>
           </li>
           <?php endif ?>
-          <?php if ($_SESSION['role'] == 'Gudang' || $_SESSION['role'] == 'Admin'): ?>
+          <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
@@ -398,83 +364,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
               <span class="menu-title"> Ubah Password</span>
             </a>
           </li>
-        </ul>
       </nav>
         <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
                 <div class="row">
-                    <div class="col-md-6 mx-auto">
+                    <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="card-title">
-                                    Ubah Password
-                                </h4>
-                                <?php if ($pesan != "") : ?>
-                                    <div class="alert alert-success">
-                                        <?= $pesan ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if ($error != "") : ?>
-                                    <div class="alert alert-danger">
-                                        <?= $error ?>
-                                    </div>
-                                <?php endif; ?>
-                                <form method="POST">
-                                    <div class="form-group">
-                                        <label>Password Lama</label>
-                                        <input
-                                            type="password"
-                                            name="password_lama"
-                                            class="form-control"
-                                            required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Password Baru</label>
-                                        <input
-                                            type="password"
-                                            name="password_baru"
-                                            class="form-control"
-                                            required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Konfirmasi Password Baru</label>
-                                        <input
-                                            type="password"
-                                            name="konfirmasi"
-                                            class="form-control"
-                                            required>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        Simpan Perubahan
-                                    </button>
-                                    <a href="../index.php" class="btn btn-secondary">
-                                        Kembali
-                                    </a>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+                    
+          <!-- content-wrapper ends -->
+          <!-- partial:partials/_footer.html -->
+          <footer class="footer">
+            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <!-- FOOTER -->
             </div>
+          </footer>
+          <!-- partial -->
         </div>
-        <script src="../../vendors/js/vendor.bundle.base.js"></script>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- base:js -->
+    <script src="../../vendors/js/vendor.bundle.base.js"></script>
     <!-- endinject -->
     <!-- Plugin js for this page-->
     <!-- End plugin js for this page-->
     <!-- inject:js -->
-    <script src="../js/off-canvas.js"></script>
-    <script src="../js/hoverable-collapse.js"></script>
-    <script src="../js/template.js"></script>
-    <script src="../js/settings.js"></script>
-    <script src="../js/todolist.js"></script>
+    <script src="../../js/off-canvas.js"></script>
+    <script src="../../js/hoverable-collapse.js"></script>
+    <script src="../../js/template.js"></script>
+    <script src="../../js/settings.js"></script>
+    <script src="../../js/todolist.js"></script>
     <!-- endinject -->
     <!-- plugin js for this page -->
-    <script src="../vendors/progressbar.js/progressbar.min.js"></script>
-    <script src="../vendors/chart.js/Chart.min.js"></script>
+    <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
+    <script src="../../vendors/chart.js/Chart.min.js"></script>
     <!-- End plugin js for this page -->
     <!-- Custom js for this page-->
-    <script src="../js/dashboard.js"></script>
+    <script src="../../js/dashboard.js"></script>
     <!-- End custom js for this page-->
   </body>
 </html>

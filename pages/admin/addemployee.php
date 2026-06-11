@@ -277,6 +277,10 @@ try {
               </li>
 
               <li class="nav-item">
+                <a class="nav-link" href="kategori.php">Kategori</a>
+              </li>
+
+              <li class="nav-item">
                 <a class="nav-link" href="resep.php">Resep</a>
               </li>
             </ul>
