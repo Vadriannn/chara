@@ -458,17 +458,17 @@ try {
                             <div class="form-group">
                                 <label>Satuan</label>
                                 <select name="satuan" class="form-control" required>
-    <option value="">-- Pilih Satuan --</option>
-    <?php if (!empty($satuan)): ?>
-        <?php foreach($satuan as $row): ?>
-            <option value="<?= $row['id'] ?>">
-                <?= $row['nama'] ?>
-            </option>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <option value="">-- Data Satuan Tidak Tersedia --</option>
-    <?php endif; ?>
-</select>
+                                  <option value="">-- Pilih Satuan --</option>
+                                  <?php if (!empty($satuan)): ?>
+                                      <?php foreach($satuan as $row): ?>
+                                          <option value="<?= $row['id'] ?>">
+                                              <?= $row['nama'] ?>
+                                          </option>
+                                      <?php endforeach; ?>
+                                  <?php else: ?>
+                                      <option value="">-- Data Satuan Tidak Tersedia --</option>
+                                  <?php endif; ?>
+                              </select>
                             </div>
                             <button type="submit" class="btn btn-primary">
                                 Simpan
