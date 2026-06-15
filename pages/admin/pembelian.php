@@ -5,113 +5,128 @@ require_once '../../auth.php';
 require_once '../auth_admin.php';
 
 $error = "";
+
 try {
-    // 1. Ambil data supplier dari tabel tSupplier
+
+    // Data supplier
     $supplier = $koneksi->query("
         SELECT id, nama
         FROM tSupplier
         ORDER BY nama
     ");
-    // 2. Ambil data bahan baku dari tBahan untuk dropdown select option
+
+    // Data bahan baku
     $bahan_baku = $koneksi->query("
         SELECT b.kode, b.nama, s.nama AS nama_satuan
         FROM tBahan b
         JOIN tSatuan s ON b.tSatuan_id = s.id
         ORDER BY b.nama
     ");
-    // 3. Ambil nomor pembelian terakhir dari tabel tPembelian
-    $stmtLast = $koneksi->query("
-        SELECT nomor
-        FROM tPembelian
-        ORDER BY nomor DESC
-        LIMIT 1
-    ");
-    $lastPembelian = $stmtLast->fetch(PDO::FETCH_ASSOC);
-    $nomorTerakhir = $lastPembelian
-        ? $lastPembelian['nomor']
-        : '-';
+
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $nomor      = intval($_POST['nomor']); 
+
         $tanggal    = $_POST['tanggal'];
-        $total      = doubleval($_POST['total']); 
-        $supplierId = intval($_POST['supplier']);
-        // Cek apakah nomor pembelian sudah digunakan di tPembelian
-        $cek = $koneksi->prepare("
-            SELECT COUNT(*)
-            FROM tPembelian
-            WHERE nomor = ?
+        $supplierId = $_POST['supplier'];
+        $total      = $_POST['total'];
+
+        $koneksi->beginTransaction();
+
+        /*
+        ==========================
+        SIMPAN HEADER PEMBELIAN
+        ==========================
+        */
+
+        $stmt = $koneksi->prepare("
+            INSERT INTO tPembelian
+            (
+                tanggal,
+                total,
+                tSupplier_id
+            )
+            VALUES
+            (
+                ?, ?, ?
+            )
         ");
-        $cek->execute([$nomor]);
-        if ($cek->fetchColumn() > 0) {
-            $error = "Nomor pembelian sudah digunakan.";
-        } else {
-            // Mengaktifkan database transaction pdo
-            $koneksi->beginTransaction();
-            // Sesuai ERD: tPembelian (nomor, tanggal, total, tSupplier_id)
-            $sql = "
-                INSERT INTO tPembelian
-                (nomor, tanggal, total, tSupplier_id)
+
+        $stmt->execute([
+            $tanggal,
+            $total,
+            $supplierId
+        ]);
+
+        // Ambil ID pembelian yang baru dibuat
+        $pembelianId = $koneksi->lastInsertId();
+
+        /*
+        ==========================
+        SIMPAN DETAIL PEMBELIAN
+        ==========================
+        */
+
+        $arrBahanKode   = $_POST['bahan_baku'];
+        $arrJumlah      = $_POST['jumlah'];
+        $arrHargaSatuan = $_POST['harga_satuan'];
+
+        for ($i = 0; $i < count($arrBahanKode); $i++) {
+
+            $bahanKode   = $arrBahanKode[$i];
+            $jumlah      = (int)$arrJumlah[$i];
+            $hargaSatuan = (float)$arrHargaSatuan[$i];
+            $subtotal    = $jumlah * $hargaSatuan;
+
+            // Simpan detail pembelian
+            $stmtDetail = $koneksi->prepare("
+                INSERT INTO tDetailPembelian
+                (
+                    tPembelian_id,
+                    tBahan_kode,
+                    jumlah,
+                    harga,
+                    subtotal
+                )
                 VALUES
-                (?, ?, ?, ?)
-            ";
-            $stmt = $koneksi->prepare($sql);
-            $stmt->execute([
-                $nomor,
-                $tanggal,
-                $total,
-                $supplierId
+                (
+                    ?, ?, ?, ?, ?
+                )
+            ");
+
+            $stmtDetail->execute([
+                $pembelianId,
+                $bahanKode,
+                $jumlah,
+                $hargaSatuan,
+                $subtotal
             ]);
-            // Ambil data array kiriman form dari baris dinamis JavaScript
-            $arrBahanKode   = $_POST['bahan_baku'];   // Berisi kode bahan baku (misal: B001)
-            $arrJumlah      = $_POST['jumlah'];       // Berisi jumlah (INT)
-            $arrHargaSatuan = $_POST['harga_satuan']; // Berisi harga satuan (DOUBLE)
-            // Loop untuk menyimpan data ke tDetailPembelian dan update stok di tBahan
-            for ($i = 0; $i < count($arrBahanKode); $i++) {
-                $bahanKode   = $arrBahanKode[$i];
-                $jumlah      = intval($arrJumlah[$i]);
-                $hargaSatuan = doubleval($arrHargaSatuan[$i]);
-                $subtotal    = $jumlah * $hargaSatuan;
-                // Sesuai ERD: tDetailPembelian (tBahan_kode, tPembelian_nomor, jumlah, harga, subtotal)
-                $sqlDetail = "
-                    INSERT INTO tDetailPembelian
-                    (tBahan_kode, tPembelian_nomor, jumlah, harga, subtotal)
-                    VALUES
-                    (?, ?, ?, ?, ?)
-                ";
-                $stmtDetail = $koneksi->prepare($sqlDetail);
-                $stmtDetail->execute([
-                    $bahanKode,
-                    $nomor, // Menggunakan variabel $nomor dari input karena tPembelian_nomor berelasi ke tPembelian.nomor
-                    $jumlah,
-                    $hargaSatuan,
-                    $subtotal
-                ]);
-                // Sesuai ERD: Update tambah stok & harga beli terakhir langsung ke tabel tBahan
-                $sqlStok = "
-                    UPDATE tBahan
-                    SET stok = stok + ?,
-                        harga = ?
-                    WHERE kode = ?
-                ";
-                $stmtStok = $koneksi->prepare($sqlStok);
-                $stmtStok->execute([
-                    $jumlah,
-                    $hargaSatuan, // Menyimpan harga beli terbaru ke master tBahan untuk kebutuhan hitung HPP nanti
-                    $bahanKode
-                ]);
-            }
-            
-            // Jalankan commit jika seluruh rangkaian query berhasil tanpa hambatan
-            $koneksi->commit();
-            header("Location: pembelian.php?success=add");
-            exit;
+
+            // Update stok bahan
+            $stmtStok = $koneksi->prepare("
+                UPDATE tBahan
+                SET stok = stok + ?,
+                    harga = ?
+                WHERE kode = ?
+            ");
+
+            $stmtStok->execute([
+                $jumlah,
+                $hargaSatuan,
+                $bahanKode
+            ]);
         }
+
+        $koneksi->commit();
+
+        header("Location: pembelian.php?success=add");
+        exit;
     }
+
 } catch(PDOException $e) {
-    // Batalkan semua operasi database jika terjadi kegagalan query ditengah jalan
+
     if ($koneksi->inTransaction()) {
         $koneksi->rollBack();
     }
+
     $error = $e->getMessage();
 }
 ?>

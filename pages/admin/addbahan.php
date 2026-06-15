@@ -385,7 +385,7 @@ try {
             </a>
           </li>
           <?php endif ?>
-          <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
+          <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Adminw'): ?>
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">

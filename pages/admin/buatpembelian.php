@@ -10,29 +10,35 @@ if(isset($_POST['simpan'])){
 
         $koneksi->beginTransaction();
 
+        // Insert Pembelian
         $stmt = $koneksi->prepare("
             INSERT INTO tPembelian
             (
                 tanggal,
                 total,
-                tSupplier_id
+                tSupplier_id,
+                tPurchaseRequest_id
             )
             VALUES
             (
                 NOW(),
                 0,
+                ?,
                 ?
             )
         ");
 
         $stmt->execute([
-            $_POST['supplier']
+            $_POST['supplier'],
+            $pr
         ]);
 
         $nomorPembelian = $koneksi->lastInsertId();
+        
 
         $total = 0;
 
+        // Ambil detail PR
         $stmtPR = $koneksi->prepare("
             SELECT *
             FROM tDetailPurchaseRequest
@@ -43,50 +49,50 @@ if(isset($_POST['simpan'])){
 
         while($row = $stmtPR->fetch(PDO::FETCH_ASSOC)){
 
-            $stmtHarga = $koneksi->prepare("
-                SELECT harga
-                FROM tBahan
-                WHERE kode = ?
-            ");
+          $stmtHarga = $koneksi->prepare("
+              SELECT harga
+              FROM tBahan
+              WHERE kode = ?
+          ");
 
-            $stmtHarga->execute([
-                $row['tBahan_kode']
-            ]);
+          $stmtHarga->execute([
+              $row['tBahan_kode']
+          ]);
 
-            $bahan = $stmtHarga->fetch(PDO::FETCH_ASSOC);
+          $bahan = $stmtHarga->fetch(PDO::FETCH_ASSOC);
 
-            $harga = $bahan['harga'];
-            $subtotal = $harga * $row['jumlah'];
+          $harga = $bahan['harga'];
+          $subtotal = $harga * $row['jumlah'];
 
-            $total += $subtotal;
+          $total += $subtotal;
 
-            $stmtInsert = $koneksi->prepare("
-                INSERT INTO tDetailPembelian
-                (
-                    tBahan_kode,
-                    tPembelian_nomor,
-                    jumlah,
-                    satuanBeli,
-                    harga,
-                    subtotal,
-                    status
-                )
-                VALUES
-                (
-                    ?, ?, ?, ?, ?, ?, 'ongoing'
-                )
-            ");
+          $stmtDetail = $koneksi->prepare("
+              INSERT INTO tDetailPembelian
+              (
+                  tBahan_kode,
+                  tPembelian_nomor,
+                  jumlah,
+                  satuanBeli,
+                  harga,
+                  subtotal,
+                  status
+              )
+              VALUES
+              (
+                  ?, ?, ?, ?, ?, ?, 'ongoing'
+              )
+          ");
 
-            $stmtInsert->execute([
-                $row['tBahan_kode'],
-                $nomorPembelian,
-                $row['jumlah'],
-                $row['satuanBeli'],
-                $harga,
-                $subtotal
-            ]);
-        }
-
+          $stmtDetail->execute([
+              $row['tBahan_kode'],
+              $nomorPembelian,
+              $row['jumlah'],
+              $row['satuanBeli'],
+              $harga,
+              $subtotal
+          ]);
+      }
+        // Update total pembelian
         $stmt = $koneksi->prepare("
             UPDATE tPembelian
             SET total = ?
@@ -98,29 +104,28 @@ if(isset($_POST['simpan'])){
             $nomorPembelian
         ]);
 
-        $stmt = $koneksi->prepare("
-            UPDATE tPurchaseRequest
-            SET tPembelian_nomor = ?
-            WHERE id = ?
-        ");
-
-        $stmt->execute([
-            $nomorPembelian,
-            $pr
-        ]);
-
         $koneksi->commit();
 
-        header("Location: pembelian.php");
+        echo "
+        <script>
+            alert('Pembelian berhasil dibuat');
+            window.location='pembelian.php';
+        </script>
+        ";
+
         exit;
 
     }catch(PDOException $e){
 
-        $koneksi->rollBack();
-        echo $e->getMessage();
+        if($koneksi->inTransaction()){
+            $koneksi->rollBack();
+        }
+
+        die('ERROR : '.$e->getMessage());
 
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

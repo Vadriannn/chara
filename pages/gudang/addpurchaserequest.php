@@ -500,10 +500,8 @@ try {
                                                     <?= $bahan['nama']; ?>
                                                 </option>
                                             <?php endwhile; ?>
-
                                         </select>
                                     </div>
-
                                     <div class="col-md-2">
                                         <label>Jumlah</label>
                                         <input
@@ -513,7 +511,6 @@ try {
                                             min="1"
                                             step="0.01">
                                     </div>
-
                                     <div class="col-md-3">
                                         <label>Satuan Beli</label>
                                         <input
@@ -522,7 +519,6 @@ try {
                                             class="form-control"
                                             placeholder="Dus / Karung / Sak">
                                     </div>
-
                                     <div class="col-md-2">
                                         <label>Konversi</label>
                                         <input
@@ -533,7 +529,6 @@ try {
                                             min="0.01"
                                             placeholder="1 dus = ? kg">
                                     </div>
-
                                     <div class="col-md-2">
                                         <label>&nbsp;</label>
                                         <button
@@ -543,11 +538,8 @@ try {
                                             Tambah
                                         </button>
                                     </div>
-
                                 </div>
-
                                 <br>
-
                                 <table class="table table-bordered">
                                     <thead>
                                         <tr>
@@ -558,20 +550,15 @@ try {
                                             <th width="100">Aksi</th>
                                         </tr>
                                     </thead>
-
                                     <tbody id="tabelPRBody">
-
                                     </tbody>
                                 </table>
-
                                 <div id="hiddenDetail">
-
                                 <button
                                     type="submit"
                                     class="btn btn-primary">
                                     Simpan
                                 </button>
-
                                 <a
                                     href="purchaserequest.php"
                                     class="btn btn-light">

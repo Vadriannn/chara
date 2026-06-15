@@ -35,7 +35,7 @@ try {
             pr.id,
             pr.status,
             pr.tanggal,
-            pr.tPembelian_nomor,
+            pb.nomor AS nomor_pembelian,
             u.username,
 
             GROUP_CONCAT(
@@ -54,6 +54,9 @@ try {
 
         JOIN tUser u
             ON pr.tUser_id = u.id
+
+        LEFT JOIN tPembelian pb
+          ON pb.tPurchaseRequest_id = pr.id
 
         LEFT JOIN tDetailPurchaseRequest d
             ON pr.id = d.tPurchaseRequest_id
