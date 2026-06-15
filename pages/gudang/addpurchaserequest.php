@@ -410,21 +410,27 @@ try {
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/bahanbaku.php">
+              <a class="nav-link" href="bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangmasuk.php">
+              <a class="nav-link" href="barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangkeluar.php">
+              <a class="nav-link" href="barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="purchaserequest.php">
+                <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
+                <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
             <?php endif ?>
@@ -558,7 +564,7 @@ try {
                                     </tbody>
                                 </table>
 
-                                <div id="hiddenDetail"></div>
+                                <div id="hiddenDetail">
 
                                 <button
                                     type="submit"
@@ -571,6 +577,7 @@ try {
                                     class="btn btn-light">
                                     Batal
                                 </a>
+                                </div>
                             </form> 
                           </div>
                         </div>

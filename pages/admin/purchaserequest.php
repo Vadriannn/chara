@@ -4,43 +4,32 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
-
 $error = "";
-
 try {
-
     if(isset($_GET['approve'])){
-
         $stmt = $koneksi->prepare("
             UPDATE tPurchaseRequest
             SET status = 'Approved'
             WHERE id = ?
         ");
-
         $stmt->execute([
             $_GET['approve']
         ]);
-
         header("Location: purchaserequest.php");
         exit;
     }
-
     if(isset($_GET['reject'])){
-
         $stmt = $koneksi->prepare("
             UPDATE tPurchaseRequest
             SET status = 'Rejected'
             WHERE id = ?
         ");
-
         $stmt->execute([
             $_GET['reject']
         ]);
-
         header("Location: purchaserequest.php");
         exit;
     }
-
     $purchaseRequest = $koneksi->query("
         SELECT
             pr.id,
@@ -465,26 +454,22 @@ catch(PDOException $e){
                                     <th>Tanggal</th>
                                     <th>Pengaju</th>
                                     <th>Detail Permintaan</th>
+                                    <th> Detail </th>
                                     <th>Status</th>
                                     <th width="180">Aksi</th>
                                 </tr>
                             </thead>
-
                             <tbody>
-
                                 <?php
                                 while(
                                     $row =
                                     $purchaseRequest->fetch(PDO::FETCH_ASSOC)
                                 ):
                                 ?>
-
                                 <tr>
-
                                     <td>
                                         <?= $row['id']; ?>
                                     </td>
-
                                     <td>
                                         <?= date(
                                             'd/m/Y H:i',
@@ -493,28 +478,28 @@ catch(PDOException $e){
                                             )
                                         ); ?>
                                     </td>
-
                                     <td>
                                         <?= $row['username']; ?>
                                     </td>
-
                                     <td>
                                         <?= $row['detail_bahan']; ?>
                                     </td>
-
                                     <td>
-
+                                      <a href="detailpurchaserequest.php?id=<?= $row['id'] ?>"
+                                                    class="btn btn-info btn-sm">
+                                                    Detail
+                                      </a>
+                                    </td>
+                                    <td>
                                         <?php
                                         if(
                                             $row['status']
                                             == 'Pending'
                                         ):
                                         ?>
-
                                             <span class="badge badge-warning">
                                                 Pending
                                             </span>
-
                                         <?php
                                         elseif(
                                             $row['status']

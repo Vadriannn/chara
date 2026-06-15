@@ -33,7 +33,7 @@ try {
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Employees</title>
+    <title> CHARA - Purchase Request </title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -242,13 +242,13 @@ try {
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="employee.php">
+            <a class="nav-link" href="../admin/employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="logaktivitas.php">
+            <a class="nav-link" href="../admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
             </a>
@@ -262,19 +262,19 @@ try {
           <div class="collapse" id="stok">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="bahanbaku.php">Bahan Baku</a>
+                <a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="produk.php">Produk</a>
+                <a class="nav-link" href="../admin/produk.php">Produk</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="kategori.php">Kategori</a>
+                <a class="nav-link" href="../admin/kategori.php">Kategori</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="resep.php">Resep</a>
+                <a class="nav-link" href="../admin/resep.php">Resep</a>
               </li>
             </ul>
           </div>
@@ -346,21 +346,27 @@ try {
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/bahanbaku.php">
+              <a class="nav-link" href="bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangmasuk.php">
+              <a class="nav-link" href="barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangkeluar.php">
+              <a class="nav-link" href="barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
+              </a>
+            </li>
+            <li class = "nav-item">
+              <a class="nav-link" href="purchaserequest.php">
+                <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
+                <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
             
@@ -414,28 +420,20 @@ try {
                                         <tr>
                                             <th>ID Purchase Request</th>
                                             <th>Tanggal</th>
-                                            <th>Pengaju</th>
+                                            <th>Pengajuan Oleh</th>
                                             <th>Status</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
-
                                     <tbody>
-
                                     <?php if(count($pr) > 0): ?>
-
                                         <?php foreach($pr as $row): ?>
-
                                         <tr>
-
                                             <td><?= $row['id'] ?></td>
-
                                             <td>
                                                 <?= date('d/m/Y H:i', strtotime($row['tanggal'])) ?>
                                             </td>
-
                                             <td><?= $row['username'] ?></td>
-
                                             <td>
                                                 <?php
                                                 if($row['status'] == 'Pending'){
@@ -449,32 +447,22 @@ try {
                                                 }
                                                 ?>
                                             </td>
-
-                                            
-
                                             <td>
                                                 <a href="detailpurchaserequest.php?id=<?= $row['id'] ?>"
                                                     class="btn btn-info btn-sm">
                                                     Detail
                                                 </a>
                                             </td>
-
                                         </tr>
-
                                         <?php endforeach; ?>
-
                                     <?php else: ?>
-
                                         <tr>
                                             <td colspan="6" class="text-center text-muted">
                                                 Belum ada Purchase Request
                                             </td>
                                         </tr>
-
                                     <?php endif; ?>
-
                                     </tbody>
-
                                 </table>                                
                                 </div>
                             </div>
