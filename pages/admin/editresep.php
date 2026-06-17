@@ -28,10 +28,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Simpan ulang resep yang baru
         if(isset($_POST['bahan'])){
+            $bahanSudahAda = [];
+            foreach($_POST['bahan'] as $kodeBahan){
+                if(in_array($kodeBahan, $bahanSudahAda)){
+                    throw new Exception(
+                        "Terdapat bahan baku yang sama dalam resep."
+                    );
+                }
+                $bahanSudahAda[] = $kodeBahan;
+            }
             foreach($_POST['bahan'] as $i => $kodeBahan){
                 $jumlah = $_POST['jumlah'][$i];
-
-                // skip jika kosong
                 if($jumlah <= 0){
                     continue;
                 }
@@ -44,9 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     )
                     VALUES
                     (
-                        ?,
-                        ?,
-                        ?
+                        ?, ?, ?
                     )
                 ";
                 $stmtInsert = $koneksi->prepare($sqlInsert);
@@ -65,10 +70,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </script>
         ";
         exit;
-    } catch(PDOException $e){
-
+    } catch(Exception $e){
         $koneksi->rollBack();
-        die($e->getMessage());
+        echo "
+        <script>
+            alert('".$e->getMessage()."');
+            history.back();
+        </script>
+        ";
+        exit;
     }
 }
 try {
@@ -96,7 +106,13 @@ try {
             r.tBahan_kode,
             r.jumlah,
             b.nama AS nama_bahan,
-            s.nama AS satuan
+            CASE
+                WHEN LOWER(s.nama) = 'kg'
+                    THEN 'Gram'
+                WHEN LOWER(s.nama) = 'liter'
+                    THEN 'Ml'
+                ELSE s.nama
+            END AS satuan
         FROM tresep r
         INNER JOIN tbahan b
             ON r.tBahan_kode = b.kode
@@ -115,7 +131,13 @@ try {
         SELECT
             b.kode,
             b.nama,
-            s.nama AS satuan
+            CASE
+                WHEN LOWER(s.nama) = 'kg'
+                    THEN 'Gram'
+                WHEN LOWER(s.nama) = 'liter'
+                    THEN 'Ml'
+                ELSE s.nama
+            END AS satuan
         FROM tbahan b
         INNER JOIN tsatuan s
             ON b.tSatuan_id = s.id
@@ -405,6 +427,9 @@ try {
               <li class ="nav-item">
                 <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>
@@ -622,6 +647,10 @@ try {
             row.innerHTML = `
                 <td>
                     <select name="bahan[]" class="form-control" onchange="ubahSatuan(this)">
+                        <option value="" selected disabled>
+                            -- Pilih Bahan Baku --
+                        </option>
+
                         <?php foreach($semuaBahan as $b){ ?>
                             <option value="<?= $b['kode']; ?>">
                                 <?= $b['nama']; ?>
@@ -629,7 +658,7 @@ try {
                         <?php } ?>
                     </select>
                 </td>
-                <td class="satuan">kg</td>
+                <td class="satuan">-</td>
                 <td>
                     <input
                         type="number"
@@ -655,10 +684,37 @@ try {
                     "<?= $b['kode']; ?>": "<?= $b['satuan']; ?>",
                 <?php } ?>
             };
-            let satuanCell = select.closest("tr").querySelector(".satuan");
-            if (satuanCell) {
-                satuanCell.innerHTML = data[select.value] ?? "-";
+            let kodeDipilih = select.value;
+            let semuaSelect =
+                document.querySelectorAll(
+                    'select[name="bahan[]"]'
+                );
+            let jumlahSama = 0;
+            semuaSelect.forEach(function(item){
+
+                if(item.value === kodeDipilih){
+                    jumlahSama++;
+                }
+
+            });
+            if(jumlahSama > 1){
+
+                alert("Bahan baku sudah dipilih!");
+
+                select.value = "";
+
+                select.closest("tr")
+                      .querySelector(".satuan")
+                      .innerHTML = "-";
+
+                return;
             }
+            let satuanCell =
+                select.closest("tr")
+                      .querySelector(".satuan");
+
+            satuanCell.innerHTML =
+                data[kodeDipilih] ?? "-";
         }
         </script>
     </body>

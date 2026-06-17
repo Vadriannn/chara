@@ -290,6 +290,9 @@ try {
               <li class ="nav-item">
                 <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
               </li>

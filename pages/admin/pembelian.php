@@ -394,6 +394,9 @@ try {
               <li class ="nav-item">
                 <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>

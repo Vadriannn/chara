@@ -1,49 +1,79 @@
 <?php
 session_start();
+
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
-$pesan = "";
+if (!isset($_SESSION['is_auth']) || $_SESSION['is_auth'] !== true) {
+    header("Location: ../../login.php");
+    exit;
+}
 $error = "";
+$pesan = "";
+/* Cek ID Supplier*/
+if (!isset($_GET['id'])) {
+    header("Location: daftarsupplier.php");
+    exit;
+}
+$id = $_GET['id'];
+try {
+    /*Ambil Data Supplier */
+    $stmt = $koneksi->prepare("
+        SELECT *
+        FROM tsupplier
+        WHERE id = ?
+    ");
+    $stmt->execute([$id]);
+    $supplier = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$supplier) {
+        die("Data supplier tidak ditemukan.");
+    }
+    /*Proses Update*/
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $nama = trim($_POST['nama']);
 
-    $nama = trim($_POST['nama']);
-
-    try {
-        // Cek supplier sudah ada atau belum
+        /* Cek Nama Supplier Duplikat */
         $cek = $koneksi->prepare("
             SELECT COUNT(*)
             FROM tsupplier
             WHERE nama = ?
+            AND id != ?
         ");
-        $cek->execute([$nama]);
+        $cek->execute([
+            $nama,
+            $id
+        ]);
         if ($cek->fetchColumn() > 0) {
-            $error = "Supplier sudah ada.";
+            $error = "Nama supplier sudah digunakan.";
         } else {
-            $sql = "
-                INSERT INTO tsupplier (nama)
-                VALUES (?)
-            ";
-            $stmt = $koneksi->prepare($sql);
-            $stmt->execute([$nama]);
-            
-            header("Location: daftarsupplier.php?success=add");
+            $update = $koneksi->prepare("
+                UPDATE tsupplier
+                SET nama = ?
+                WHERE id = ?
+            ");
+            $update->execute([
+                $nama,
+                $id
+            ]);
+            header("Location: daftarsupplier.php?success=edit");
             exit;
         }
-    } catch (PDOException $e) {
-        $error = $e->getMessage();
     }
+} catch(PDOException $e) {
+    $error = $e->getMessage();
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Tambah Supplier</title>
+    <title> CHARA - Employees</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -297,14 +327,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </a>
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
-              <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
-              </li>
-              <li class ="nav-item">
-                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
-              </li>
               <li class="nav-item">
-                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pengajuanpembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
@@ -376,13 +400,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <span class="menu-title"> Barang Keluar</span>
               </a>
             </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="../gudang/purchaserequest.php">
-                <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
-                <span class="menu-title"> Purchase Request</span>
-              </a>
-            </li>
-            
             <?php endif ?>
             <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
@@ -401,7 +418,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="card">
                     <div class="card-body">
 
-                        <h4 class="card-title">Tambah Supplier</h4>
+                        <h4 class="card-title">Edit Supplier</h4>
+
+                        <?php if($pesan != "") : ?>
+                        <div class="alert alert-success">
+                            <?= $pesan ?>
+                        </div>
+                        <?php endif; ?>
 
                         <?php if($error != "") : ?>
                         <div class="alert alert-danger">
@@ -412,20 +435,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <form method="POST">
 
                             <div class="form-group">
+                                <label>ID Supplier</label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    value="<?= $supplier['id'] ?>"
+                                    readonly>
+                            </div>
+
+                            <div class="form-group">
                                 <label>Nama Supplier</label>
                                 <input
                                     type="text"
                                     name="nama"
                                     class="form-control"
-                                    placeholder="Masukkan nama supplier"
+                                    value="<?= htmlspecialchars($supplier['nama']) ?>"
                                     required>
                             </div>
 
                             <button type="submit" class="btn btn-primary">
-                                Simpan
+                                Simpan Perubahan
                             </button>
 
-                            <a href="supplier.php" class="btn btn-secondary">
+                            <a href="daftarsupplier.php" class="btn btn-secondary">
                                 Kembali
                             </a>
 
@@ -437,7 +469,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 </div>
-          <!-- content-wrapper ends -->
+          <!-- content -wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
             <div class="d-sm-flex justify-content-center justify-content-sm-between">

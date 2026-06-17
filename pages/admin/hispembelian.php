@@ -283,6 +283,9 @@ $stmt = $koneksi->query("
               <li class ="nav-item">
                 <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
               </li>
@@ -422,7 +425,7 @@ $stmt = $koneksi->query("
                         </td>
 
                         <td>
-                            <a href="detail_histori_pembelian.php?nomor=<?= $row['nomor'] ?>"
+                            <a href="detailhispembelian.php?nomor=<?= $row['nomor'] ?>"
                                class="btn btn-info btn-sm">
                                 Detail
                             </a>

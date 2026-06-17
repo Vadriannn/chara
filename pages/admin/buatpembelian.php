@@ -47,51 +47,48 @@ if(isset($_POST['simpan'])){
 
         $stmtPR->execute([$pr]);
 
-        while($row = $stmtPR->fetch(PDO::FETCH_ASSOC)){
+        $hargaInput = $_POST['harga'];
 
-          $stmtHarga = $koneksi->prepare("
-              SELECT harga
-              FROM tBahan
-              WHERE kode = ?
-          ");
+        $no = 0;
 
-          $stmtHarga->execute([
-              $row['tBahan_kode']
-          ]);
+        while($row = $stmtPR->fetch(PDO::FETCH_ASSOC))
+        {
+            $harga = $hargaInput[$no];
 
-          $bahan = $stmtHarga->fetch(PDO::FETCH_ASSOC);
+            $subtotal =
+                $harga *
+                $row['jumlah'];
 
-          $harga = $bahan['harga'];
-          $subtotal = $harga * $row['jumlah'];
+            $total += $subtotal;
 
-          $total += $subtotal;
+            $stmtDetail = $koneksi->prepare("
+                INSERT INTO tDetailPembelian
+                (
+                    tBahan_kode,
+                    tPembelian_nomor,
+                    jumlah,
+                    satuanBeli,
+                    harga,
+                    subtotal,
+                    status
+                )
+                VALUES
+                (
+                    ?, ?, ?, ?, ?, ?, 'ongoing'
+                )
+            ");
 
-          $stmtDetail = $koneksi->prepare("
-              INSERT INTO tDetailPembelian
-              (
-                  tBahan_kode,
-                  tPembelian_nomor,
-                  jumlah,
-                  satuanBeli,
-                  harga,
-                  subtotal,
-                  status
-              )
-              VALUES
-              (
-                  ?, ?, ?, ?, ?, ?, 'ongoing'
-              )
-          ");
+            $stmtDetail->execute([
+                $row['tBahan_kode'],
+                $nomorPembelian,
+                $row['jumlah'],
+                $row['satuanBeli'],
+                $harga,
+                $subtotal
+            ]);
 
-          $stmtDetail->execute([
-              $row['tBahan_kode'],
-              $nomorPembelian,
-              $row['jumlah'],
-              $row['satuanBeli'],
-              $harga,
-              $subtotal
-          ]);
-      }
+            $no++;
+        }
         // Update total pembelian
         $stmt = $koneksi->prepare("
             UPDATE tPembelian
@@ -390,6 +387,9 @@ if(isset($_POST['simpan'])){
               <li class ="nav-item">
                 <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>
@@ -557,19 +557,66 @@ if(isset($_POST['simpan'])){
                                                         <th>Nama Bahan</th>
                                                         <th>Jumlah</th>
                                                         <th>Satuan</th>
+                                                        <th>Harga / Satuan</th>
+                                                        <th>Subtotal</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <?php foreach($detailPR as $d): ?>
-                                                    <tr>
-                                                        <td><?= $d['tBahan_kode'] ?></td>
-                                                        <td><?= $d['nama'] ?></td>
-                                                        <td><?= $d['jumlah'] ?></td>
-                                                        <td><?= $d['satuanBeli'] ?></td>
-                                                    </tr>
+                                                    <?php foreach($detailPR as $index => $d): ?>
+                                                      <tr>
+                                                          <td>
+                                                              <?= $d['tBahan_kode'] ?>
+                                                              <input
+                                                                  type="hidden"
+                                                                  name="kode[]"
+                                                                  value="<?= $d['tBahan_kode'] ?>">
+                                                          </td>
+
+                                                          <td><?= $d['nama'] ?></td>
+
+                                                          <td>
+                                                              <?= $d['jumlah'] ?>
+                                                              <input
+                                                                  type="hidden"
+                                                                  class="jumlah"
+                                                                  value="<?= $d['jumlah'] ?>">
+                                                          </td>
+
+                                                          <td><?= $d['satuanBeli'] ?></td>
+
+                                                          <td>
+                                                              <input
+                                                                  type="number"
+                                                                  name="harga[]"
+                                                                  class="form-control harga"
+                                                                  min="0"
+                                                                  value="0"
+                                                                  required>
+                                                          </td>
+
+                                                          <td>
+                                                              <input
+                                                                  type="text"
+                                                                  class="form-control subtotal"
+                                                                  value="0"
+                                                                  readonly>
+                                                          </td>
+                                                      </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
                                             </table>
+                                              <div class="row mt-3">
+                                                <div class="col-md-4 offset-md-8">
+                                                    <table class="table table-bordered">
+                                                        <tr>
+                                                            <th>Total Pembelian</th>
+                                                            <td>
+                                                                Rp <span id="grandTotal">0</span>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                              </div>
                                         </div>
                                         <div class="mt-3">
                                             <button
@@ -622,5 +669,45 @@ if(isset($_POST['simpan'])){
     <!-- End plugin js for this page -->
     <!-- Custom js for this page-->
     <!-- End custom js for this page-->
+    <script>
+      function hitungTotal() {
+
+          let grandTotal = 0;
+
+          document.querySelectorAll(".harga").forEach(function(input){
+
+              let row = input.closest("tr");
+
+              console.log("ROW:", row);
+
+              let jumlahInput = row.querySelector(".jumlah");
+              let subtotalInput = row.querySelector(".subtotal");
+
+              console.log("jumlah =", jumlahInput);
+              console.log("subtotal =", subtotalInput);
+
+              let jumlah = parseFloat(jumlahInput.value) || 0;
+              let harga = parseFloat(input.value) || 0;
+
+              let subtotal = jumlah * harga;
+
+              subtotalInput.value =
+                  subtotal.toLocaleString('id-ID');
+
+              grandTotal += subtotal;
+          });
+
+          console.log("Grand Total =", grandTotal);
+
+          document.getElementById("grandTotal").textContent =
+              grandTotal.toLocaleString('id-ID');
+      }
+
+      document.querySelectorAll(".harga").forEach(function(input){
+          input.addEventListener("input", hitungTotal);
+      });
+
+      hitungTotal();
+    </script>
   </body>
 </html>

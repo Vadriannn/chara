@@ -373,6 +373,9 @@ try {
               <li class ="nav-item">
                 <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>
@@ -692,6 +695,12 @@ try {
         let kode =
             select.value;
 
+        // Cek apakah bahan sudah pernah ditambahkan
+        if(document.querySelector(`input[name="resep[${kode}]"]`)){
+            alert('Bahan baku tersebut sudah ada di resep!');
+            return;
+        }
+
         let nama =
             select.options[
                 select.selectedIndex
@@ -744,7 +753,7 @@ try {
                 <button
                     type="button"
                     class="btn btn-danger btn-sm"
-                    onclick="hapusBaris(this, ${hpp})">
+                    onclick="hapusBaris(this, ${hpp}, '${kode}')">
                     Hapus
                 </button>
             </td>
@@ -760,6 +769,7 @@ try {
             `
             <input
                 type="hidden"
+                id="resep_${kode}"
                 name="resep[${kode}]"
                 value="${jumlah}">
             `
@@ -769,16 +779,23 @@ try {
         document.getElementById('satuanBahan').value = '';
     }
 
-    function hapusBaris(btn, hpp){
-      totalHpp -= hpp;
-      btn.closest('tr').remove();
-      updateHppDanLaba();
-  }
+    function hapusBaris(btn, hpp, kode){
+        totalHpp -= hpp;
+        btn.closest('tr').remove();
+        let hidden =
+            document.getElementById(
+                'resep_' + kode
+            );
+        if(hidden){
+            hidden.remove();
+        }
+        updateHppDanLaba();
+    }
 
     function updateHppDanLaba() {
-    document.getElementById('totalHpp').innerText =
-        totalHpp.toLocaleString('id-ID');
-}
+        document.getElementById('totalHpp').innerText =
+            totalHpp.toLocaleString('id-ID');
+    }
 document
 .getElementById('hargaJual')
 .addEventListener('input', function(){

@@ -4,46 +4,56 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
-$pesan = "";
-$error = "";
+$nomor = $_GET['nomor'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-    $nama = trim($_POST['nama']);
-
-    try {
-        // Cek supplier sudah ada atau belum
-        $cek = $koneksi->prepare("
-            SELECT COUNT(*)
-            FROM tsupplier
-            WHERE nama = ?
-        ");
-        $cek->execute([$nama]);
-        if ($cek->fetchColumn() > 0) {
-            $error = "Supplier sudah ada.";
-        } else {
-            $sql = "
-                INSERT INTO tsupplier (nama)
-                VALUES (?)
-            ";
-            $stmt = $koneksi->prepare($sql);
-            $stmt->execute([$nama]);
-            
-            header("Location: daftarsupplier.php?success=add");
-            exit;
-        }
-    } catch (PDOException $e) {
-        $error = $e->getMessage();
-    }
+if(empty($nomor)){
+    die('Nomor pembelian tidak ditemukan');
 }
+
+$stmt = $koneksi->prepare("
+    SELECT
+        p.nomor,
+        p.tanggal,
+        p.total,
+        p.tPurchaseRequest_id,
+        s.nama AS supplier
+    FROM tPembelian p
+    JOIN tSupplier s
+        ON p.tSupplier_id = s.id
+    WHERE p.nomor = ?
+");
+
+$stmt->execute([$nomor]);
+
+$pembelian = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if(!$pembelian){
+    die('Data pembelian tidak ditemukan');
+}
+
+$stmtDetail = $koneksi->prepare("
+    SELECT
+        d.*,
+        b.nama
+    FROM tDetailPembelian d
+    JOIN tBahan b
+        ON d.tBahan_kode = b.kode
+    WHERE d.tPembelian_nomor = ?
+");
+
+$stmtDetail->execute([$nomor]);
+
+$detailPembelian = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Tambah Supplier</title>
+    <title> CHARA - Detail Purchase Request</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -252,13 +262,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="employee.php">
+            <a class="nav-link" href="../admin/employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="logaktivitas.php">
+            <a class="nav-link" href="../admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
             </a>
@@ -272,19 +282,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="collapse" id="stok">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="bahanbaku.php">Bahan Baku</a>
+                <a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="produk.php">Produk</a>
+                <a class="nav-link" href="../admin/produk.php">Produk</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="kategori.php">Kategori</a>
+                <a class="nav-link" href="../admin/kategori.php">Kategori</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="resep.php">Resep</a>
+                <a class="nav-link" href="../admin/resep.php">Resep</a>
               </li>
             </ul>
           </div>
@@ -298,16 +308,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
+                <a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a>
               </li>
             </ul>
           </div>
@@ -321,19 +331,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <div class="collapse" id="laporan">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a>
+                <a class="nav-link" href="../admin/laporanpenjualan.php">Laporan Penjualan</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a>
+                <a class="nav-link" href="../admin/laporankeuangan.php">Laporan Keuangan</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="aruskas.php">Arus Kas</a>
+                <a class="nav-link" href="../admin/aruskas.php">Arus Kas</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="labarugi.php">Laba Rugi</a>
+                <a class="nav-link" href="../admin/labarugi.php">Laba Rugi</a>
               </li>
             </ul>
           </div>
@@ -343,13 +353,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
           <!-- SIDEBAR MODUL KASIR -->
             <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
-              <a class="nav-link" href="pages/kasir/transaksipenjualan.php">
+              <a class="nav-link" href="../kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
                 <span class="menu-title"> Transaksi Penjualan</span>
               </a>
             </li>
           <li class="nav-item">
-            <a class="nav-link" href="pages/kasir/datapenjualan.php">
+            <a class="nav-link" href="../kasir/datapenjualan.php">
               <i class="typcn typcn-chart-bar menu-icon"></i>
               <span class="menu-title"> Data Penjualan</span>
             </a>
@@ -359,25 +369,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/bahanbaku.php">
+              <a class="nav-link" href="bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangmasuk.php">
+              <a class="nav-link" href="barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangkeluar.php">
+              <a class="nav-link" href="barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/purchaserequest.php">
+              <a class="nav-link" href="purchaserequest.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
@@ -395,48 +405,165 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       </nav>
         <!-- partial -->
         <div class="main-panel">
-    <div class="content-wrapper">
-        <div class="row">
-            <div class="col-lg-12 grid-margin stretch-card">
-                <div class="card">
-                    <div class="card-body">
+            <div class="content-wrapper">
+                <div class="row">
+                    <div class="col-lg-12 grid-margin stretch-card">
+                        <div class="card">
 
-                        <h4 class="card-title">Tambah Supplier</h4>
+                            <div class="card-body">
 
-                        <?php if($error != "") : ?>
-                        <div class="alert alert-danger">
-                            <?= $error ?>
-                        </div>
-                        <?php endif; ?>
+                                <h4 class="card-title">
+                                    Detail Pembelian
+                                </h4>
 
-                        <form method="POST">
+                                <div class="row mb-4">
 
-                            <div class="form-group">
-                                <label>Nama Supplier</label>
-                                <input
-                                    type="text"
-                                    name="nama"
-                                    class="form-control"
-                                    placeholder="Masukkan nama supplier"
-                                    required>
+                                    <div class="col-md-6">
+
+                                        <table class="table table-borderless">
+
+                                            <tr>
+                                                <th width="180">
+                                                    Nomor Pembelian
+                                                </th>
+                                                <td>
+                                                    : <?= $pembelian['nomor'] ?>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <th>
+                                                    Tanggal
+                                                </th>
+                                                <td>
+                                                    : <?= date('d-m-Y H:i', strtotime($pembelian['tanggal'])) ?>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <th>
+                                                    Supplier
+                                                </th>
+                                                <td>
+                                                    : <?= $pembelian['supplier'] ?>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <th>
+                                                    Purchase Request
+                                                </th>
+                                                <td>
+                                                    : <?= $pembelian['tPurchaseRequest_id'] ?>
+                                                </td>
+                                            </tr>
+
+                                        </table>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="table-responsive">
+
+                                    <table class="table table-bordered table-hover">
+
+                                        <thead class="thead-dark">
+
+                                            <tr>
+                                                <th>Kode</th>
+                                                <th>Nama Bahan</th>
+                                                <th>Jumlah</th>
+                                                <th>Satuan</th>
+                                                <th>Harga</th>
+                                                <th>Subtotal</th>
+                                                <th>Status</th>
+                                            </tr>
+
+                                        </thead>
+
+                                        <tbody>
+
+                                            <?php foreach($detailPembelian as $d): ?>
+
+                                            <tr>
+
+                                                <td>
+                                                    <?= $d['tBahan_kode'] ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= $d['nama'] ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= $d['jumlah'] ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= $d['satuanBeli'] ?>
+                                                </td>
+
+                                                <td>
+                                                    Rp <?= number_format($d['harga'],0,',','.') ?>
+                                                </td>
+
+                                                <td>
+                                                    Rp <?= number_format($d['subtotal'],0,',','.') ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= ucfirst($d['status']) ?>
+                                                </td>
+
+                                            </tr>
+
+                                            <?php endforeach; ?>
+
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+
+                                <div class="row mt-4">
+
+                                    <div class="col-md-4 offset-md-8">
+
+                                        <table class="table table-bordered">
+
+                                            <tr>
+
+                                                <th width="70%">
+                                                    Total Pembelian
+                                                </th>
+
+                                                <td>
+                                                    Rp <?= number_format($pembelian['total'],0,',','.') ?>
+                                                </td>
+
+                                            </tr>
+
+                                        </table>
+
+                                    </div>
+
+                                </div>
+
+                                <a href="hispembelian.php"
+                                class="btn btn-secondary">
+                                    Kembali
+                                </a>
+
                             </div>
 
-                            <button type="submit" class="btn btn-primary">
-                                Simpan
-                            </button>
-
-                            <a href="supplier.php" class="btn btn-secondary">
-                                Kembali
-                            </a>
-
-                        </form>
-
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
     </div>
+
 </div>
+
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
