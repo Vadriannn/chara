@@ -376,13 +376,13 @@ try {
           <!-- SIDEBAR MODUL KASIR -->
             <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
-              <a class="nav-link" href="pages/kasir/transaksipenjualan.php">
+              <a class="nav-link" href="../kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
                 <span class="menu-title"> Transaksi Penjualan</span>
               </a>
             </li>
           <li class="nav-item">
-            <a class="nav-link" href="pages/kasir/datapenjualan.php">
+            <a class="nav-link" href="../kasir/datapenjualan.php">
               <i class="typcn typcn-chart-bar menu-icon"></i>
               <span class="menu-title"> Data Penjualan</span>
             </a>
