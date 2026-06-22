@@ -1,39 +1,70 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
-$pesan = '';
-try {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $username = trim($_POST['username']);
-        $password = trim($_POST['password']);
-        $role     = $_POST['role'];
-        $cek = $koneksi->prepare("SELECT COUNT(*) FROM tUser WHERE username = ?");
-        $cek->execute([$username]);
-        if ($cek->fetchColumn() > 0) {
-            $pesan = "Username sudah digunakan!";
-        } else {
-            $sql = "
-                INSERT INTO tUser
-                (username, password, tRole_id)
-                VALUES
-                (?, SHA1(?), ?)
-            ";
-            $stmt = $koneksi->prepare($sql);
-            $stmt->execute([
-                $username,
-                $password,
-                $role
-            ]);
-            header("Location: employee.php");
-            exit;
-        }
+if(!isset($_GET['id'])){
+    header("Location: biayaoperasional.php");
+    exit;
+}
+
+$id = $_GET['id'];
+
+// Ambil kategori
+$stmtKategori = $koneksi->prepare("SELECT * FROM tKategoriBiaya ORDER BY jenis ASC");
+$stmtKategori->execute();
+$kategori = $stmtKategori->fetchAll(PDO::FETCH_ASSOC);
+
+// Ambil data biaya
+$sql = "SELECT * FROM tBiayaOperasional WHERE id = :id";
+$stmt = $koneksi->prepare($sql);
+$stmt->bindParam(':id',$id);
+$stmt->execute();
+
+$data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if(!$data){
+    header("Location: biayaoperasional.php");
+    exit;
+}
+
+// Update data
+if(isset($_POST['update'])){
+
+    $tanggal    = $_POST['tanggal'];
+    $kategoriId = $_POST['kategori'];
+    $keterangan = $_POST['keterangan'];
+    $nominal    = $_POST['nominal'];
+    $user       = $_SESSION['id_user'];
+
+    try{
+
+        $sql = "UPDATE tBiayaOperasional SET
+                    tanggal = :tanggal,
+                    keterangan = :keterangan,
+                    nominal = :nominal,
+                    tKategoriBiaya_id = :kategori,
+                    tUser_id = :user
+                WHERE id = :id";
+
+        $stmt = $koneksi->prepare($sql);
+
+        $stmt->bindParam(':tanggal',$tanggal);
+        $stmt->bindParam(':keterangan',$keterangan);
+        $stmt->bindParam(':nominal',$nominal);
+        $stmt->bindParam(':kategori',$kategoriId);
+        $stmt->bindParam(':user',$user);
+        $stmt->bindParam(':id',$id);
+
+        $stmt->execute();
+
+        header("Location: biayaoperasional.php?success=edit");
+        exit;
+
+    }catch(PDOException $e){
+        $error = $e->getMessage();
     }
-    $roles = $koneksi->query("SELECT * FROM tRole ORDER BY nama");
-} catch(PDOException $e) {
-    $pesan = $e->getMessage();
 }
 ?>
 
@@ -78,7 +109,7 @@ try {
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
                 <a class="dropdown-item preview-item">
                   <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
+                    <img src="../../images/faces/face4.jpg" alt="image" class="profile-pic">
                   </div>
                   <div class="preview-item-content flex-grow">
                     <h6 class="preview-subject ellipsis font-weight-normal">David Grey
@@ -388,7 +419,6 @@ try {
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
-            
             <?php endif ?>
             <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
@@ -401,80 +431,108 @@ try {
       </nav>
         <!-- partial -->
         <div class="main-panel">
-            <!-- TABEL -->
-             <div class="content-wrapper">
+            <div class="content-wrapper">
                 <div class="row">
                     <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h4 class="card-title mb-0">
-                                        Tambah User
-                                    </h4>
-                                    <a href="employee.php" class="btn btn-secondary">
-                                        Kembali
-                                    </a>
-                                </div>
-                                <?php if(!empty($pesan)): ?>
+
+                                <h4 class="card-title">Edit Biaya Operasional</h4>
+                                <p class="card-description">
+                                    Ubah data biaya operasional.
+                                </p>
+
+                                <?php if(isset($error)): ?>
                                     <div class="alert alert-danger">
-                                        <?= $pesan ?>
+                                        <?= $error ?>
                                     </div>
                                 <?php endif; ?>
+
                                 <form method="POST">
+
                                     <div class="form-group">
-                                        <label>Username</label>
+                                        <label>Tanggal</label>
+
                                         <input
-                                            type="text"
-                                            name="username"
+                                            type="datetime-local"
+                                            name="tanggal"
                                             class="form-control"
+                                            value="<?= date('Y-m-d\TH:i', strtotime($data['tanggal'])) ?>"
                                             required>
                                     </div>
 
                                     <div class="form-group">
-                                        <label>Password</label>
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            class="form-control"
-                                            required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Role</label>
-                                        <select
-                                            name="role"
-                                            class="form-control"
-                                            required>
-                                            <option value="">
-                                                -- Pilih Role --
-                                            </option>
-                                            <?php while($role = $roles->fetch(PDO::FETCH_ASSOC)): ?>
-                                                <option value="<?= $role['id']; ?>">
-                                                    <?= $role['nama']; ?>
+                                        <label>Kategori Biaya</label>
+
+                                        <select name="kategori" class="form-control" required>
+
+                                            <?php foreach($kategori as $row): ?>
+
+                                                <option
+                                                    value="<?= $row['id'] ?>"
+                                                    <?= ($row['id']==$data['tKategoriBiaya_id']) ? 'selected' : '' ?>>
+
+                                                    <?= $row['jenis'] ?>
+
                                                 </option>
-                                            <?php endwhile; ?>
+
+                                            <?php endforeach; ?>
+
                                         </select>
                                     </div>
+
+                                    <div class="form-group">
+                                        <label>Keterangan</label>
+
+                                        <textarea
+                                            name="keterangan"
+                                            rows="4"
+                                            class="form-control"
+                                            required><?= $data['keterangan'] ?></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Nominal</label>
+
+                                        <input
+                                            type="number"
+                                            name="nominal"
+                                            class="form-control"
+                                            value="<?= $data['nominal'] ?>"
+                                            required>
+                                    </div>
+
                                     <button
                                         type="submit"
+                                        name="update"
                                         class="btn btn-primary">
-                                        Simpan
+
+                                        Update
                                     </button>
-                                    <a
-                                        href="employee.php"
+
+                                    <a href="biayaoperasional.php"
                                         class="btn btn-light">
+
                                         Batal
                                     </a>
+
                                 </form>
+
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>  
+            </div>
+        </div>
+                                
+
+                    
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
-
-
+            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <!-- FOOTER -->
+            </div>
           </footer>
           <!-- partial -->
         </div>
@@ -500,7 +558,6 @@ try {
     <script src="../../vendors/chart.js/Chart.min.js"></script>
     <!-- End plugin js for this page -->
     <!-- Custom js for this page-->
-    <script src="../../js/dashboard.js"></script>
     <!-- End custom js for this page-->
   </body>
 </html>

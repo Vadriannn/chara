@@ -319,6 +319,12 @@ $nama = $_SESSION['nama'];
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>

@@ -283,7 +283,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="pengajuanpembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="tambahpembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>

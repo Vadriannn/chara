@@ -275,8 +275,11 @@ $nama = $_SESSION['nama'];
               <li class ="nav-item">
                 <a class="nav-link" href="pages/admin/purchaserequest.php">Purchase Request</a>
               </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="pages/admin/hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
-                <a class="nav-link" href="pages/admin/pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pages/admin/tambahpembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="pages/admin/daftarsupplier.php">Daftar Supplier</a>

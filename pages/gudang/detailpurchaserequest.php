@@ -22,7 +22,7 @@ try {
             u.username
         FROM tPurchaseRequest pr
         INNER JOIN tUser u
-            ON pr.tUser_id = u.id
+           ON pr.reqBy = u.id
         WHERE pr.id = ?
     ");
 
@@ -571,7 +571,7 @@ try {
                                         <?php else: ?>
 
                                             <tr>
-                                                <td colspan="5" class="text-center text-muted">
+                                                <td colspan="6" class="text-center text-muted">
                                                     Tidak ada detail barang
                                                 </td>
                                             </tr>

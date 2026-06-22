@@ -9,10 +9,15 @@ try {
     if(isset($_GET['approve'])){
         $stmt = $koneksi->prepare("
             UPDATE tPurchaseRequest
-            SET status = 'Approved'
+            SET
+                status = 'Approved',
+                tanggalApprove = NOW(),
+                approveBy = ?
             WHERE id = ?
         ");
+
         $stmt->execute([
+            $_SESSION['id'],
             $_GET['approve']
         ]);
         header("Location: purchaserequest.php");
@@ -21,10 +26,15 @@ try {
     if(isset($_GET['reject'])){
         $stmt = $koneksi->prepare("
             UPDATE tPurchaseRequest
-            SET status = 'Rejected'
+            SET
+                status = 'Rejected',
+                tanggalReject = NOW(),
+                approveBy = ?
             WHERE id = ?
         ");
+
         $stmt->execute([
+            $_SESSION['id'],
             $_GET['reject']
         ]);
         header("Location: purchaserequest.php");
@@ -53,7 +63,7 @@ try {
         FROM tPurchaseRequest pr
 
         JOIN tUser u
-            ON pr.tUser_id = u.id
+          ON pr.reqBy = u.id
 
         LEFT JOIN tPembelian pb
           ON pb.tPurchaseRequest_id = pr.id
@@ -65,10 +75,11 @@ try {
             ON d.tBahan_kode = b.kode
 
         GROUP BY
-            pr.id,
-            pr.status,
-            pr.tanggal,
-            u.username
+          pr.id,
+          pr.status,
+          pr.tanggal,
+          u.username,
+          pb.nomor
 
         ORDER BY pr.tanggal DESC
     ");
@@ -298,6 +309,12 @@ catch(PDOException $e){
             <a class="nav-link" href="employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
+            </a>
+          </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
             </a>
           </li>
           <li class = "nav-item">
@@ -542,7 +559,10 @@ catch(PDOException $e){
                                                 onclick="return confirm('Reject purchase request ini?')">
                                                 Reject
                                             </a>
-                                        <?php elseif($row['status'] == 'Approved' && empty($row['tPembelian_nomor'])): ?>
+                                        <?php elseif(
+                                            $row['status'] == 'Approved'
+                                            && empty($row['nomor_pembelian'])
+                                        ): ?>
                                             <a
                                                 href="buatpembelian.php?pr=<?= $row['id']; ?>"
                                                 class="btn btn-primary btn-sm">

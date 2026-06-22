@@ -35,15 +35,15 @@ try {
             INSERT INTO tPurchaseRequest
             (
                 id,
-                status,
                 tanggal,
-                tUser_id
+                status,
+                reqBy
             )
             VALUES
             (
                 ?,
-                'Pending',
                 NOW(),
+                'Pending',
                 ?
             )
         ");
@@ -57,7 +57,6 @@ try {
         if(isset($_POST['detail'])){
 
             foreach($_POST['detail'] as $kodeBahan => $item){
-
                 $stmtDetail = $koneksi->prepare("
                     INSERT INTO tDetailPurchaseRequest
                     (
@@ -65,7 +64,7 @@ try {
                         tPurchaseRequest_id,
                         jumlah,
                         satuanBeli,
-                        keterangan
+                        konversi
                     )
                     VALUES
                     (
@@ -74,12 +73,12 @@ try {
                 ");
 
                 $stmtDetail->execute([
-                    $kodeBahan,
-                    $idPR,
-                    $item['jumlah'],
-                    $item['satuanBeli'],
-                    $item['konversi']
-                ]);
+                  $kodeBahan,
+                  $idPR,
+                  $item['jumlah'],
+                  $item['satuanBeli'],
+                  $item['konversi']
+              ]);
             }
         }
 
@@ -455,7 +454,7 @@ try {
                             <div class="card-body">
                               <div class="d-flex justify-content-between align-items-center mb-4">
                                   <h4 class="card-title mb-0">
-                                      Tambah Produk
+                                      Buat Purchase Request
                                   </h4>
                                   <a href="purchaserequest.php" class="btn btn-secondary">
                                       Kembali
@@ -494,7 +493,6 @@ try {
                                             </option>
 
                                             <?php
-                                            $bahanBaku->execute();
                                             while($bahan = $bahanBaku->fetch(PDO::FETCH_ASSOC)):
                                             ?>
                                                 <option
@@ -528,9 +526,7 @@ try {
                                             type="number"
                                             id="konversi"
                                             class="form-control"
-                                            step="0.01"
-                                            min="0.01"
-                                            placeholder="1 dus = ? kg">
+                                            min="1">
                                     </div>
                                     <div class="col-md-2">
                                         <label>&nbsp;</label>
@@ -556,17 +552,17 @@ try {
                                     <tbody id="tabelPRBody">
                                     </tbody>
                                 </table>
-                                <div id="hiddenDetail">
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary">
-                                    Simpan
-                                </button>
-                                <a
-                                    href="purchaserequest.php"
-                                    class="btn btn-light">
-                                    Batal
-                                </a>
+                                <div id="hiddenDetail"></div>
+                                  <button
+                                      type="submit"
+                                      class="btn btn-primary">
+                                      Simpan
+                                  </button>
+                                  <a
+                                      href="purchaserequest.php"
+                                      class="btn btn-light">
+                                      Batal
+                                  </a>
                                 </div>
                             </form> 
                           </div>
@@ -638,7 +634,6 @@ try {
             document.getElementById(
                 'satuanBeli'
             ).value;
-
         let konversi =
             document.getElementById(
                 'konversi'
@@ -665,7 +660,8 @@ try {
             );
 
         let row =
-            tbody.insertRow();
+          tbody.insertRow();
+          row.setAttribute('data-kode', kode);    
 
         row.innerHTML = `
             <td>${nama}</td>
@@ -703,7 +699,7 @@ try {
                     type="hidden"
                     name="detail[${kode}][konversi]"
                     value="${konversi}">
-                `
+                  `
             );
 
         // reset input
@@ -725,11 +721,15 @@ try {
     }
 
     function hapusBaris(btn){
-        btn.closest('tr').remove();
+        let row = btn.closest('tr');
+        let kode = row.getAttribute('data-kode');
+        document
+            .querySelectorAll(
+                `input[name^="detail[${kode}]"]`
+            )
+            .forEach(el => el.remove());
+        row.remove();
     }
-
     </script>
-
-  
   </body>
 </html>

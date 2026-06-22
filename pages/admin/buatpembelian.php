@@ -5,17 +5,32 @@ require_once '../../auth.php';
 require_once '../auth_admin.php';
 $pr = $_GET['pr'] ?? '';
 if(isset($_POST['simpan'])){
-
     try{
-
         $koneksi->beginTransaction();
-
+        // Generate nomor pembelian sementara
+        $stmtNomor = $koneksi->query("
+            SELECT IFNULL(MAX(nomor),0)+1 AS next_no
+            FROM tPembelian
+        ");
+        $nextNo = $stmtNomor->fetch(PDO::FETCH_ASSOC)['next_no'];
+        $kodePembelian =
+            'PBL-' .
+            date('Ymd') .
+            '-' .
+            str_pad(
+                $nextNo,
+                4,
+                '0',
+                STR_PAD_LEFT
+            );
         // Insert Pembelian
         $stmt = $koneksi->prepare("
             INSERT INTO tPembelian
             (
                 tanggal,
                 total,
+                status,
+                kode,
                 tSupplier_id,
                 tPurchaseRequest_id
             )
@@ -23,44 +38,36 @@ if(isset($_POST['simpan'])){
             (
                 NOW(),
                 0,
+                'Dipesan',
+                ?,
                 ?,
                 ?
             )
         ");
-
         $stmt->execute([
+            $kodePembelian,
             $_POST['supplier'],
             $pr
         ]);
-
         $nomorPembelian = $koneksi->lastInsertId();
-        
-
         $total = 0;
-
         // Ambil detail PR
         $stmtPR = $koneksi->prepare("
             SELECT *
             FROM tDetailPurchaseRequest
             WHERE tPurchaseRequest_id = ?
+            ORDER BY tBahan_kode
         ");
-
         $stmtPR->execute([$pr]);
-
         $hargaInput = $_POST['harga'];
-
         $no = 0;
-
         while($row = $stmtPR->fetch(PDO::FETCH_ASSOC))
         {
             $harga = $hargaInput[$no];
-
             $subtotal =
                 $harga *
                 $row['jumlah'];
-
             $total += $subtotal;
-
             $stmtDetail = $koneksi->prepare("
                 INSERT INTO tDetailPembelian
                 (
@@ -68,25 +75,24 @@ if(isset($_POST['simpan'])){
                     tPembelian_nomor,
                     jumlah,
                     satuanBeli,
+                    konversi,
                     harga,
-                    subtotal,
-                    status
+                    subtotal
                 )
                 VALUES
                 (
-                    ?, ?, ?, ?, ?, ?, 'ongoing'
+                    ?, ?, ?, ?, ?, ?, ?
                 )
             ");
-
             $stmtDetail->execute([
                 $row['tBahan_kode'],
                 $nomorPembelian,
                 $row['jumlah'],
                 $row['satuanBeli'],
+                $row['konversi'],
                 $harga,
                 $subtotal
             ]);
-
             $no++;
         }
         // Update total pembelian
@@ -100,6 +106,15 @@ if(isset($_POST['simpan'])){
             $total,
             $nomorPembelian
         ]);
+
+        // Update status PR
+        $stmtPRUpdate = $koneksi->prepare("
+            UPDATE tPurchaseRequest
+            SET status = 'Approved'
+            WHERE id = ?
+        ");
+
+        $stmtPRUpdate->execute([$pr]);
 
         $koneksi->commit();
 
@@ -119,7 +134,6 @@ if(isset($_POST['simpan'])){
         }
 
         die('ERROR : '.$e->getMessage());
-
     }
 }
 
@@ -345,6 +359,12 @@ if(isset($_POST['simpan'])){
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -490,20 +510,23 @@ if(isset($_POST['simpan'])){
                     $pr = $_GET['pr'] ?? '';
 
                     $stmt = $koneksi->prepare("
-                        SELECT
-                            pr.id,
-                            pr.status,
-                            b.nama,
-                            d.tBahan_kode,
-                            d.jumlah,
-                            d.satuanBeli
-                        FROM tPurchaseRequest pr
-                        JOIN tDetailPurchaseRequest d
-                            ON pr.id = d.tPurchaseRequest_id
-                        JOIN tBahan b
-                            ON d.tBahan_kode = b.kode
-                        WHERE pr.id = ?
-                    ");
+                      SELECT
+                          pr.id,
+                          pr.status,
+                          b.nama,
+                          d.tBahan_kode,
+                          d.jumlah,
+                          d.satuanBeli,
+                          d.konversi
+                      FROM tPurchaseRequest pr
+                      JOIN tDetailPurchaseRequest d
+                          ON pr.id = d.tPurchaseRequest_id
+                      JOIN tBahan b
+                          ON d.tBahan_kode = b.kode
+                      WHERE pr.id = ?
+                      ORDER BY d.tBahan_kode
+
+                  ");
 
                     $stmt->execute([$pr]);
 

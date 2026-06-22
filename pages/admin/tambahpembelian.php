@@ -1,39 +1,114 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
-$pesan = '';
+$error = "";
+
 try {
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $username = trim($_POST['username']);
-        $password = trim($_POST['password']);
-        $role     = $_POST['role'];
-        $cek = $koneksi->prepare("SELECT COUNT(*) FROM tUser WHERE username = ?");
-        $cek->execute([$username]);
-        if ($cek->fetchColumn() > 0) {
-            $pesan = "Username sudah digunakan!";
-        } else {
-            $sql = "
-                INSERT INTO tUser
-                (username, password, tRole_id)
-                VALUES
-                (?, SHA1(?), ?)
-            ";
-            $stmt = $koneksi->prepare($sql);
-            $stmt->execute([
-                $username,
-                $password,
-                $role
-            ]);
-            header("Location: employee.php");
-            exit;
-        }
+    // Data supplier
+    $supplier = $koneksi->query("
+        SELECT id, nama
+        FROM tSupplier
+        ORDER BY nama
+    ");
+
+    // Data bahan baku
+    $bahan_baku = $koneksi->query("
+        SELECT b.kode, b.nama, s.nama AS nama_satuan
+        FROM tBahan b
+        JOIN tSatuan s ON b.tSatuan_id = s.id
+        ORDER BY b.nama
+    ");
+
+  if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+    $nomor      = intval($_POST['nomor']); 
+    $tanggal    = $_POST['tanggal'];
+    $supplierId = $_POST['supplier'];
+    $total      = $_POST['total'];
+    
+    // KUNCI DI SINI: Pastikan nilainya string 'Menunggu' sesuai ENUM database
+    $status     = 'Menunggu'; 
+    $koneksi->beginTransaction();
+    /*
+    =========================================
+    1. SIMPAN HEADER PEMBELIAN (PASTI MENUNGGU)
+    =========================================
+    */
+    $stmt = $koneksi->prepare("
+        INSERT INTO tPembelian
+        (
+            nomor,
+            tanggal,
+            total,
+            tSupplier_id,
+            status
+        )
+        VALUES
+        (?, ?, ?, ?, ?)
+    ");
+    // Eksekusi dengan memasukkan variabel $status ('Menunggu') ke parameter ke-5
+    $stmt->execute([
+        $nomor,
+        $tanggal,
+        $total,
+        $supplierId,
+        $status 
+    ]);
+    /*
+    =========================================
+    2. SIMPAN DETAIL ITEM PEMBELIAN
+    =========================================
+    */
+    $arrBahanKode   = $_POST['bahan_baku'];
+    $arrJumlah      = $_POST['jumlah'];
+    $arrSatuanBeli  = $_POST['satuan_beli'];
+    $arrHargaSatuan = $_POST['harga_satuan'];
+    
+    for ($i = 0; $i < count($arrBahanKode); $i++) {
+
+        $bahanKode   = $arrBahanKode[$i];
+        $jumlahBeli  = (int)$arrJumlah[$i];
+        $satuanBeli  = $arrSatuanBeli[$i];
+        $hargaSatuan = (float)$arrHargaSatuan[$i];
+        $subtotal    = $jumlahBeli * $hargaSatuan;
+
+        $stmtDetail = $koneksi->prepare("
+            INSERT INTO tDetailPembelian
+            (
+                tPembelian_nomor,
+                tBahan_kode,
+                jumlah,
+                satuanBeli,
+                harga,
+                subtotal
+            )
+            VALUES
+            (?, ?, ?, ?, ?, ?)
+        ");
+
+        $stmtDetail->execute([
+            $nomor,
+            $bahanKode,
+            $jumlahBeli,
+            $satuanBeli,
+            $hargaSatuan,
+            $subtotal
+        ]);
     }
-    $roles = $koneksi->query("SELECT * FROM tRole ORDER BY nama");
-} catch(PDOException $e) {
-    $pesan = $e->getMessage();
+
+    $koneksi->commit();
+    header("Location: pembelian.php?success=add");
+    exit;
+}
+}
+catch(PDOException $e) {
+    if ($koneksi->inTransaction()) {
+        $koneksi->rollBack();
+    }
+    $error = $e->getMessage();
 }
 ?>
 
@@ -388,7 +463,6 @@ try {
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
-            
             <?php endif ?>
             <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
@@ -400,81 +474,224 @@ try {
           </li>
       </nav>
         <!-- partial -->
-        <div class="main-panel">
-            <!-- TABEL -->
-             <div class="content-wrapper">
-                <div class="row">
-                    <div class="col-lg-12 grid-margin stretch-card">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h4 class="card-title mb-0">
-                                        Tambah User
-                                    </h4>
-                                    <a href="employee.php" class="btn btn-secondary">
-                                        Kembali
-                                    </a>
-                                </div>
-                                <?php if(!empty($pesan)): ?>
-                                    <div class="alert alert-danger">
-                                        <?= $pesan ?>
-                                    </div>
-                                <?php endif; ?>
-                                <form method="POST">
-                                    <div class="form-group">
-                                        <label>Username</label>
-                                        <input
-                                            type="text"
-                                            name="username"
-                                            class="form-control"
-                                            required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Password</label>
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            class="form-control"
-                                            required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Role</label>
-                                        <select
-                                            name="role"
-                                            class="form-control"
-                                            required>
-                                            <option value="">
-                                                -- Pilih Role --
-                                            </option>
-                                            <?php while($role = $roles->fetch(PDO::FETCH_ASSOC)): ?>
-                                                <option value="<?= $role['id']; ?>">
-                                                    <?= $role['nama']; ?>
-                                                </option>
-                                            <?php endwhile; ?>
-                                        </select>
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        class="btn btn-primary">
-                                        Simpan
-                                    </button>
-                                    <a
-                                        href="employee.php"
-                                        class="btn btn-light">
-                                        Batal
-                                    </a>
-                                </form>
-                            </div>
+      <div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="card-title mb-0">
+                                Tambah Pembelian
+                            </h4>
+                            <a href="pembelian.php" class="btn btn-secondary">
+                                Kembali
+                            </a>
                         </div>
+                        
+                        <?php if($error != "") : ?>
+                            <div class="alert alert-danger">
+                                <?= $error ?>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <form method="POST">
+                            <div class="form-group">
+                                <label>Nomor Pembelian</label>
+                                <input
+                                    type="text"
+                                    name="nomor"
+                                    class="form-control"
+                                    placeholder="Contoh: 1001"
+                                    required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Tanggal Pembelian</label>
+                                <input
+                                    type="date"
+                                    name="tanggal"
+                                    class="form-control"
+                                    value="<?= date('Y-m-d') ?>"
+                                    required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Supplier</label>
+                                <select
+                                    name="supplier"
+                                    class="form-control"
+                                    required>
+                                    <option value="">
+                                        -- Pilih Supplier --
+                                    </option>
+                                    <?php foreach($supplier as $row): ?>
+                                        <option value="<?= $row['id'] ?>">
+                                            <?= $row['nama'] ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Detail Bahan Baku</h5>
+                                <button type="button" class="btn btn-success btn-sm" id="btn-tambah-baris">
+                                    + Tambah Baris
+                                </button>
+                            </div>
+
+                            <div class="table-responsive mb-3">
+                                <table class="table table-bordered" id="tabel-detail-pembelian">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th>Bahan Baku</th>
+                                            <th width="14%">Jumlah Beli</th>
+                                            <th width="12%">Satuan Beli</th>
+                                            <th width="14%">Konversi</th> <th width="18%">Harga / Satuan Beli</th>
+                                            <th width="18%">Subtotal</th>
+                                            <th width="5%" class="text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <select name="bahan_baku[]" class="form-control" required>
+                                                <option value="">Pilih Bahan Baku</option>
+                                                <?php foreach($bahan_baku as $bb): ?>
+                                                    <option value="<?= $bb['kode'] ?>">
+                                                        <?= $bb['nama'] ?> (<?= $bb['nama_satuan'] ?>)
+                                                    </option>
+                                                <?php endforeach; ?>
+                                              </select>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="jumlah[]" class="form-control input-jumlah" min="1" value="1" required>
+                                            </td>
+                                            <td>
+                                                <input type="text" name="satuan_beli[]" class="form-control" placeholder="Contoh: Dus / Pak" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="isi_konversi[]" class="form-control input-isi" min="1" value="1" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" name="harga_satuan[]" class="form-control input-harga" min="0" placeholder="0" required>
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control input-subtotal" value="0" readonly>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-danger btn-sm btn-hapus-baris" disabled>&times;</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="form-group row justify-content-end mt-4">
+                                <label class="col-sm-3 col-form-label text-right font-weight-bold">Total Pembelian:</label>
+                                <div class="col-sm-4">
+                                    <input 
+                                        type="number" 
+                                        name="total" 
+                                        id="total-pembelian" 
+                                        class="form-control form-control-lg font-weight-bold text-danger" 
+                                        value="0" 
+                                        readonly>
+                                </div>
+                            </div>
+                            
+                            <button
+                                type="submit"
+                                name="simpan"
+                                class="btn btn-primary">
+                                Simpan
+                            </button>
+                            <a
+                                href="pembelian.php"
+                                class="btn btn-light">
+                                Batal
+                            </a>
+                        </form>
                     </div>
                 </div>
-            </div>  
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabelBody = document.querySelector('#tabel-detail-pembelian tbody');
+    const btnTambahBaris = document.getElementById('btn-tambah-baris');
+    const totalPembelianInput = document.getElementById('total-pembelian');
+
+    function hitungTotal() {
+        let grandTotal = 0;
+        const baris = tabelBody.querySelectorAll('tr');
+
+        baris.forEach(function (row) {
+            const jumlah = parseFloat(row.querySelector('.input-jumlah').value) || 0;
+            const harga = parseFloat(row.querySelector('.input-harga').value) || 0;
+            
+            // Subtotal tetap dihitung dari Jumlah Beli * Harga per Satuan Beli
+            const subtotal = jumlah * harga;
+            
+            row.querySelector('.input-subtotal').value = subtotal;
+            grandTotal += subtotal;
+        });
+
+        totalPembelianInput.value = grandTotal;
+    }
+
+    // Deteksi input otomatis ketika jumlah, isi konversi, atau harga berubah
+    tabelBody.addEventListener('input', function (e) {
+        if (e.target.classList.contains('input-jumlah') || e.target.classList.contains('input-harga') || e.target.classList.contains('input-isi')) {
+            hitungTotal();
+        }
+    });
+
+    btnTambahBaris.addEventListener('click', function () {
+        const semuaBaris = tabelBody.querySelectorAll('tr');
+        const barisBaru = semuaBaris[0].cloneNode(true); 
+
+        // Reset nilai input baris baru
+        barisBaru.querySelector('select').value = '';
+        barisBaru.querySelector('.input-jumlah').value = 1;
+        barisBaru.querySelector('input[name="satuan_beli[]"]').value = '';
+        barisBaru.querySelector('.input-isi').value = 1;
+        barisBaru.querySelector('.input-harga').value = '';
+        barisBaru.querySelector('.input-subtotal').value = 0;
+        
+        const btnHapus = barisBaru.querySelector('.btn-hapus-baris');
+        btnHapus.removeAttribute('disabled');
+
+        tabelBody.appendChild(barisBaru);
+        
+        if (semuaBaris.length >= 1) {
+            semuaBaris[0].querySelector('.btn-hapus-baris').removeAttribute('disabled');
+        }
+    });
+
+    tabelBody.addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-hapus-baris')) {
+            e.target.closest('tr').remove();
+            hitungTotal();
+
+            const sisaBaris = tabelBody.querySelectorAll('tr');
+            if (sisaBaris.length === 1) {
+                sisaBaris[0].querySelector('.btn-hapus-baris').setAttribute('disabled', 'disabled');
+            }
+        }
+    });
+});
+</script>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
-
-
+            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <!-- FOOTER -->
+            </div>
           </footer>
           <!-- partial -->
         </div>
