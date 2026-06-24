@@ -294,7 +294,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -431,7 +431,7 @@ try {
                                               <th>Nama Bahan</th>
                                               <th>Satuan</th>
                                               <th>Stok</th>
-                                              <th>Harga</th>
+                                              <th>Harga Rata-Rata</th>
                                               <th>Aksi</th>
                                           </tr>
                                       </thead>
@@ -442,7 +442,7 @@ try {
                                                   <td><?= $row['kode'] ?></td>
                                                   <td><?= $row['nama'] ?></td>
                                                   <td><?= $row['satuan'] ?></td>
-                                                  <td><?= $row['stok'] ?></td>
+                                                  <td><?= rtrim(rtrim($row['stok'], '0'), '.') ?></td>
                                                   <td>
                                                       Rp <?= number_format($row['harga'], 0, ',', '.') ?>
                                                   </td>

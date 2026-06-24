@@ -10,49 +10,142 @@ require_once '../auth_gudang.php';
 | RECEIVE BARANG
 |--------------------------------------------------------------------------
 */
-if(isset($_GET['receive']))
+if(isset($_GET['receive'])){
     try{
         $koneksi->beginTransaction();
         $nomor = $_GET['receive'];
+        
+        // Perbaikan 1: Tambahkan 'subtotal' untuk mendapatkan nilai pembelian
         $stmt = $koneksi->prepare("
             SELECT
                 tBahan_kode,
                 jumlah,
-                konversi
+                konversi,
+                subtotal 
             FROM tDetailPembelian
             WHERE tPembelian_nomor = ?
         ");
         $stmt->execute([$nomor]);
+        
         while($row = $stmt->fetch(PDO::FETCH_ASSOC))
         {
-            $stokTambah =
-                $row['jumlah'] *
-                $row['konversi'];
-            $update = $koneksi->prepare("
-                UPDATE tBahan
-                SET stok = stok + ?
+            $stokTambah = $row['jumlah'] * $row['konversi'];
+
+            // Perbaikan 2: Ambil stok lama DAN harga lama
+            $cekStok = $koneksi->prepare("
+                SELECT stok, harga
+                FROM tBahan
                 WHERE kode = ?
             ");
-            $update->execute([
-                $stokTambah,
+            $cekStok->execute([
                 $row['tBahan_kode']
             ]);
+
+            $dataBahan = $cekStok->fetch(PDO::FETCH_ASSOC);
+            $stokLama = $dataBahan['stok'];
+            $hargaLama = $dataBahan['harga']; // Mengambil harga HPP yang lama
+            
+            $stokBaru = $stokLama + $stokTambah;
+
+            // Perbaikan 3: Kalkulasi Moving Average
+            $nilaiLama = $stokLama * $hargaLama;
+            $nilaiBaru = $row['subtotal']; // Subtotal adalah jumlah beli x harga beli
+            
+            // Mencegah division by zero jika stokBaru kebetulan 0 (walau jarang terjadi saat receive)
+            if ($stokBaru > 0) {
+                $hargaBaru = ($nilaiLama + $nilaiBaru) / $stokBaru;
+            } else {
+                $hargaBaru = $hargaLama; 
+            }
+
+            // Perbaikan 4: Update stok bahan DAN harga
+            $update = $koneksi->prepare("
+                UPDATE tBahan
+                SET stok = ?, harga = ?
+                WHERE kode = ?
+            ");
+
+            $update->execute([
+                $stokBaru,
+                $hargaBaru, // Menyimpan harga rata-rata yang baru
+                $row['tBahan_kode']
+            ]);
+
+            // Simpan mutasi stok
+            $mutasi = $koneksi->prepare("
+                INSERT INTO tMutasiStok
+                (
+                    tanggal,
+                    jenis,
+                    qty,
+                    stokSebelum,
+                    stokSesudah,
+                    referensi,
+                    tBahan_kode,
+                    tUser_id
+                )
+                VALUES
+                (
+                    NOW(),
+                    'Pembelian',
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )
+            ");
+
+            $mutasi->execute([
+                $stokTambah,
+                $stokLama,
+                $stokBaru,
+                $nomor,
+                $row['tBahan_kode'],
+                $_SESSION['id_user']
+            ]);
         }
+
+        // Simpan penerimaan barang
+        $penerimaan = $koneksi->prepare("
+            INSERT INTO tPenerimaanBarang
+            (
+                tanggal,
+                tPembelian_nomor,
+                tUser_id
+            )
+            VALUES
+            (
+                NOW(),
+                ?,
+                ?
+            )
+        ");
+
+        $penerimaan->execute([
+            $nomor,
+            $_SESSION['id_user']
+        ]);
+        
         $stmt = $koneksi->prepare("
             UPDATE tPembelian
             SET status = 'Diterima'
             WHERE nomor = ?
         ");
         $stmt->execute([$nomor]);
+        
         $koneksi->commit();
         header("Location: barangmasuk.php");
         exit;
+        
     }catch(PDOException $e){
         if($koneksi->inTransaction()){
             $koneksi->rollBack();
         }
         die($e->getMessage());
     }
+}
 /*
 |--------------------------------------------------------------------------
 | DATA PEMBELIAN YANG BELUM DITERIMA
@@ -284,19 +377,25 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="dashboard.php">
+            <a class="nav-link" href="../admin/dashboard.php">
               <i class="typcn typcn-device-desktop menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="employee.php">
+            <a class="nav-link" href="../admin/employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="logaktivitas.php">
+            <a class="nav-link" href="../admin/biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="../admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
             </a>
@@ -336,7 +435,7 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>

@@ -20,6 +20,7 @@ try {
         SELECT p.*, s.nama AS nama_supplier
         FROM tPembelian p
         JOIN tSupplier s ON p.tSupplier_id = s.id
+        WHERE p.status IN ('Dipesan', 'Dibatalkan')
         ORDER BY p.tanggal DESC, p.nomor DESC
     ");
     $dataPembelian = $queryPembelian->fetchAll(PDO::FETCH_ASSOC);
@@ -296,7 +297,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -440,18 +441,28 @@ try {
                                     <?php foreach($dataPembelian as $row): ?>
                                     <tr>
                                         <td><?= $no++ ?></td>
-                                        <td><strong>#<?= $row['kode'] ?></strong></td>
+                                        <td><strong>#<?= $row['nomor'] ?></strong></td>
                                         <td><?= date('d-m-Y', strtotime($row['tanggal'])) ?></td>
                                         <td><?= $row['nama_supplier'] ?></td>
                                         <td class="font-weight-bold">
                                             Rp <?= number_format($row['total'], 0, ',', '.') ?>
                                         </td>
                                         <td>
-                                            <?php if($row['status'] == 'Menunggu'): ?>
-                                                <span class="badge badge-warning text-dark font-weight-bold">Menunggu</span>
-                                            <?php else: ?>
-                                                <span class="badge badge-success font-weight-bold">Selesai</span>
-                                            <?php endif; ?>
+                                            <?php
+                                            $status = $row['status'];
+                                              if($status == 'Dipesan'){
+                                                  $badge = 'warning';
+                                              }
+                                              elseif($status == 'Dibatalkan'){
+                                                  $badge = 'danger';
+                                              }
+                                              elseif($status == 'Diterima'){
+                                                  $badge = 'success';
+                                              }
+                                            ?>
+                                            <span class="badge badge-<?= $badge ?>">
+                                                <?= $status ?>
+                                            </span>
                                         </td>
                                         <td class="text-center">
                                             <a href="detailpembelian.php?nomor=<?= $row['nomor'] ?>" class="btn btn-info btn-sm">
@@ -463,7 +474,7 @@ try {
                                 <?php else: ?>
                                     <tr>
                                         <td colspan="7" class="text-center text-muted py-4">
-                                            Belum ada riwayat pengajuan pembelian
+                                            Tidak ada pengajuan pembelian yang sedang berjalan
                                         </td>
                                     </tr>
                                 <?php endif; ?>

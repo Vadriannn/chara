@@ -312,7 +312,7 @@ if(isset($_POST['simpan'])){
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -413,60 +413,45 @@ if(isset($_POST['simpan'])){
                     <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-
                                 <h4 class="card-title">Tambah Biaya Operasional</h4>
                                 <p class="card-description">
                                     Masukkan data biaya operasional.
                                 </p>
-
                                 <?php if(isset($error)): ?>
                                     <div class="alert alert-danger">
                                         <?= $error ?>
                                     </div>
                                 <?php endif; ?>
-
                                 <form method="POST">
-
                                     <div class="form-group">
                                         <label>Tanggal</label>
                                         <input
-                                            type="datetime-local"
+                                            type="date"
                                             name="tanggal"
                                             class="form-control"
                                             required>
                                     </div>
-
                                     <div class="form-group">
                                         <label>Kategori Biaya</label>
                                         <select name="kategori" class="form-control" required>
-
                                             <option value="">-- Pilih Kategori --</option>
-
                                             <?php foreach($kategori as $row): ?>
-
                                                 <option value="<?= $row['id'] ?>">
                                                     <?= $row['jenis'] ?>
                                                 </option>
-
                                             <?php endforeach; ?>
-
                                         </select>
                                     </div>
-
                                     <div class="form-group">
                                         <label>Keterangan</label>
-
                                         <textarea
                                             name="keterangan"
                                             rows="4"
                                             class="form-control"
                                             required></textarea>
-
                                     </div>
-
                                     <div class="form-group">
                                         <label>Nominal</label>
-
                                         <input
                                             type="number"
                                             name="nominal"
@@ -474,29 +459,22 @@ if(isset($_POST['simpan'])){
                                             min="0"
                                             required>
                                     </div>
-
                                     <button
                                         type="submit"
                                         name="simpan"
                                         class="btn btn-primary mr-2">
                                         Simpan
                                     </button>
-
                                     <a href="biayaoperasional.php" class="btn btn-light">
                                         Batal
                                     </a>
-
                                 </form>
-
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-                                
-
-                    
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">

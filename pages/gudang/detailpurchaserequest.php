@@ -268,7 +268,7 @@ try {
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="dashboard.php">
+            <a class="nav-link" href="../admin/dashboard.php">
               <i class="typcn typcn-device-desktop menu-icon"></i>
               <span class="menu-title">Dashboard</span>
             </a>
@@ -277,6 +277,12 @@ try {
             <a class="nav-link" href="../admin/employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
+            </a>
+          </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="../admin/biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
             </a>
           </li>
           <li class = "nav-item">
@@ -320,7 +326,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>

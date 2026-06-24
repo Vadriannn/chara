@@ -416,7 +416,7 @@ try {
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/purchaserequest.php">
+              <a class="nav-link" href="../gudang/purchaserequestadmin.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>

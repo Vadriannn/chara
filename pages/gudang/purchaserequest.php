@@ -174,6 +174,7 @@ try {
             <span class="typcn typcn-th-menu"></span>
           </button>
         </div>
+        </ul> 
       </nav>
       <!-- partial -->
       <div class="container-fluid page-body-wrapper">
@@ -249,6 +250,12 @@ try {
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="../admin/biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="../admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -281,7 +288,7 @@ try {
           </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="stok">
+            <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="Pembelian">
               <i class="typcn typcn-shopping-cart menu-icon"></i>
               <span class="menu-title">Pembelian</span>
               <i class="menu-arrow"></i>
@@ -289,7 +296,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Requests</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>
@@ -368,7 +375,7 @@ try {
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="purchaser$equest.php">
+              <a class="nav-link" href="purchaserequest.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
@@ -433,15 +440,12 @@ try {
                                     <tbody>
                                     <?php if(count($pr) > 0): ?>
                                         <?php foreach($pr as $row): ?>
-                                        <<tr>
+                                        <tr>
                                           <td><?= $row['id'] ?></td>
-
                                           <td>
                                               <?= date('d/m/Y H:i', strtotime($row['tanggal'])) ?>
                                           </td>
-
                                           <td><?= $row['username'] ?></td>
-
                                           <td>
                                               <?php
                                               if($row['status'] == 'Pending'){

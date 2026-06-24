@@ -16,10 +16,22 @@ $stmt = $koneksi->prepare("
         p.tanggal,
         p.total,
         p.tPurchaseRequest_id,
-        s.nama AS supplier
+        s.nama AS supplier,
+
+        pb.tanggal AS tanggal_terima,
+        u.username AS penerima
+
     FROM tPembelian p
+
     JOIN tSupplier s
         ON p.tSupplier_id = s.id
+
+    LEFT JOIN tPenerimaanBarang pb
+        ON p.nomor = pb.tPembelian_nomor
+
+    LEFT JOIN tUser u
+        ON pb.tUser_id = u.id
+
     WHERE p.nomor = ?
 ");
 
@@ -314,10 +326,10 @@ $detailPembelian = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
-                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+                <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
@@ -375,25 +387,25 @@ $detailPembelian = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="bahanbaku.php">
+              <a class="nav-link" href="../gudang/bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="barangmasuk.php">
+              <a class="nav-link" href="../gudang/barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="barangkeluar.php">
+              <a class="nav-link" href="../gudang/barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="purchaserequest.php">
+              <a class="nav-link" href="../gudang/purchaserequest.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
@@ -454,8 +466,21 @@ $detailPembelian = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
                                                     : <?= $pembelian['supplier'] ?>
                                                 </td>
                                             </tr>
-
                                             <tr>
+                                                <th>Petugas Penerima</th>
+                                                <td>
+                                                    : <?= $pembelian['penerima'] ?? '-' ?>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Tanggal Diterima</th>
+                                                <td>
+                                                    :
+                                                    <?= !empty($pembelian['tanggal_terima'])
+                                                        ? date('d-m-Y H:i', strtotime($pembelian['tanggal_terima']))
+                                                        : '-' ?>
+                                                </td>
+                                              </tr>   
                                                 <th>
                                                     Purchase Request
                                                 </th>
@@ -483,92 +508,58 @@ $detailPembelian = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
                                                 <th>Satuan</th>
                                                 <th>Harga</th>
                                                 <th>Subtotal</th>
-                                                <th>Status</th>
                                             </tr>
-
                                         </thead>
-
                                         <tbody>
-
                                             <?php foreach($detailPembelian as $d): ?>
-
                                             <tr>
-
                                                 <td>
                                                     <?= $d['tBahan_kode'] ?>
                                                 </td>
-
                                                 <td>
                                                     <?= $d['nama'] ?>
                                                 </td>
-
                                                 <td>
                                                     <?= $d['jumlah'] ?>
                                                 </td>
-
                                                 <td>
                                                     <?= $d['satuanBeli'] ?>
                                                 </td>
-
                                                 <td>
                                                     Rp <?= number_format($d['harga'],0,',','.') ?>
                                                 </td>
-
                                                 <td>
                                                     Rp <?= number_format($d['subtotal'],0,',','.') ?>
                                                 </td>
-
-                                                <td>
-                                                    <?= ucfirst($d['status']) ?>
-                                                </td>
-
                                             </tr>
-
                                             <?php endforeach; ?>
-
                                         </tbody>
-
                                     </table>
-
                                 </div>
-
                                 <div class="row mt-4">
-
                                     <div class="col-md-4 offset-md-8">
-
                                         <table class="table table-bordered">
-
                                             <tr>
-
                                                 <th width="70%">
                                                     Total Pembelian
                                                 </th>
-
                                                 <td>
                                                     Rp <?= number_format($pembelian['total'],0,',','.') ?>
                                                 </td>
-
                                             </tr>
-
                                         </table>
-
                                     </div>
-
                                 </div>
-
                                 <a href="hispembelian.php"
                                 class="btn btn-secondary">
                                     Kembali
                                 </a>
-
                             </div>
-
                         </div>
                     </div>
                 </div>
-    </div>
-
-</div>
+          </div>
+      </div>
 
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->

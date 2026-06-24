@@ -326,16 +326,16 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a>
+                <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
               </li>
             </ul>
           </div>

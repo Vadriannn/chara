@@ -33,44 +33,44 @@ try {
     ");
     // Ambil kode produk terakhir
     $stmtLast = $koneksi->query("
-      SELECT kode
-      FROM tproduct
-      ORDER BY kode DESC
-      LIMIT 1
+        SELECT kode
+        FROM tproduct
+        WHERE kode LIKE 'P%'
+        ORDER BY kode DESC
+        LIMIT 1
     ");
 
-    
+    $lastProduct = $stmtLast->fetch(PDO::FETCH_ASSOC);
+
+    if ($lastProduct) {
+        $lastNumber = (int) substr($lastProduct['kode'], 1);
+        $newNumber = $lastNumber + 1;
+    } else {
+        $newNumber = 1;
+    }
+    $kodeOtomatis = 'P' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     $lastProduct = $stmtLast->fetch(PDO::FETCH_ASSOC);
     $kodeTerakhir = $lastProduct ? $lastProduct['kode'] : '-';
+    
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $kode       = strtoupper(trim($_POST['kode']));
-        $nama       = trim($_POST['nama']);
-        $hargaJual  = $_POST['hargajual'];
-        $kategoriId = $_POST['kategori'];
-        $status     = $_POST['status'];
-        // Cek kode produk
-        $cek = $koneksi->prepare("
-            SELECT COUNT(*)
-            FROM tproduct
-            WHERE kode = ?
-        ");
-        $cek->execute([$kode]);
-        if ($cek->fetchColumn() > 0) {
-            $error = "Kode produk sudah digunakan.";
-        } else {
-            $sql = "
-                INSERT INTO tproduct
-                (
-                    kode,
-                    nama,
-                    hargaJual,
-                    tKategori_id,
-                    status
-                )
-                VALUES
-                (
-                    ?, ?, ?, ?, ?
-                )
+      $kode = $kodeOtomatis;
+      $nama       = trim($_POST['nama']);
+      $hargaJual  = $_POST['hargajual'];
+      $kategoriId = $_POST['kategori'];
+      $status     = $_POST['status'];
+      $sql = "
+        INSERT INTO tproduct
+        (
+        kode,
+        nama,
+        hargaJual,
+        tKategori_id,
+        status
+        )
+        VALUES
+       (
+        ?, ?, ?, ?, ?
+        )
             ";
             $stmt = $koneksi->prepare($sql);
             $stmt->execute([
@@ -105,7 +105,7 @@ try {
             exit;
         }
     }
-} catch(PDOException $e) {
+  catch(PDOException $e) {
     $error = $e->getMessage();
 }
 ?>
@@ -113,25 +113,17 @@ try {
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title> CHARA - Tambah Produk</title>
-    <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
-    <!-- endinject --> 
-    <!-- plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
-    <!-- endinject -->
     <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">
       <div class="container-scroller">
-      <!-- partial:partials/_navbar.html -->
       <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
           <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
@@ -257,9 +249,7 @@ try {
           </button>
         </div>
       </nav>
-      <!-- partial -->
       <div class="container-fluid page-body-wrapper">
-        <!-- partial:partials/_settings-panel.html -->
         <div class="theme-setting-wrapper">
           <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
           <div id="theme-settings" class="settings-panel">
@@ -285,8 +275,6 @@ try {
             </div>
           </div>
         </div>
-        <!-- partial -->
-        <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
@@ -314,7 +302,6 @@ try {
                 </div>
               </div>
             </div>
-            <!-- SIDEBAR MODUL ADMIN -->
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
@@ -377,7 +364,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -419,8 +406,7 @@ try {
           </li>
           <?php endif; ?>
           <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-          <!-- SIDEBAR MODUL KASIR -->
-            <p class = "sidebar-menu-title"> Sales Modules</p>
+          <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
               <a class="nav-link" href="../kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
@@ -435,8 +421,7 @@ try {
           </li>
           <?php endif ?>
           <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
-           <!-- SIDEBAR MODUL GUDANG  -->
-            <p class = "sidebar-menu-title"> Stock Modules</p>
+           <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
               <a class="nav-link" href="../gudang/bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
@@ -462,7 +447,6 @@ try {
               </a>
             </li>
             <?php endif ?>
-            <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
           <li class="nav-item">
             <a class="nav-link" href="../settings/ubahpassword.php">
@@ -471,7 +455,6 @@ try {
             </a>
           </li>
       </nav>
-        <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
                 <div class="row">
@@ -496,11 +479,9 @@ try {
                                       <label>Kode Produk</label>
                                       <input
                                           type="text"
-                                          name="kode"
-                                          maxlength="4"
                                           class="form-control"
-                                          placeholder="Contoh: P001 - Kode Terakhir: <?= $kodeTerakhir ?>"
-                                          required>
+                                          value="<?= $kodeOtomatis ?>"
+                                          readonly>
                                   </div>
                                   <div class="form-group">
                                       <label>Nama Produk</label>
@@ -598,21 +579,19 @@ try {
                                       <table class="table table-bordered">
                                           <thead>
                                               <tr>
-                                                <th>Bahan</th>
-                                                <th>Jumlah</th>
-                                                <th>Satuan</th>
-                                                <th>HPP</th>
-                                                <th width="100">Aksi</th>
-                                            </tr>
+                                                  <th>Bahan</th>
+                                                  <th>Jumlah</th>
+                                                  <th>Satuan</th>
+                                                  <th>HPP</th>
+                                                  <th width="100">Aksi</th>
+                                              </tr>
                                           </thead>
                                           <tbody id="tabelResepBody">
                                           </tbody>
                                       </table>
                                       <div class="text-right mt-3">
-                                        <h5>
-                                            Total HPP :
-                                            Rp <span id="totalHpp">0</span>
-                                        </h5>
+                                        <h5>Total HPP : Rp <span id="totalHpp">0</span></h5>
+                                        <h5 class="text-success">Estimasi Laba : Rp <span id="estimasiLaba">0</span></h5>
                                       </div>
                                       <div id="hiddenResep"></div>
                                   <div class="form-group">
@@ -620,6 +599,7 @@ try {
                                       <input
                                           type="number"
                                           name="hargajual"
+                                          id="hargaJual"
                                           class="form-control"
                                           min="0"
                                           placeholder="Masukkan harga jual"
@@ -641,40 +621,23 @@ try {
                     </div>
                 </div>
             </div>
-          <!-- content-wrapper ends -->
-          <!-- partial:partials/_footer.html -->
           <footer class="footer">
             <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <!-- FOOTER -->
             </div>
           </footer>
-          <!-- partial -->
+          </div>
         </div>
-        <!-- main-panel ends -->
       </div>
-      <!-- page-body-wrapper ends -->
-    </div>
-    <!-- container-scroller -->
-    <!-- base:js -->
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page-->
-    <!-- End plugin js for this page-->
-    <!-- inject:js -->
     <script src="../../js/off-canvas.js"></script>
     <script src="../../js/hoverable-collapse.js"></script>
     <script src="../../js/template.js"></script>
     <script src="../../js/settings.js"></script>
     <script src="../../js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- plugin js for this page -->
     <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
     <script src="../../vendors/chart.js/Chart.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- Custom js for this page-->
     <script src="../../js/dashboard.js"></script>
-    <!-- End custom js for this page-->
-  <script>
+    <script>
 
     document
     .getElementById('bahanSelect')
@@ -689,7 +652,9 @@ try {
         .value = satuan;
 
     });
+    
     let totalHpp = 0;
+    
     function tambahBahan(){
 
         let select =
@@ -798,17 +763,25 @@ try {
         updateHppDanLaba();
     }
 
+    // Perbaikan: Fungsi update yang menghitung HPP sekaligus Laba
     function updateHppDanLaba() {
-        document.getElementById('totalHpp').innerText =
-            totalHpp.toLocaleString('id-ID');
+        // Update Total HPP
+        document.getElementById('totalHpp').innerText = totalHpp.toLocaleString('id-ID');
+        
+        // Ambil nilai dari input hargaJual, atur default 0 jika kosong
+        let inputHargaJual = document.getElementById('hargaJual').value;
+        let hargaJual = inputHargaJual ? parseFloat(inputHargaJual) : 0;
+        
+        // Hitung dan update Estimasi Laba
+        let laba = hargaJual - totalHpp;
+        document.getElementById('estimasiLaba').innerText = laba.toLocaleString('id-ID');
     }
-document
-.getElementById('hargaJual')
-.addEventListener('input', function(){
 
-    updateHppDanLaba();
-
-});
+    document
+    .getElementById('hargaJual')
+    .addEventListener('input', function(){
+        updateHppDanLaba();
+    });
 
     </script>
   </body>

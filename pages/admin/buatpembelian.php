@@ -405,7 +405,7 @@ if(isset($_POST['simpan'])){
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -649,7 +649,7 @@ if(isset($_POST['simpan'])){
                                                 Buat Pembelian
                                             </button>
                                             <a
-                                                href="purchaserequest.php"
+                                                href="purchaserequestadmin.php"
                                                 class="btn btn-secondary">
                                                 Kembali
                                             </a>
