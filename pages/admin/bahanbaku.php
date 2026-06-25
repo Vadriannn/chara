@@ -444,7 +444,14 @@ try {
                                                   <td><?= $row['satuan'] ?></td>
                                                   <td><?= rtrim(rtrim($row['stok'], '0'), '.') ?></td>
                                                   <td>
-                                                      Rp <?= number_format($row['harga'], 0, ',', '.') ?>
+                                                      Rp <?= number_format($row['harga'], 0, ',', '.') ?> <small class="text-muted">/ <?= $row['satuan'] ?></small>
+                                                      
+                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
+                                                          <br>
+                                                          <small class="text-info">
+                                                              (Rp <?= number_format($row['harga'] / 1000, 2, ',', '.') ?> / <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
+                                                          </small>
+                                                      <?php endif; ?>
                                                   </td>
                                                   <td>
                                                       <a href="editbahan.php?kode=<?= $row['kode'] ?>"

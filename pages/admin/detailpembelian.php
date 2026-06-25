@@ -414,7 +414,6 @@ try {
             <div class="col-lg-12 grid-margin stretch-card">
                 <div class="card">
                     <div class="card-body">
-                        
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div>
                                 <h4 class="card-title mb-1">Detail Pengajuan Pembelian</h4>
@@ -422,11 +421,7 @@ try {
                                     Melihat rincian bahan baku Nota #<?= htmlspecialchars($pembelian['nomor']) ?>
                                 </p>
                             </div>
-                            <a href="pembelian.php" class="btn btn-secondary">
-                                Kembali
-                            </a>
                         </div>
-
                         <?php if($error != "") : ?>
                             <div class="alert alert-danger">
                                 <?= $error ?>
@@ -461,13 +456,11 @@ try {
                                 <?php endif; ?>
                             </div>
                         </div>
-
                         <hr class="my-4">
-                        <h5 class="mb-3 font-weight-bold text-dark">Daftar Bahan Baku Dipesan</h5>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped table-hover">
-                                <thead class="bg-dark text-white">
+                        <h4 class="mb-3 font-weight-bold text-dark">Daftar Bahan Baku Dipesan</h4>
+                        <div class="table-responsive pt-e">
+                            <table class="table table-bordered">
+                                <thead>
                                     <tr>
                                         <th width="5%">No</th>
                                         <th>Nama Bahan Baku</th>
@@ -510,9 +503,8 @@ try {
                                 </tbody>
                             </table>
                         </div>
-
                         <div class="mt-4 d-flex justify-content-end">
-                            <a href="pembelian.php" class="btn btn-light mr-2">
+                            <a href="pembelian.php" class="btn btn-secondary">
                                 Kembali
                             </a>
                         </div>

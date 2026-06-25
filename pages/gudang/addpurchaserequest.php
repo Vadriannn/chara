@@ -12,8 +12,7 @@ if (!isset($_SESSION['is_auth']) || $_SESSION['is_auth'] !== true) {
 $error = "";
 
 try {
-
-    // Ambil bahan baku
+    // Ambil bahan baku beserta nama satuannya untuk info bantuan konversi di UI
     $bahanBaku = $koneksi->query("
         SELECT
             b.kode,
@@ -102,6 +101,12 @@ try {
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
     <link rel="shortcut icon" href="../../images/charaicon.png" />
+    <style>
+        label {
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
   </head>
   <body>
     <div class="container-scroller">
@@ -116,113 +121,14 @@ try {
         </div>
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
           <ul class="navbar-nav navbar-nav-right">
-            <li class="nav-item dropdown d-flex">
-              <a class="nav-link count-indicator dropdown-toggle d-flex justify-content-center align-items-center" id="messageDropdown" href="#" data-toggle="dropdown">
-                <i class="typcn typcn-message-typing"></i>
-                <span class="count bg-success">2</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="messageDropdown">
-                <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
-                  </div>
-                  <div class="preview-item-content flex-grow">
-                    <h6 class="preview-subject ellipsis font-weight-normal">David Grey
-                    </h6>
-                    <p class="font-weight-light small-text mb-0">
-                      The meeting is cancelled
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <img src="../../images/faces/face2.jpg" alt="image" class="profile-pic">
-                  </div>
-                  <div class="preview-item-content flex-grow">
-                    <h6 class="preview-subject ellipsis font-weight-normal">Tim Cook
-                    </h6>
-                    <p class="font-weight-light small-text mb-0">
-                      New product launch
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <img src="../../images/faces/face3.jpg" alt="image" class="profile-pic">
-                  </div>
-                  <div class="preview-item-content flex-grow">
-                    <h6 class="preview-subject ellipsis font-weight-normal"> Johnson
-                    </h6>
-                    <p class="font-weight-light small-text mb-0">
-                      Upcoming board meeting
-                    </p>
-                  </div>
-                </a>
-              </div>
-            </li>
-            <li class="nav-item dropdown  d-flex">
-              <a class="nav-link count-indicator dropdown-toggle d-flex align-items-center justify-content-center" id="notificationDropdown" href="#" data-toggle="dropdown">
-                <i class="typcn typcn-bell mr-0"></i>
-                <span class="count bg-danger">2</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
-                <p class="mb-0 font-weight-normal float-left dropdown-header">Notifications</p>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <div class="preview-icon bg-success">
-                      <i class="typcn typcn-info-large mx-0"></i>
-                    </div>
-                  </div>
-                  <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Application Error</h6>
-                    <p class="font-weight-light small-text mb-0">
-                      Just now
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <div class="preview-icon bg-warning">
-                      <i class="typcn typcn-cog mx-0"></i>
-                    </div>
-                  </div>
-                  <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Settings</h6>
-                    <p class="font-weight-light small-text mb-0">
-                      Private message
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <div class="preview-icon bg-info">
-                      <i class="typcn typcn-user-outline mx-0"></i>
-                    </div>
-                  </div>
-                  <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">New user registration</h6>
-                    <p class="font-weight-light small-text mb-0">
-                      2 days ago
-                    </p>
-                  </div>
-                </a>
-              </div>
-            </li>
-            <li class="nav-item nav-profile dropdown">
-              <a class="nav-link dropdown-toggle  pl-0 pr-0" href="#" data-toggle="dropdown" id="profileDropdown">
+            <li class="nav-profile dropdown">
+              <a class="nav-link dropdown-toggle pl-0 pr-0" href="#" data-toggle="dropdown" id="profileDropdown">
                 <i class="typcn typcn-user-outline mr-0"></i>
                 <span class="nav-profile-name"> <?php echo $_SESSION['nama']; ?></span>
               </a>
               <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-                <a class="dropdown-item">
-                <i class="typcn typcn-cog text-primary"></i>
-                Settings
-                </a>
-                <a class="dropdown-item" href="../logout.php">
-                <i class="typcn typcn-power text-primary"></i>
-                Logout
-                </a>
+                <a class="dropdown-item"><i class="typcn typcn-cog text-primary"></i>Settings</a>
+                <a class="dropdown-item" href="../logout.php"><i class="typcn typcn-power text-primary"></i>Logout</a>
               </div>
             </li>
           </ul>
@@ -232,31 +138,6 @@ try {
         </div>
       </nav>
       <div class="container-fluid page-body-wrapper">
-        <div class="theme-setting-wrapper">
-          <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
-          <div id="theme-settings" class="settings-panel">
-            <i class="settings-close typcn typcn-delete-outline"></i>
-            <p class="settings-heading">SIDEBAR SKINS</p>
-            <div class="sidebar-bg-options" id="sidebar-light-theme">
-              <div class="img-ss rounded-circle bg-light border mr-3"></div>
-              Light
-            </div>
-            <div class="sidebar-bg-options selected" id="sidebar-dark-theme">
-              <div class="img-ss rounded-circle bg-dark border mr-3"></div>
-              Dark
-            </div>
-            <p class="settings-heading mt-2">HEADER SKINS</p>
-            <div class="color-tiles mx-0 px-4">
-              <div class="tiles success"></div>
-              <div class="tiles warning"></div>
-              <div class="tiles danger"></div>
-              <div class="tiles primary"></div>
-              <div class="tiles info"></div>
-              <div class="tiles dark"></div>
-              <div class="tiles default border"></div>
-            </div>
-          </div>
-        </div>
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
@@ -266,177 +147,80 @@ try {
                 <span class="sidebar-status-indicator"></span>
               </div>
               <div class="sidebar-profile-name">
-                <p class="sidebar-name">
-                  <?php echo $_SESSION['nama']; ?>
-                </p>
-                <p class="sidebar-designation">
-                  <?php echo $_SESSION['role']; ?>
-                </p>
+                <p class="sidebar-name"><?php echo $_SESSION['nama']; ?></p>
+                <p class="sidebar-designation"><?php echo $_SESSION['role']; ?></p>
               </div>
             </div>
             <div class="nav-search">
               <div class="input-group">
                 <input type="text" class="form-control" placeholder="Type to search..." aria-label="search" aria-describedby="search">
                 <div class="input-group-append">
-                  <span class="input-group-text" id="search">
-                    <i class="typcn typcn-zoom"></i>
-                  </span>
+                  <span class="input-group-text" id="search"><i class="typcn typcn-zoom"></i></span>
                 </div>
               </div>
             </div>
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="dashboard.php">
-              <i class="typcn typcn-device-desktop menu-icon"></i>
-              <span class="menu-title">Dashboard</span>
-            </a>
-          </li>
-          <li class = "nav-item">
-            <a class="nav-link" href="employee.php">
-              <i class="typcn typcn-user menu-icon"></i>
-              <span class="menu-title">Employee</span>
-            </a>
-          </li>
-          <li class = "nav-item">
-            <a class="nav-link" href="../admin/biayaoperasional.php">
-              <i class="typcn typcn-document-text menu-icon"></i>
-              <span class="menu-title">Biaya Operasional</span>
-            </a>
-          </li>
-          <li class = "nav-item">
-            <a class="nav-link" href="logaktivitas.php">
-              <i class="typcn typcn-group menu-icon"></i>
-              <span class="menu-title">Log Aktivitas</span>
-            </a>
-          </li>
+          <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="typcn typcn-device-desktop menu-icon"></i><span class="menu-title">Dashboard</span></a></li>
+          <li class = "nav-item"><a class="nav-link" href="employee.php"><i class="typcn typcn-user menu-icon"></i><span class="menu-title">Employee</span></a></li>
+          <li class = "nav-item"><a class="nav-link" href="biayaoperasional.php"><i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Biaya Operasional</span></a></li>
+          <li class = "nav-item"><a class="nav-link" href="logaktivitas.php"><i class="typcn typcn-group menu-icon"></i><span class="menu-title">Log Aktivitas</span></a></li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#stok" aria-expanded="false" aria-controls="stok">
-              <i class="typcn typcn-document-text menu-icon"></i>
-              <span class="menu-title">Stok</span>
-              <i class="menu-arrow"></i>
+              <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Stok</span><i class="menu-arrow"></i>
             </a>
           <div class="collapse" id="stok">
             <ul class="nav flex-column sub-menu">
-              <li class="nav-item">
-                <a class="nav-link" href="bahanbaku.php">Bahan Baku</a>
-              </li>
-              
-              <li class="nav-item">
-                <a class="nav-link" href="produk.php">Produk</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="kategori.php">Kategori</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="resep.php">Resep</a>
-              </li>
+              <li class="nav-item"><a class="nav-link" href="bahanbaku.php">Bahan Baku</a></li>
+              <li class="nav-item"><a class="nav-link" href="produk.php">Produk</a></li>
+              <li class="nav-item"><a class="nav-link" href="kategori.php">Kategori</a></li>
+              <li class="nav-item"><a class="nav-link" href="resep.php">Resep</a></li>
             </ul>
           </div>
           </li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="stok">
-              <i class="typcn typcn-shopping-cart menu-icon"></i>
-              <span class="menu-title">Pembelian</span>
-              <i class="menu-arrow"></i>
+              <i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title">Pembelian</span><i class="menu-arrow"></i>
             </a>
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
-              <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a>
-              </li>
-              <li class ="nav-item">
-                <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a>
-              </li>
+              <li class ="nav-item"><a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a></li>
+              <li class ="nav-item"><a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a></li>
+              <li class="nav-item"><a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a></li>
+              <li class="nav-item"><a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a></li>
             </ul>
           </div>
           </li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#laporan" aria-expanded="false" aria-controls="laporan">
-              <i class="typcn typcn-document-text menu-icon"></i>
-              <span class="menu-title">Laporan</span>
-              <i class="menu-arrow"></i>
+              <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Laporan</span><i class="menu-arrow"></i>
             </a>
           <div class="collapse" id="laporan">
             <ul class="nav flex-column sub-menu">
-              <li class="nav-item">
-                <a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a>
-              </li>
-              
-              <li class="nav-item">
-                <a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="aruskas.php">Arus Kas</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="labarugi.php">Laba Rugi</a>
-              </li>
+              <li class="nav-item"><a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a></li>
+              <li class="nav-item"><a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a></li>
+              <li class="nav-item"><a class="nav-link" href="aruskas.php">Arus Kas</a></li>
+              <li class="nav-item"><a class="nav-link" href="labarugi.php">Laba Rugi</a></li>
             </ul>
           </div>
           </li>
           <?php endif; ?>
           <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-          <p class = "sidebar-menu-title"> Sales Modules</p>
-            <li class="nav-item">
-              <a class="nav-link" href="pages/kasir/transaksipenjualan.php">
-                <i class="typcn typcn-shopping-cart menu-icon"></i>
-                <span class="menu-title"> Transaksi Penjualan</span>
-              </a>
-            </li>
-          <li class="nav-item">
-            <a class="nav-link" href="pages/kasir/datapenjualan.php">
-              <i class="typcn typcn-chart-bar menu-icon"></i>
-              <span class="menu-title"> Data Penjualan</span>
-            </a>
-          </li>
+            <p class = "sidebar-menu-title"> Sales Modules</p>
+            <li class="nav-item"><a class="nav-link" href="pages/kasir/transaksipenjualan.php"><i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title"> Transaksi Penjualan</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="pages/kasir/datapenjualan.php"><i class="typcn typcn-chart-bar menu-icon"></i><span class="menu-title"> Data Penjualan</span></a></li>
           <?php endif ?>
           <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
-           <p class = "sidebar-menu-title"> Stock Modules</p>
-            <li class = "nav-item">
-              <a class="nav-link" href="bahanbaku.php">
-                <i class="typcn typcn-th-large menu-icon"></i>
-                <span class="menu-title"> Bahan Baku</span>
-              </a>
-            </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="barangmasuk.php">
-                <i class="typcn typcn-arrow-down menu-icon"></i>
-                <span class="menu-title"> Barang Masuk </span>
-              </a>
-            </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="barangkeluar.php">
-                <i class="typcn typcn-arrow-up menu-icon"></i>
-                <span class="menu-title"> Barang Keluar</span>
-              </a>
-            </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="purchaserequest.php">
-                <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
-                <span class="menu-title"> Purchase Request</span>
-              </a>
-            </li>
-            
+            <p class = "sidebar-menu-title"> Stock Modules</p>
+            <li class = "nav-item"><a class="nav-link" href="bahanbaku.php"><i class="typcn typcn-th-large menu-icon"></i><span class="menu-title"> Bahan Baku</span></a></li>
+            <li class = "nav-item"><a class="nav-link" href="barangmasuk.php"><i class="typcn typcn-arrow-down menu-icon"></i><span class="menu-title"> Barang Masuk </span></a></li>
+            <li class = "nav-item"><a class="nav-link" href="barangkeluar.php"><i class="typcn typcn-arrow-up menu-icon"></i><span class="menu-title"> Barang Keluar</span></a></li>
+            <li class = "nav-item"><a class="nav-link" href="purchaserequest.php"><i class="typcn typcn-arrow-forward-outline menu-icon"></i><span class="menu-title"> Purchase Request</span></a></li>
             <?php endif ?>
             <p class = "sidebar-menu-title"> Settings</p>
-          <li class="nav-item">
-            <a class="nav-link" href="../settings/ubahpassword.php">
-              <i class="typcn typcn-key menu-icon"></i>
-              <span class="menu-title"> Ubah Password</span>
-            </a>
-          </li>
+          <li class="nav-item"><a class="nav-link" href="../settings/ubahpassword.php"><i class="typcn typcn-key menu-icon"></i><span class="menu-title"> Ubah Password</span></a></li>
+        </ul>
       </nav>
         <div class="main-panel">
             <div class="content-wrapper">
@@ -444,118 +228,90 @@ try {
                     <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                              <div class="d-flex justify-content-between align-items-center mb-4">
-                                  <h4 class="card-title mb-0">
-                                      Buat Purchase Request
-                                  </h4>
-                                  <a href="purchaserequest.php" class="btn btn-secondary">
-                                      Kembali
-                                  </a>
+                              <div class="d-flex justify-content-between align-items-center mb-3">
+                                  <h5 class="card-title mb-0">Buat Purchase Request</h5>
+                                  <a href="purchaserequest.php" class="btn btn-secondary btn-sm">Kembali</a>
                               </div>
+                              
                               <?php if($error != "") : ?>
-                                  <div class="alert alert-danger">
-                                      <?= $error ?>
-                                  </div>
+                                  <div class="alert alert-danger p-2"><?= $error ?></div>
                               <?php endif; ?>
-                             <form method="POST">
-
-                                <div class="form-group">
-                                    <label>ID Purchase Request</label>
-                                    <input
-                                        type="text"
-                                        class="form-control"
-                                        value="Otomatis Dibuat Sistem"
-                                        readonly>
+                              
+                              <form method="POST">
+                                <div class="form-group mb-3">
+                                    <label class="font-weight-bold">ID Purchase Request</label>
+                                    <input type="text" class="form-control form-control-sm" value="Otomatis Dibuat Sistem" readonly>
                                 </div>
 
-                                <hr>
+                                <hr class="mt-2 mb-3">
+                                <h6 class="mb-3 text-primary">Form Detail Kebutuhan Barang</h6>
 
-                                <h5>Detail Purchase Request</h5>
-
-                                <div class="row">
-
-                                    <div class="col-md-3">
-                                        <label>Bahan</label>
-                                        <select
-                                            id="bahanSelect"
-                                            class="form-control">
-
-                                            <option value="">
-                                                -- Pilih Bahan --
-                                            </option>
-
-                                            <?php
-                                            while($bahan = $bahanBaku->fetch(PDO::FETCH_ASSOC)):
-                                            ?>
-                                                <option
-                                                    value="<?= $bahan['kode']; ?>"
-                                                    data-nama="<?= $bahan['nama']; ?>">
-                                                    <?= $bahan['nama']; ?>
-                                                </option>
-                                            <?php endwhile; ?>
-                                        </select>
+                                <div class="bg-light p-3 mb-3 rounded border">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group mb-2">
+                                                <label>Bahan Baku</label>
+                                                <select id="bahanSelect" class="form-control form-control-sm">
+                                                    <option value="">-- Pilih Bahan --</option>
+                                                    <?php while($bahan = $bahanBaku->fetch(PDO::FETCH_ASSOC)): ?>
+                                                        <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuan="<?= $bahan['satuan']; ?>">
+                                                            <?= $bahan['nama']; ?>
+                                                        </option>
+                                                    <?php endwhile; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group mb-2">
+                                                <label>Jumlah Permintaan</label>
+                                                <input type="number" id="jumlahBahan" class="form-control form-control-sm" min="1" value="1" step="0.01">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-2">
+                                                <label>Satuan Beli</label>
+                                                <input type="text" id="satuanBeli" class="form-control form-control-sm" placeholder="Dus / Karung / Sak">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-2">
+                                                <label>Isi Konversi Satuan</label>
+                                                <input type="number" id="konversi" class="form-control form-control-sm" min="1" value="1">
+                                                <small id="bantuanKonversi" class="text-info" style="font-size: 0.75rem;">Dalam satuan dasar stok</small>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-2">
-                                        <label>Jumlah</label>
-                                        <input
-                                            type="number"
-                                            id="jumlahBahan"
-                                            class="form-control"
-                                            min="1"
-                                            step="0.01">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label>Satuan Beli</label>
-                                        <input
-                                            type="text"
-                                            id="satuanBeli"
-                                            class="form-control"
-                                            placeholder="Dus / Karung / Sak">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label>Konversi (Kg/L)</label>
-                                        <input
-                                            type="number"
-                                            id="konversi"
-                                            class="form-control"
-                                            min="1">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label>&nbsp;</label>
-                                        <button
-                                            type="button"
-                                            class="btn btn-success btn-block"
-                                            onclick="tambahBarang()">
-                                            Tambah
-                                        </button>
+                                    <div class="row mt-1">
+                                        <div class="col-md-12 text-right">
+                                            <button type="button" class="btn btn-success btn-sm" onclick="tambahBarang()">
+                                                <i class="typcn typcn-plus"></i> Tambah ke Daftar
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <br>
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Bahan</th>
-                                            <th>Jumlah</th>
-                                            <th>Satuan Beli</th>
-                                            <th>Konversi</th>
-                                            <th width="100">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabelPRBody">
-                                    </tbody>
-                                </table>
+
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-bordered table-hover table-sm">
+                                        <thead style="background-color: #f4f5f7;">
+                                            <tr>
+                                                <th>Bahan</th>
+                                                <th>Jumlah Permintaan</th>
+                                                <th>Satuan Beli</th>
+                                                <th>Isi Konversi Gudang</th>
+                                                <th class="text-center" width="80">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tabelPRBody">
+                                            </tbody>
+                                    </table>
+                                </div>
+                                
                                 <div id="hiddenDetail"></div>
-                                <br>
-                                  <button
-                                      type="submit"
-                                      class="btn btn-primary">
-                                      Simpan
-                                  </button>
-                                  <a
-                                      href="purchaserequest.php"
-                                      class="btn btn-light">
-                                      Batal
-                                  </a>
+                                <hr class="mb-3">
+                                
+                                <div class="text-right">
+                                    <a href="purchaserequest.php" class="btn btn-light mr-2">Batal</a>
+                                    <button type="submit" class="btn btn-primary">Simpan Request</button>
                                 </div>
                             </form> 
                           </div>
@@ -564,12 +320,12 @@ try {
                 </div>
             </div>
           <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            </div>
+            <div class="d-sm-flex justify-content-center justify-content-sm-between"></div>
           </footer>
-          </div>
         </div>
       </div>
+    </div>
+
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
     <script src="../../js/off-canvas.js"></script>
     <script src="../../js/hoverable-collapse.js"></script>
@@ -579,12 +335,21 @@ try {
     <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
     <script src="../../vendors/chart.js/Chart.min.js"></script>
     <script src="../../js/dashboard.js"></script>
+    
     <script>
+    // Asisten label satuan dinamis saat bahan baku dipilih
+    document.getElementById('bahanSelect').addEventListener('change', function() {
+        let textBantuan = document.getElementById('bantuanKonversi');
+        if (this.value !== "") {
+            let namaSatuanBase = this.options[this.selectedIndex].dataset.satuan;
+            textBantuan.innerHTML = "Akan dikalikan ke satuan dasar <b>" + namaSatuanBase + "</b>";
+        } else {
+            textBantuan.innerHTML = "Dalam satuan dasar stok";
+        }
+    });
 
     function tambahBarang(){
-
         let select = document.getElementById('bahanSelect');
-
         if(select.value == ''){
             alert('Pilih bahan terlebih dahulu');
             return;
@@ -592,88 +357,77 @@ try {
 
         let kode = select.value;
         let nama = select.options[select.selectedIndex].dataset.nama;
+        let satuanBase = select.options[select.selectedIndex].dataset.satuan;
         let jumlah = document.getElementById('jumlahBahan').value;
         let satuan = document.getElementById('satuanBeli').value;
         let konversi = document.getElementById('konversi').value;
 
         if(jumlah == '' || jumlah <= 0){
-            alert('Jumlah harus diisi');
+            alert('Jumlah harus diisi dengan benar');
             return;
         }
-
         if(satuan == ''){
             alert('Satuan beli harus diisi');
             return;
         }
-
         if(konversi == '' || konversi <= 0){
-            alert('Konversi harus diisi');
+            alert('Konversi harus diisi dengan benar');
             return;
         }
 
-        // Cek apakah barang sudah ada di dalam tabel (opsional tapi disarankan)
         if(document.querySelector(`input[name="detail[${kode}][jumlah]"]`)){
-            alert('Bahan ini sudah ditambahkan ke dalam daftar!');
+            alert('Bahan baku ini sudah ditambahkan ke dalam daftar request!');
             return;
         }
 
         let tbody = document.getElementById('tabelPRBody');
         let row = tbody.insertRow();
-        row.setAttribute('data-kode', kode);    
+        row.setAttribute('id', 'row_' + kode);    
 
         row.innerHTML = `
-            <td>${nama}</td>
-            <td>${jumlah}</td>
-            <td>${satuan}</td>
-            <td>${konversi}</td>
-            <td>
-                <button
-                    type="button"
-                    class="btn btn-danger btn-sm"
-                    onclick="hapusBaris(this)">
-                    Hapus
+            <td class="align-middle">${nama}</td>
+            <td class="align-middle">${jumlah} ${satuan}</td>
+            <td class="align-middle">${satuan}</td>
+            <td class="align-middle text-muted" style="font-size: 0.85rem;">1 ${satuan} = ${konversi} ${satuanBase}</td>
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-danger btn-sm py-1 px-2" onclick="hapusBaris(this, '${kode}')">
+                    &times;
                 </button>
             </td>
         `;
 
         document.getElementById('hiddenDetail').insertAdjacentHTML('beforeend',
-                `
+            `<div id="hidden_group_${kode}">
                 <input type="hidden" name="detail[${kode}][jumlah]" value="${jumlah}">
                 <input type="hidden" name="detail[${kode}][satuanBeli]" value="${satuan}">
                 <input type="hidden" name="detail[${kode}][konversi]" value="${konversi}">
-                `
-            );
+            </div>`
+        );
 
-        // reset input
-        document.getElementById('jumlahBahan').value = '';
+        // Reset forms input
+        document.getElementById('jumlahBahan').value = '1';
         document.getElementById('satuanBeli').value = '';
-        document.getElementById('konversi').value = '';
-        document.getElementById('bahanSelect').selectedIndex = 0;
+        document.getElementById('konversi').value = '1';
+        select.selectedIndex = 0;
+        document.getElementById('bantuanKonversi').innerHTML = "Dalam satuan dasar stok";
     }
 
-    function hapusBaris(btn){
-        let row = btn.closest('tr');
-        let kode = row.getAttribute('data-kode');
-        document
-            .querySelectorAll(`input[name^="detail[${kode}]"]`)
-            .forEach(el => el.remove());
-        row.remove();
+    function hapusBaris(btn, kode){
+        btn.closest('tr').remove();
+        let hiddenGroup = document.getElementById("hidden_group_" + kode);
+        if(hiddenGroup) hiddenGroup.remove();
     }
 
-    // PERBAIKAN FRONTEND: Menangkap Event Tombol "Enter"
+    // Interseptor Tombol Enter
     window.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
-            // Cegah form submit secara otomatis
             event.preventDefault(); 
-            
-            // Cek apakah kursor sedang berada di area form input barang
             let activeId = event.target.id;
             if (activeId === 'bahanSelect' || activeId === 'jumlahBahan' || activeId === 'satuanBeli' || activeId === 'konversi') {
-                tambahBarang(); // Eksekusi tombol tambah
+                tambahBarang();
             }
         }
     });
-
     </script>
   </body>
 </html>
