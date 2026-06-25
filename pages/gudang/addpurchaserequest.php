@@ -27,35 +27,37 @@ try {
 
     // Simpan purchase request
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        
+        // PERBAIKAN BACKEND: Cek apakah ada barang di daftar tabel detail
+        if (!isset($_POST['detail']) || count($_POST['detail']) == 0) {
+            $error = "Gagal disimpan: Anda harus menambahkan minimal 1 barang ke dalam daftar!";
+        } else {
+            $idPR = "PR" . date('YmdHis');
 
-        $idPR = "PR" . date('YmdHis');
+            // Simpan header PR
+            $stmt = $koneksi->prepare("
+                INSERT INTO tPurchaseRequest
+                (
+                    id,
+                    tanggal,
+                    status,
+                    reqBy
+                )
+                VALUES
+                (
+                    ?,
+                    NOW(),
+                    'Pending',
+                    ?
+                )
+            ");
 
-        // Simpan header PR
-        $stmt = $koneksi->prepare("
-            INSERT INTO tPurchaseRequest
-            (
-                id,
-                tanggal,
-                status,
-                reqBy
-            )
-            VALUES
-            (
-                ?,
-                NOW(),
-                'Pending',
-                ?
-            )
-        ");
+            $stmt->execute([
+                $idPR,
+                $_SESSION['id_user']
+            ]);
 
-        $stmt->execute([
-            $idPR,
-            $_SESSION['id_user']
-        ]);
-
-        // Simpan detail barang
-        if(isset($_POST['detail'])){
-
+            // Simpan detail barang
             foreach($_POST['detail'] as $kodeBahan => $item){
                 $stmtDetail = $koneksi->prepare("
                     INSERT INTO tDetailPurchaseRequest
@@ -80,10 +82,10 @@ try {
                   $item['konversi']
               ]);
             }
-        }
 
-        header("Location: purchaserequest.php?success=add");
-        exit;
+            header("Location: purchaserequest.php?success=add");
+            exit;
+        }
     }
 
 } catch(PDOException $e) {
@@ -93,25 +95,17 @@ try {
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Employees</title>
-    <!-- base:css -->
+    <title> CHARA - Buat Purchase Request</title>
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
-    <!-- endinject --> 
-    <!-- plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
-    <!-- endinject -->
     <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">
       <div class="container-scroller">
-      <!-- partial:partials/_navbar.html -->
       <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
           <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
@@ -237,9 +231,7 @@ try {
           </button>
         </div>
       </nav>
-      <!-- partial -->
       <div class="container-fluid page-body-wrapper">
-        <!-- partial:partials/_settings-panel.html -->
         <div class="theme-setting-wrapper">
           <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
           <div id="theme-settings" class="settings-panel">
@@ -265,8 +257,6 @@ try {
             </div>
           </div>
         </div>
-        <!-- partial -->
-        <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
@@ -294,7 +284,6 @@ try {
                 </div>
               </div>
             </div>
-            <!-- SIDEBAR MODUL ADMIN -->
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
@@ -399,8 +388,7 @@ try {
           </li>
           <?php endif; ?>
           <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-          <!-- SIDEBAR MODUL KASIR -->
-            <p class = "sidebar-menu-title"> Sales Modules</p>
+          <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
               <a class="nav-link" href="pages/kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
@@ -415,8 +403,7 @@ try {
           </li>
           <?php endif ?>
           <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
-           <!-- SIDEBAR MODUL GUDANG  -->
-            <p class = "sidebar-menu-title"> Stock Modules</p>
+           <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
               <a class="nav-link" href="bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
@@ -441,8 +428,8 @@ try {
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
+            
             <?php endif ?>
-            <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
           <li class="nav-item">
             <a class="nav-link" href="../settings/ubahpassword.php">
@@ -451,7 +438,6 @@ try {
             </a>
           </li>
       </nav>
-        <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
                 <div class="row">
@@ -527,7 +513,7 @@ try {
                                             placeholder="Dus / Karung / Sak">
                                     </div>
                                     <div class="col-md-2">
-                                        <label>Konversi</label>
+                                        <label>Konversi (Kg/L)</label>
                                         <input
                                             type="number"
                                             id="konversi"
@@ -559,6 +545,7 @@ try {
                                     </tbody>
                                 </table>
                                 <div id="hiddenDetail"></div>
+                                <br>
                                   <button
                                       type="submit"
                                       class="btn btn-primary">
@@ -576,74 +563,38 @@ try {
                     </div>
                 </div>
             </div>
-          <!-- content-wrapper ends -->
-          <!-- partial:partials/_footer.html -->
           <footer class="footer">
             <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <!-- FOOTER -->
             </div>
           </footer>
-          <!-- partial -->
+          </div>
         </div>
-        <!-- main-panel ends -->
       </div>
-      <!-- page-body-wrapper ends -->
-    </div>
-    <!-- container-scroller -->
-    <!-- base:js -->
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page-->
-    <!-- End plugin js for this page-->
-    <!-- inject:js -->
     <script src="../../js/off-canvas.js"></script>
     <script src="../../js/hoverable-collapse.js"></script>
     <script src="../../js/template.js"></script>
     <script src="../../js/settings.js"></script>
     <script src="../../js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- plugin js for this page -->
     <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
     <script src="../../vendors/chart.js/Chart.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- Custom js for this page-->
     <script src="../../js/dashboard.js"></script>
-    <!-- End custom js for this page-->
     <script>
 
     function tambahBarang(){
 
-        let select =
-            document.getElementById(
-                'bahanSelect'
-            );
+        let select = document.getElementById('bahanSelect');
 
         if(select.value == ''){
             alert('Pilih bahan terlebih dahulu');
             return;
         }
 
-        let kode =
-            select.value;
-
-        let nama =
-            select.options[
-                select.selectedIndex
-            ].dataset.nama;
-
-        let jumlah =
-            document.getElementById(
-                'jumlahBahan'
-            ).value;
-
-        let satuan =
-            document.getElementById(
-                'satuanBeli'
-            ).value;
-        let konversi =
-            document.getElementById(
-                'konversi'
-            ).value;
+        let kode = select.value;
+        let nama = select.options[select.selectedIndex].dataset.nama;
+        let jumlah = document.getElementById('jumlahBahan').value;
+        let satuan = document.getElementById('satuanBeli').value;
+        let konversi = document.getElementById('konversi').value;
 
         if(jumlah == '' || jumlah <= 0){
             alert('Jumlah harus diisi');
@@ -660,14 +611,15 @@ try {
             return;
         }
 
-        let tbody =
-            document.getElementById(
-                'tabelPRBody'
-            );
+        // Cek apakah barang sudah ada di dalam tabel (opsional tapi disarankan)
+        if(document.querySelector(`input[name="detail[${kode}][jumlah]"]`)){
+            alert('Bahan ini sudah ditambahkan ke dalam daftar!');
+            return;
+        }
 
-        let row =
-          tbody.insertRow();
-          row.setAttribute('data-kode', kode);    
+        let tbody = document.getElementById('tabelPRBody');
+        let row = tbody.insertRow();
+        row.setAttribute('data-kode', kode);    
 
         row.innerHTML = `
             <td>${nama}</td>
@@ -684,58 +636,44 @@ try {
             </td>
         `;
 
-        document
-            .getElementById(
-                'hiddenDetail'
-            )
-            .insertAdjacentHTML(
-                'beforeend',
+        document.getElementById('hiddenDetail').insertAdjacentHTML('beforeend',
                 `
-                <input
-                    type="hidden"
-                    name="detail[${kode}][jumlah]"
-                    value="${jumlah}">
-
-                <input
-                    type="hidden"
-                    name="detail[${kode}][satuanBeli]"
-                    value="${satuan}">
-
-                <input
-                    type="hidden"
-                    name="detail[${kode}][konversi]"
-                    value="${konversi}">
-                  `
+                <input type="hidden" name="detail[${kode}][jumlah]" value="${jumlah}">
+                <input type="hidden" name="detail[${kode}][satuanBeli]" value="${satuan}">
+                <input type="hidden" name="detail[${kode}][konversi]" value="${konversi}">
+                `
             );
 
         // reset input
-        document.getElementById(
-            'jumlahBahan'
-        ).value = '';
-
-        document.getElementById(
-            'satuanBeli'
-        ).value = '';
-
-        document.getElementById(
-            'konversi'
-        ).value = '';
-
-        document.getElementById(
-            'bahanSelect'
-        ).selectedIndex = 0;
+        document.getElementById('jumlahBahan').value = '';
+        document.getElementById('satuanBeli').value = '';
+        document.getElementById('konversi').value = '';
+        document.getElementById('bahanSelect').selectedIndex = 0;
     }
 
     function hapusBaris(btn){
         let row = btn.closest('tr');
         let kode = row.getAttribute('data-kode');
         document
-            .querySelectorAll(
-                `input[name^="detail[${kode}]"]`
-            )
+            .querySelectorAll(`input[name^="detail[${kode}]"]`)
             .forEach(el => el.remove());
         row.remove();
     }
+
+    // PERBAIKAN FRONTEND: Menangkap Event Tombol "Enter"
+    window.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            // Cegah form submit secara otomatis
+            event.preventDefault(); 
+            
+            // Cek apakah kursor sedang berada di area form input barang
+            let activeId = event.target.id;
+            if (activeId === 'bahanSelect' || activeId === 'jumlahBahan' || activeId === 'satuanBeli' || activeId === 'konversi') {
+                tambahBarang(); // Eksekusi tombol tambah
+            }
+        }
+    });
+
     </script>
   </body>
 </html>

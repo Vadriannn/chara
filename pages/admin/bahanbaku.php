@@ -431,7 +431,7 @@ try {
                                               <th>Nama Bahan</th>
                                               <th>Satuan</th>
                                               <th>Stok</th>
-                                              <th>Harga Rata-Rata</th>
+                                              <th>Harga Satuan Rata-Rata</th>
                                               <th>Aksi</th>
                                           </tr>
                                       </thead>

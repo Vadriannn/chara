@@ -23,11 +23,9 @@ try {
     ");
 
   if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
     $tanggal    = $_POST['tanggal'];
     $supplierId = $_POST['supplier'];
     $total      = $_POST['total'];
-    
     // KUNCI DI SINI: Pastikan nilainya string 'Menunggu' sesuai ENUM database
     $status     = 'Dipesan'; 
     $koneksi->beginTransaction();
@@ -49,7 +47,6 @@ try {
         VALUES
         (?, ?, ?, ?, ?)
     ");
-
     $stmt->execute([
         $tanggal,
         $total,
@@ -57,7 +54,6 @@ try {
         $status,
         $kode
     ]);
-
     $nomor = $koneksi->lastInsertId();
     /*
     =========================================
@@ -70,14 +66,12 @@ try {
     $arrHargaSatuan = $_POST['harga_satuan'];
     $arrKonversi    = $_POST['isi_konversi'];    
     for ($i = 0; $i < count($arrBahanKode); $i++) {
-
         $bahanKode   = $arrBahanKode[$i];
         $jumlahBeli  = (int)$arrJumlah[$i];
         $satuanBeli  = $arrSatuanBeli[$i];
         $hargaSatuan = (float)$arrHargaSatuan[$i];
         $konversi    = (int)$arrKonversi[$i];
         $subtotal    = $jumlahBeli * $hargaSatuan;
-
         $stmtDetail = $koneksi->prepare("
             INSERT INTO tDetailPembelian
             (
@@ -92,7 +86,6 @@ try {
             VALUES
             (?, ?, ?, ?, ?, ?, ?)
         ");
-
         $stmtDetail->execute([
             $nomor,
             $bahanKode,
