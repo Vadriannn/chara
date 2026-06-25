@@ -3,64 +3,62 @@ session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
+
 $pr = $_GET['pr'] ?? '';
+
 if(isset($_POST['simpan'])){
-
     try{
-
         $koneksi->beginTransaction();
-
-        // Insert Pembelian
+        
+        $stmtNomor = $koneksi->query("
+            SELECT IFNULL(MAX(nomor),0)+1 AS next_no
+            FROM tPembelian
+        ");
+        $nextNo = $stmtNomor->fetch(PDO::FETCH_ASSOC)['next_no'];
+        
+        $kodePembelian = 'PBL-' . date('Ymd') . '-' . str_pad($nextNo, 4, '0', STR_PAD_LEFT);
+        
         $stmt = $koneksi->prepare("
             INSERT INTO tPembelian
             (
+                nomor,
                 tanggal,
                 total,
+                status,
+                kode,
                 tSupplier_id,
                 tPurchaseRequest_id
             )
             VALUES
-            (
-                NOW(),
-                0,
-                ?,
-                ?
-            )
+            (?, NOW(), 0, 'Dipesan', ?, ?, ?)
         ");
-
         $stmt->execute([
+            $nextNo,
+            $kodePembelian,
             $_POST['supplier'],
             $pr
         ]);
-
-        $nomorPembelian = $koneksi->lastInsertId();
         
-
+        $nomorPembelian = $nextNo;
         $total = 0;
-
-        // Ambil detail PR
+        
         $stmtPR = $koneksi->prepare("
             SELECT *
             FROM tDetailPurchaseRequest
             WHERE tPurchaseRequest_id = ?
+            ORDER BY tBahan_kode
         ");
-
         $stmtPR->execute([$pr]);
-
+        
         $hargaInput = $_POST['harga'];
-
         $no = 0;
-
+        
         while($row = $stmtPR->fetch(PDO::FETCH_ASSOC))
         {
             $harga = $hargaInput[$no];
-
-            $subtotal =
-                $harga *
-                $row['jumlah'];
-
+            $subtotal = $harga * $row['jumlah'];
             $total += $subtotal;
-
+            
             $stmtDetail = $koneksi->prepare("
                 INSERT INTO tDetailPembelian
                 (
@@ -68,84 +66,81 @@ if(isset($_POST['simpan'])){
                     tPembelian_nomor,
                     jumlah,
                     satuanBeli,
+                    konversi,
                     harga,
-                    subtotal,
-                    status
+                    subtotal
                 )
-                VALUES
-                (
-                    ?, ?, ?, ?, ?, ?, 'ongoing'
-                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-
             $stmtDetail->execute([
                 $row['tBahan_kode'],
                 $nomorPembelian,
                 $row['jumlah'],
                 $row['satuanBeli'],
+                $row['konversi'],
                 $harga,
                 $subtotal
             ]);
-
             $no++;
         }
-        // Update total pembelian
+        
         $stmt = $koneksi->prepare("
             UPDATE tPembelian
             SET total = ?
             WHERE nomor = ?
         ");
+        $stmt->execute([$total, $nomorPembelian]);
 
-        $stmt->execute([
-            $total,
-            $nomorPembelian
-        ]);
+        $stmtPRUpdate = $koneksi->prepare("
+            UPDATE tPurchaseRequest
+            SET status = 'Approved'
+            WHERE id = ?
+        ");
+        $stmtPRUpdate->execute([$pr]);
 
         $koneksi->commit();
 
         echo "
         <script>
-            alert('Pembelian berhasil dibuat');
+            alert('Pembelian berhasil dibuat!');
             window.location='pembelian.php';
         </script>
         ";
-
         exit;
 
     }catch(PDOException $e){
-
         if($koneksi->inTransaction()){
             $koneksi->rollBack();
         }
-
         die('ERROR : '.$e->getMessage());
-
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Tambah Bahan</title>
-    <!-- base:css -->
+    <title> CHARA - Buat Pembelian</title>
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
-    <!-- endinject --> 
-    <!-- plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
-    <!-- endinject -->
     <link rel="shortcut icon" href="../../images/charaicon.png" />
+    <style>
+        .summary-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #ff4747;
+            padding: 1rem;
+        }
+        .form-control-plaintext {
+            background-color: transparent !important;
+            border: none !important;
+            font-weight: 500;
+        }
+    </style>
   </head>
   <body>
     <div class="container-scroller">
-      <div class="container-scroller">
-      <!-- partial:partials/_navbar.html -->
       <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
           <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
@@ -156,113 +151,14 @@ if(isset($_POST['simpan'])){
         </div>
         <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
           <ul class="navbar-nav navbar-nav-right">
-            <li class="nav-item dropdown d-flex">
-              <a class="nav-link count-indicator dropdown-toggle d-flex justify-content-center align-items-center" id="messageDropdown" href="#" data-toggle="dropdown">
-                <i class="typcn typcn-message-typing"></i>
-                <span class="count bg-success">2</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="messageDropdown">
-                <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
-                  </div>
-                  <div class="preview-item-content flex-grow">
-                    <h6 class="preview-subject ellipsis font-weight-normal">David Grey
-                    </h6>
-                    <p class="font-weight-light small-text mb-0">
-                      The meeting is cancelled
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <img src="../../images/faces/face2.jpg" alt="image" class="profile-pic">
-                  </div>
-                  <div class="preview-item-content flex-grow">
-                    <h6 class="preview-subject ellipsis font-weight-normal">Tim Cook
-                    </h6>
-                    <p class="font-weight-light small-text mb-0">
-                      New product launch
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <img src="../../images/faces/face3.jpg" alt="image" class="profile-pic">
-                  </div>
-                  <div class="preview-item-content flex-grow">
-                    <h6 class="preview-subject ellipsis font-weight-normal"> Johnson
-                    </h6>
-                    <p class="font-weight-light small-text mb-0">
-                      Upcoming board meeting
-                    </p>
-                  </div>
-                </a>
-              </div>
-            </li>
-            <li class="nav-item dropdown  d-flex">
-              <a class="nav-link count-indicator dropdown-toggle d-flex align-items-center justify-content-center" id="notificationDropdown" href="#" data-toggle="dropdown">
-                <i class="typcn typcn-bell mr-0"></i>
-                <span class="count bg-danger">2</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="notificationDropdown">
-                <p class="mb-0 font-weight-normal float-left dropdown-header">Notifications</p>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <div class="preview-icon bg-success">
-                      <i class="typcn typcn-info-large mx-0"></i>
-                    </div>
-                  </div>
-                  <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Application Error</h6>
-                    <p class="font-weight-light small-text mb-0">
-                      Just now
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <div class="preview-icon bg-warning">
-                      <i class="typcn typcn-cog mx-0"></i>
-                    </div>
-                  </div>
-                  <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Settings</h6>
-                    <p class="font-weight-light small-text mb-0">
-                      Private message
-                    </p>
-                  </div>
-                </a>
-                <a class="dropdown-item preview-item">
-                  <div class="preview-thumbnail">
-                    <div class="preview-icon bg-info">
-                      <i class="typcn typcn-user-outline mx-0"></i>
-                    </div>
-                  </div>
-                  <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">New user registration</h6>
-                    <p class="font-weight-light small-text mb-0">
-                      2 days ago
-                    </p>
-                  </div>
-                </a>
-              </div>
-            </li>
             <li class="nav-item nav-profile dropdown">
-              <a class="nav-link dropdown-toggle  pl-0 pr-0" href="#" data-toggle="dropdown" id="profileDropdown">
+              <a class="nav-link dropdown-toggle pl-0 pr-0" href="#" data-toggle="dropdown" id="profileDropdown">
                 <i class="typcn typcn-user-outline mr-0"></i>
                 <span class="nav-profile-name"> <?php echo $_SESSION['nama']; ?></span>
               </a>
               <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-                <a class="dropdown-item">
-                <i class="typcn typcn-cog text-primary"></i>
-                Settings
-                </a>
-                <a class="dropdown-item" href="../logout.php">
-                <i class="typcn typcn-power text-primary"></i>
-                Logout
-                </a>
+                <a class="dropdown-item"><i class="typcn typcn-cog text-primary"></i>Settings</a>
+                <a class="dropdown-item" href="../logout.php"><i class="typcn typcn-power text-primary"></i>Logout</a>
               </div>
             </li>
           </ul>
@@ -271,36 +167,7 @@ if(isset($_POST['simpan'])){
           </button>
         </div>
       </nav>
-      <!-- partial -->
       <div class="container-fluid page-body-wrapper">
-        <!-- partial:partials/_settings-panel.html -->
-        <div class="theme-setting-wrapper">
-          <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
-          <div id="theme-settings" class="settings-panel">
-            <i class="settings-close typcn typcn-delete-outline"></i>
-            <p class="settings-heading">SIDEBAR SKINS</p>
-            <div class="sidebar-bg-options" id="sidebar-light-theme">
-              <div class="img-ss rounded-circle bg-light border mr-3"></div>
-              Light
-            </div>
-            <div class="sidebar-bg-options selected" id="sidebar-dark-theme">
-              <div class="img-ss rounded-circle bg-dark border mr-3"></div>
-              Dark
-            </div>
-            <p class="settings-heading mt-2">HEADER SKINS</p>
-            <div class="color-tiles mx-0 px-4">
-              <div class="tiles success"></div>
-              <div class="tiles warning"></div>
-              <div class="tiles danger"></div>
-              <div class="tiles primary"></div>
-              <div class="tiles info"></div>
-              <div class="tiles dark"></div>
-              <div class="tiles default border"></div>
-            </div>
-          </div>
-        </div>
-        <!-- partial -->
-        <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
@@ -310,403 +177,242 @@ if(isset($_POST['simpan'])){
                 <span class="sidebar-status-indicator"></span>
               </div>
               <div class="sidebar-profile-name">
-                <p class="sidebar-name">
-                  <?php echo $_SESSION['nama']; ?>
-                </p>
-                <p class="sidebar-designation">
-                  <?php echo $_SESSION['role']; ?>
-                </p>
+                <p class="sidebar-name"><?php echo $_SESSION['nama']; ?></p>
+                <p class="sidebar-designation"><?php echo $_SESSION['role']; ?></p>
               </div>
             </div>
-            <div class="nav-search">
-              <div class="input-group">
-                <input type="text" class="form-control" placeholder="Type to search..." aria-label="search" aria-describedby="search">
-                <div class="input-group-append">
-                  <span class="input-group-text" id="search">
-                    <i class="typcn typcn-zoom"></i>
-                  </span>
-                </div>
-              </div>
-            </div>
-            <!-- SIDEBAR MODUL ADMIN -->
+          </li>
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="dashboard.php">
-              <i class="typcn typcn-device-desktop menu-icon"></i>
-              <span class="menu-title">Dashboard</span>
-            </a>
-          </li>
-          <li class = "nav-item">
-            <a class="nav-link" href="employee.php">
-              <i class="typcn typcn-user menu-icon"></i>
-              <span class="menu-title">Employee</span>
-            </a>
-          </li>
-          <li class = "nav-item">
-            <a class="nav-link" href="logaktivitas.php">
-              <i class="typcn typcn-group menu-icon"></i>
-              <span class="menu-title">Log Aktivitas</span>
-            </a>
-          </li>
+          <li class="nav-item"><a class="nav-link" href="dashboard.php"><i class="typcn typcn-device-desktop menu-icon"></i><span class="menu-title">Dashboard</span></a></li>
+          <li class = "nav-item"><a class="nav-link" href="employee.php"><i class="typcn typcn-user menu-icon"></i><span class="menu-title">Employee</span></a></li>
+          <li class = "nav-item"><a class="nav-link" href="biayaoperasional.php"><i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Biaya Operasional</span></a></li>
+          <li class = "nav-item"><a class="nav-link" href="logaktivitas.php"><i class="typcn typcn-group menu-icon"></i><span class="menu-title">Log Aktivitas</span></a></li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#stok" aria-expanded="false" aria-controls="stok">
-              <i class="typcn typcn-document-text menu-icon"></i>
-              <span class="menu-title">Stok</span>
-              <i class="menu-arrow"></i>
+              <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Stok</span><i class="menu-arrow"></i>
             </a>
           <div class="collapse" id="stok">
             <ul class="nav flex-column sub-menu">
-              <li class="nav-item">
-                <a class="nav-link" href="bahanbaku.php">Bahan Baku</a>
-              </li>
-              
-              <li class="nav-item">
-                <a class="nav-link" href="produk.php">Produk</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="kategori.php">Kategori</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="resep.php">Resep</a>
-              </li>
+              <li class="nav-item"><a class="nav-link" href="bahanbaku.php">Bahan Baku</a></li>
+              <li class="nav-item"><a class="nav-link" href="produk.php">Produk</a></li>
+              <li class="nav-item"><a class="nav-link" href="kategori.php">Kategori</a></li>
+              <li class="nav-item"><a class="nav-link" href="resep.php">Resep</a></li>
             </ul>
           </div>
           </li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="stok">
-              <i class="typcn typcn-shopping-cart menu-icon"></i>
-              <span class="menu-title">Pembelian</span>
-              <i class="menu-arrow"></i>
+              <i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title">Pembelian</span><i class="menu-arrow"></i>
             </a>
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
-              <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
-              </li>
-              <li class ="nav-item">
-                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
-              </li>
+              <li class ="nav-item"><a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a></li>
+              <li class ="nav-item"><a class="nav-link" href="hispembelian.php">Histori Pembelian</a></li>
+              <li class="nav-item"><a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a></li>
+              <li class="nav-item"><a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a></li>
             </ul>
           </div>
           </li>
           <li class="nav-item">
             <a class="nav-link" data-toggle="collapse" href="#laporan" aria-expanded="false" aria-controls="laporan">
-              <i class="typcn typcn-document-text menu-icon"></i>
-              <span class="menu-title">Laporan</span>
-              <i class="menu-arrow"></i>
+              <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Laporan</span><i class="menu-arrow"></i>
             </a>
           <div class="collapse" id="laporan">
             <ul class="nav flex-column sub-menu">
-              <li class="nav-item">
-                <a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a>
-              </li>
-              
-              <li class="nav-item">
-                <a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="aruskas.php">Arus Kas</a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link" href="labarugi.php">Laba Rugi</a>
-              </li>
+              <li class="nav-item"><a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a></li>
+              <li class="nav-item"><a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a></li>
+              <li class="nav-item"><a class="nav-link" href="aruskas.php">Arus Kas</a></li>
+              <li class="nav-item"><a class="nav-link" href="labarugi.php">Laba Rugi</a></li>
             </ul>
           </div>
           </li>
           <?php endif; ?>
           <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-          <!-- SIDEBAR MODUL KASIR -->
             <p class = "sidebar-menu-title"> Sales Modules</p>
-            <li class="nav-item">
-              <a class="nav-link" href="../kasir/transaksipenjualan.php">
-                <i class="typcn typcn-shopping-cart menu-icon"></i>
-                <span class="menu-title"> Transaksi Penjualan</span>
-              </a>
-            </li>
-          <li class="nav-item">
-            <a class="nav-link" href="../kasir/datapenjualan.php">
-              <i class="typcn typcn-chart-bar menu-icon"></i>
-              <span class="menu-title"> Data Penjualan</span>
-            </a>
-          </li>
+            <li class="nav-item"><a class="nav-link" href="../kasir/transaksipenjualan.php"><i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title"> Transaksi Penjualan</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../kasir/datapenjualan.php"><i class="typcn typcn-chart-bar menu-icon"></i><span class="menu-title"> Data Penjualan</span></a></li>
           <?php endif ?>
           <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
-           <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
-            <li class = "nav-item">
-              <a class="nav-link" href="../gudang/bahanbaku.php">
-                <i class="typcn typcn-th-large menu-icon"></i>
-                <span class="menu-title"> Bahan Baku</span>
-              </a>
-            </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangmasuk.php">
-                <i class="typcn typcn-arrow-down menu-icon"></i>
-                <span class="menu-title"> Barang Masuk </span>
-              </a>
-            </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangkeluar.php">
-                <i class="typcn typcn-arrow-up menu-icon"></i>
-                <span class="menu-title"> Barang Keluar</span>
-              </a>
-            </li>
-            <li class = "nav-item">
-              <a class="nav-link" href="../gudang/purchaserequest.php">
-                <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
-                <span class="menu-title"> Purchase Request</span>
-              </a>
-            </li>
-            <?php endif ?>
-            <!-- SIDEBAR MENU SETTINGS -->
-            <p class = "sidebar-menu-title"> Settings</p>
-          <li class="nav-item">
-            <a class="nav-link" href="../settings/ubahpassword.php">
-              <i class="typcn typcn-key menu-icon"></i>
-              <span class="menu-title"> Ubah Password</span>
-            </a>
-          </li>
+            <li class = "nav-item"><a class="nav-link" href="../gudang/bahanbaku.php"><i class="typcn typcn-th-large menu-icon"></i><span class="menu-title"> Bahan Baku</span></a></li>
+            <li class = "nav-item"><a class="nav-link" href="../gudang/barangmasuk.php"><i class="typcn typcn-arrow-down menu-icon"></i><span class="menu-title"> Barang Masuk </span></a></li>
+            <li class = "nav-item"><a class="nav-link" href="../gudang/barangkeluar.php"><i class="typcn typcn-arrow-up menu-icon"></i><span class="menu-title"> Barang Keluar</span></a></li>
+            <li class = "nav-item"><a class="nav-link" href="../gudang/purchaserequest.php"><i class="typcn typcn-arrow-forward-outline menu-icon"></i><span class="menu-title"> Purchase Request</span></a></li>
+          <?php endif ?>
+          <p class = "sidebar-menu-title"> Settings</p>
+          <li class="nav-item"><a class="nav-link" href="../settings/ubahpassword.php"><i class="typcn typcn-key menu-icon"></i><span class="menu-title"> Ubah Password</span></a></li>
+        </ul>
       </nav>
-        <!-- partial -->
         <div class="main-panel">
-    <div class="content-wrapper">
-    <div class="row">
-        <div class="col-lg-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <?php
-                    $pr = $_GET['pr'] ?? '';
+            <div class="content-wrapper">
+                <div class="row">
+                    <div class="col-lg-12 grid-margin stretch-card">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <?php
+                                $stmt = $koneksi->prepare("
+                                  SELECT
+                                      pr.id,
+                                      pr.status,
+                                      b.nama,
+                                      d.tBahan_kode,
+                                      d.jumlah,
+                                      d.satuanBeli,
+                                      d.konversi
+                                  FROM tPurchaseRequest pr
+                                  JOIN tDetailPurchaseRequest d
+                                      ON pr.id = d.tPurchaseRequest_id
+                                  JOIN tBahan b
+                                      ON d.tBahan_kode = b.kode
+                                  WHERE pr.id = ?
+                                  ORDER BY d.tBahan_kode
+                                ");
+                                $stmt->execute([$pr]);
+                                $detailPR = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    $stmt = $koneksi->prepare("
-                        SELECT
-                            pr.id,
-                            pr.status,
-                            b.nama,
-                            d.tBahan_kode,
-                            d.jumlah,
-                            d.satuanBeli
-                        FROM tPurchaseRequest pr
-                        JOIN tDetailPurchaseRequest d
-                            ON pr.id = d.tPurchaseRequest_id
-                        JOIN tBahan b
-                            ON d.tBahan_kode = b.kode
-                        WHERE pr.id = ?
-                    ");
+                                $supplier = $koneksi->query("
+                                    SELECT *
+                                    FROM tSupplier
+                                    ORDER BY nama
+                                ");
+                                ?>
 
-                    $stmt->execute([$pr]);
-
-                    $detailPR = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                    $supplier = $koneksi->query("
-                        SELECT *
-                        FROM tSupplier
-                        ORDER BY nama
-                    ");
-
-                    ?>
-
-                    <div class="row">
-                        <div class="col-lg-12 grid-margin stretch-card">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h4 class="card-title mb-4">
-                                        Buat Pembelian
-                                    </h4>
-                                    <form method="POST">
-                                        <div class="form-group">
-                                            <label>Purchase Request</label>
-                                            <input
-                                                type="text"
-                                                class="form-control"
-                                                value="<?= $pr ?>"
-                                                readonly>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Supplier</label>
-                                            <select
-                                                name="supplier"
-                                                class="form-control"
-                                                required>
-                                                <option value="">
-                                                    -- Pilih Supplier --
-                                                </option>
-                                                <?php while($s = $supplier->fetch(PDO::FETCH_ASSOC)): ?>
-                                                    <option value="<?= $s['id'] ?>">
-                                                        <?= $s['nama'] ?>
-                                                    </option>
-                                                <?php endwhile; ?>
-                                            </select>
-                                        </div>
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-hover">
-                                                <thead class="thead-dark">
-                                                    <tr>
-                                                        <th>Kode</th>
-                                                        <th>Nama Bahan</th>
-                                                        <th>Jumlah</th>
-                                                        <th>Satuan</th>
-                                                        <th>Harga / Satuan</th>
-                                                        <th>Subtotal</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php foreach($detailPR as $index => $d): ?>
-                                                      <tr>
-                                                          <td>
-                                                              <?= $d['tBahan_kode'] ?>
-                                                              <input
-                                                                  type="hidden"
-                                                                  name="kode[]"
-                                                                  value="<?= $d['tBahan_kode'] ?>">
-                                                          </td>
-
-                                                          <td><?= $d['nama'] ?></td>
-
-                                                          <td>
-                                                              <?= $d['jumlah'] ?>
-                                                              <input
-                                                                  type="hidden"
-                                                                  class="jumlah"
-                                                                  value="<?= $d['jumlah'] ?>">
-                                                          </td>
-
-                                                          <td><?= $d['satuanBeli'] ?></td>
-
-                                                          <td>
-                                                              <input
-                                                                  type="number"
-                                                                  name="harga[]"
-                                                                  class="form-control harga"
-                                                                  min="0"
-                                                                  value="0"
-                                                                  required>
-                                                          </td>
-
-                                                          <td>
-                                                              <input
-                                                                  type="text"
-                                                                  class="form-control subtotal"
-                                                                  value="0"
-                                                                  readonly>
-                                                          </td>
-                                                      </tr>
-                                                    <?php endforeach; ?>
-                                                </tbody>
-                                            </table>
-                                              <div class="row mt-3">
-                                                <div class="col-md-4 offset-md-8">
-                                                    <table class="table table-bordered">
-                                                        <tr>
-                                                            <th>Total Pembelian</th>
-                                                            <td>
-                                                                Rp <span id="grandTotal">0</span>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                </div>
-                                              </div>
-                                        </div>
-                                        <div class="mt-3">
-                                            <button
-                                                type="submit"
-                                                name="simpan"
-                                                class="btn btn-primary">
-                                                Buat Pembelian
-                                            </button>
-                                            <a
-                                                href="purchaserequest.php"
-                                                class="btn btn-secondary">
-                                                Kembali
-                                            </a>
-                                        </div>
-                                    </form>
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h5 class="card-title mb-0">Buat Pembelian (Berdasarkan PR)</h5>
+                                    <a href="purchaserequestadmin.php" class="btn btn-secondary btn-sm">Kembali</a>
                                 </div>
+                                
+                                <form method="POST">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="font-weight-bold text-muted mb-1">Nomor Purchase Request</label>
+                                                <input type="text" class="form-control form-control-plaintext form-control-lg text-primary" value="<?= $pr ?>" readonly>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="form-group">
+                                                <label class="font-weight-bold mb-2">Pilih Supplier Penerima Order</label>
+                                                <select name="supplier" class="form-control form-control-sm" required>
+                                                    <option value="">-- Pilih Supplier --</option>
+                                                    <?php while($s = $supplier->fetch(PDO::FETCH_ASSOC)): ?>
+                                                        <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
+                                                    <?php endwhile; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="mt-2 mb-4">
+                                    <h6 class="mb-3 text-info">Daftar Barang yang Diajukan</h6>
+                                    <p class="text-muted small mb-3">Silakan lengkapi harga beli per satuan (*harga otomatis dikalikan dengan jumlah pengajuan*).</p>
+
+                                    <div class="table-responsive mb-4">
+                                        <table class="table table-bordered table-hover table-sm">
+                                            <thead style="background-color: #f4f5f7;">
+                                                <tr>
+                                                    <th>Kode</th>
+                                                    <th>Nama Bahan Baku</th>
+                                                    <th>Jumlah Diajukan</th>
+                                                    <th>Satuan Beli</th>
+                                                    <th width="20%">Harga per Satuan (Rp)</th>
+                                                    <th width="20%">Subtotal (Rp)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach($detailPR as $index => $d): ?>
+                                                  <tr>
+                                                      <td class="align-middle text-muted">
+                                                          <?= $d['tBahan_kode'] ?>
+                                                          <input type="hidden" name="kode[]" value="<?= $d['tBahan_kode'] ?>">
+                                                      </td>
+                                                      <td class="align-middle font-weight-bold"><?= $d['nama'] ?></td>
+                                                      <td class="align-middle">
+                                                          <?= $d['jumlah'] ?>
+                                                          <input type="hidden" class="jumlah" value="<?= $d['jumlah'] ?>">
+                                                      </td>
+                                                      <td class="align-middle"><?= $d['satuanBeli'] ?></td>
+                                                      <td class="align-middle">
+                                                          <input type="number" name="harga[]" class="form-control form-control-sm harga" min="0" placeholder="0" required>
+                                                      </td>
+                                                      <td class="align-middle">
+                                                          <input type="text" class="form-control form-control-sm form-control-plaintext subtotal" value="0" readonly>
+                                                      </td>
+                                                  </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-5 offset-md-7">
+                                            <div class="summary-card rounded shadow-sm">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <h6 class="mb-0 text-dark">Grand Total</h6>
+                                                    <h5 class="mb-0 text-danger font-weight-bold">Rp <span id="grandTotal">0</span></h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="mb-4 mt-2">
+                                    
+                                    <div class="text-right">
+                                        <a href="purchaserequestadmin.php" class="btn btn-light mr-2">Batal</a>
+                                        <button type="submit" name="simpan" class="btn btn-primary">Proses & Setujui Pembelian</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-          <!-- content-wrapper ends -->
-          <!-- partial:partials/_footer.html -->
-          <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <!-- FOOTER -->
             </div>
+          <footer class="footer">
+            <div class="d-sm-flex justify-content-center justify-content-sm-between"></div>
           </footer>
-          <!-- partial -->
         </div>
-        <!-- main-panel ends -->
       </div>
-      <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
-    <!-- base:js -->
+
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page-->
-    <!-- End plugin js for this page-->
-    <!-- inject:js -->
     <script src="../../js/off-canvas.js"></script>
     <script src="../../js/hoverable-collapse.js"></script>
     <script src="../../js/template.js"></script>
     <script src="../../js/settings.js"></script>
     <script src="../../js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- plugin js for this page -->
     <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
     <script src="../../vendors/chart.js/Chart.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- Custom js for this page-->
-    <!-- End custom js for this page-->
+    <script src="../../js/dashboard.js"></script>
+    
     <script>
       function hitungTotal() {
-
           let grandTotal = 0;
-
           document.querySelectorAll(".harga").forEach(function(input){
-
               let row = input.closest("tr");
-
-              console.log("ROW:", row);
-
               let jumlahInput = row.querySelector(".jumlah");
               let subtotalInput = row.querySelector(".subtotal");
-
-              console.log("jumlah =", jumlahInput);
-              console.log("subtotal =", subtotalInput);
 
               let jumlah = parseFloat(jumlahInput.value) || 0;
               let harga = parseFloat(input.value) || 0;
 
               let subtotal = jumlah * harga;
 
-              subtotalInput.value =
-                  subtotal.toLocaleString('id-ID');
-
+              // Format subtotal ke dalam style rupiah yang rapi
+              subtotalInput.value = subtotal.toLocaleString('id-ID');
               grandTotal += subtotal;
           });
 
-          console.log("Grand Total =", grandTotal);
-
-          document.getElementById("grandTotal").textContent =
-              grandTotal.toLocaleString('id-ID');
+          // Update Grand Total di UI
+          document.getElementById("grandTotal").textContent = grandTotal.toLocaleString('id-ID');
       }
 
+      // Pasang event listener pada setiap kolom harga
       document.querySelectorAll(".harga").forEach(function(input){
           input.addEventListener("input", hitungTotal);
       });
 
+      // Hitung saat pertama kali halaman dimuat (berjaga-jaga)
       hitungTotal();
     </script>
   </body>

@@ -1,29 +1,32 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
 try {
-
     $sql = "
         SELECT
-            b.kode,
-            b.nama,
-            b.stok,
-            b.harga,
-            s.nama AS satuan
-        FROM tbahan b
-        INNER JOIN tsatuan s
-            ON b.tSatuan_id = s.id
-        ORDER BY b.kode ASC
-        ";
-        $stmt = $koneksi->prepare($sql);
-        $stmt->execute();
-        $bahan = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            b.id,
+            b.tanggal,
+            b.keterangan,
+            b.nominal,
+            k.jenis as kategori,
+            u.username as username
+        FROM tBiayaOperasional b
+        LEFT JOIN tKategoriBiaya k
+            ON b.tKategoriBiaya_id = k.id
+        LEFT JOIN tUser u
+            ON b.tUser_id = u.id
+        ORDER BY b.tanggal DESC
+    ";
+
+    $stmt = $koneksi->prepare($sql);
+    $stmt->execute();
+    $biaya = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
-    die("Error: " . $e->getMessage());
+    die("Error : " . $e->getMessage());
 }
 ?>
 
@@ -33,7 +36,7 @@ try {
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Bahan Baku</title>
+    <title> CHARA - Employees</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -68,7 +71,7 @@ try {
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
                 <a class="dropdown-item preview-item">
                   <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
+                    <img src="../../images/faces/face4.jpg" alt="image" class="profile-pic">
                   </div>
                   <div class="preview-item-content flex-grow">
                     <h6 class="preview-subject ellipsis font-weight-normal">David Grey
@@ -378,7 +381,6 @@ try {
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
-            
             <?php endif ?>
             <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
@@ -398,87 +400,115 @@ try {
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <h4 class="card-title mb-1">Bahan</h4>
+                                        <h4 class="card-title mb-1">Biaya Operasional</h4>
                                         <p class="text-muted mb-0">
-                                            Kelola bahan yang digunakan sistem.
+                                            Kelola Data Biaya Operasional.
                                         </p>
                                     </div>
-                                    <a href="addbahan.php" class="btn btn-primary">
+
+                                    <a href="addbiaya.php" class="btn btn-primary">
                                         <i class="typcn typcn-plus"></i>
-                                        Tambah Bahan
+                                        Tambah Biaya
                                     </a>
                                 </div>
-                                <div class="table-responsive">
-                                  <?php if(isset($_GET['success']) && $_GET['success'] == 'delete') : ?>
+
+                                <?php if(isset($_GET['success']) && $_GET['success'] == 'add'): ?>
                                     <div class="alert alert-success">
-                                        Bahan berhasil dihapus.
+                                        Data biaya operasional berhasil ditambahkan.
                                     </div>
-                                    <?php endif; ?>
-                                    <?php if(isset($_GET['error']) && $_GET['error'] == 'digunakan') : ?>
-                                    <div class="alert alert-warning">
-                                        Bahan tidak dapat dihapus karena masih digunakan oleh produk.
+                                <?php endif; ?>
+
+                                <?php if(isset($_GET['success']) && $_GET['success'] == 'edit'): ?>
+                                    <div class="alert alert-success">
+                                        Data biaya operasional berhasil diubah.
                                     </div>
-                                    <?php endif; ?>
-                                    <?php if(isset($_GET['error']) && $_GET['error'] == 'delete') : ?>
-                                    <div class="alert alert-danger">
-                                        Terjadi kesalahan saat menghapus bahan.
+                                <?php endif; ?>
+
+                                <?php if(isset($_GET['success']) && $_GET['success'] == 'delete'): ?>
+                                    <div class="alert alert-success">
+                                        Data biaya operasional berhasil dihapus.
                                     </div>
-                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <div class="table-responsive">
                                     <table class="table table-bordered table-hover">
-                                      <thead>
-                                          <tr>
-                                              <th>Kode</th>
-                                              <th>Nama Bahan</th>
-                                              <th>Satuan</th>
-                                              <th>Stok</th>
-                                              <th>Harga Satuan Rata-Rata</th>
-                                              <th>Aksi</th>
-                                          </tr>
-                                      </thead>
-                                      <tbody>
-                                          <?php if(count($bahan) > 0): ?>
-                                              <?php foreach($bahan as $row): ?>
-                                              <tr>
-                                                  <td><?= $row['kode'] ?></td>
-                                                  <td><?= $row['nama'] ?></td>
-                                                  <td><?= $row['satuan'] ?></td>
-                                                  <td><?= rtrim(rtrim($row['stok'], '0'), '.') ?></td>
-                                                  <td>
-                                                      Rp <?= number_format($row['harga'], 0, ',', '.') ?> <small class="text-muted">/ <?= $row['satuan'] ?></small>
-                                                      
-                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
-                                                          <br>
-                                                          <small class="text-info">
-                                                              (Rp <?= number_format($row['harga'] / 1000, 2, ',', '.') ?> / <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
-                                                          </small>
-                                                      <?php endif; ?>
-                                                  </td>
-                                                  <td>
-                                                      <a href="editbahan.php?kode=<?= $row['kode'] ?>"
-                                                        class="btn btn-warning btn-sm">
-                                                          Edit
-                                                      </a>
-                                                      <a href="delbahan.php?kode=<?= $row['kode'] ?>"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Apakah anda yakin ingin menghapus bahan ini?')">
-                                                          Hapus
-                                                      </a>
-                                                  </td>
-                                              </tr>
-                                              <?php endforeach; ?>
-                                          <?php else: ?>
-                                              <tr>
-                                                  <td colspan="6" class="text-center text-muted">
-                                                      Belum ada bahan
-                                                  </td>
-                                              </tr>
-                                          <?php endif; ?>
-                                      </tbody>
-                                  </table>
+                                        <thead>
+                                            <tr>
+                                                <th width="5%">No</th>
+                                                <th width="18%">Tanggal</th>
+                                                <th>Kategori</th>
+                                                <th>Keterangan</th>
+                                                <th>Nominal</th>
+                                                <th>User</th>
+                                                <th width="18%">Aksi</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            <?php if(count($biaya) > 0): ?>
+                                                <?php $no = 1; ?>
+                                                <?php foreach($biaya as $row): ?>
+                                                <tr>
+                                                    <td><?= $no++ ?></td>
+
+                                                    <td>
+                                                        <?= date('d-m-Y H:i', strtotime($row['tanggal'])) ?>
+                                                    </td>
+
+                                                    <td>
+                                                        <?= $row['kategori'] ?>
+                                                    </td>
+
+                                                    <td>
+                                                        <?= $row['keterangan'] ?>
+                                                    </td>
+
+                                                    <td>
+                                                        Rp <?= number_format($row['nominal'],0,',','.') ?>
+                                                    </td>
+
+                                                    <td>
+                                                        <?= $row['username'] ?>
+                                                    </td>
+
+                                                    <td>
+                                                        <a href="editbiaya.php?id=<?= $row['id'] ?>"
+                                                            class="btn btn-warning btn-sm">
+                                                            Edit
+                                                        </a>
+
+                                                        <a href="delbiaya.php?id=<?= $row['id'] ?>"
+                                                            class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('Apakah yakin ingin menghapus data ini?')">
+                                                            Hapus
+                                                        </a>
+                                                    </td>
+
+                                                </tr>
+                                                <?php endforeach; ?>
+
+                                            <?php else: ?>
+
+                                                <tr>
+                                                    <td colspan="7" class="text-center text-muted">
+                                                        Belum ada data biaya operasional.
+                                                    </td>
+                                                </tr>
+
+                                            <?php endif; ?>
+
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+                                
+
+                    
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
@@ -510,7 +540,6 @@ try {
     <script src="../../vendors/chart.js/Chart.min.js"></script>
     <!-- End plugin js for this page -->
     <!-- Custom js for this page-->
-    <script src="../../js/dashboard.js"></script>
     <!-- End custom js for this page-->
   </body>
 </html>

@@ -233,6 +233,12 @@ $nama = $_SESSION['nama'];
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="pages/admin/biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="pages/admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -273,10 +279,13 @@ $nama = $_SESSION['nama'];
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="pages/admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="pages/admin/purchaserequestadmin.php">Purchase Request</a>
+              </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="pages/admin/hispembelian.php">Histori Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="pages/admin/pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pages/admin/tambahpembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="pages/admin/daftarsupplier.php">Daftar Supplier</a>

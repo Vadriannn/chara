@@ -10,12 +10,14 @@ $stmt = $koneksi->query("
         pb.tanggal,
         pb.total,
         s.nama AS supplier,
-        pr.id AS nomor_pr
+        pr.id AS nomor_pr,
+        pb.status
     FROM tPembelian pb
     JOIN tSupplier s
         ON pb.tSupplier_id = s.id
     LEFT JOIN tPurchaseRequest pr
         ON pb.tPurchaseRequest_id = pr.id
+    WHERE pb.status = 'Diterima'
     ORDER BY pb.tanggal DESC
 ");
 ?>
@@ -241,6 +243,12 @@ $stmt = $koneksi->query("
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="../admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -281,7 +289,7 @@ $stmt = $koneksi->query("
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -342,25 +350,25 @@ $stmt = $koneksi->query("
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="bahanbaku.php">
+              <a class="nav-link" href="../gudang/bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="barangmasuk.php">
+              <a class="nav-link" href="../gudang/barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="barangkeluar.php">
+              <a class="nav-link" href="../gudang/barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="purchaserequest.php">
+              <a class="nav-link" href="../gudang/purchaserequest.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
@@ -393,28 +401,23 @@ $stmt = $koneksi->query("
                         <th>Supplier</th>
                         <th>No PR</th>
                         <th>Total</th>
+                        <th>Status</th>
                         <th width="120">Aksi</th>
                     </tr>
                 </thead>
-
                 <tbody>
-
                 <?php while($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
-
                     <tr>
                         <td><?= $row['nomor'] ?></td>
-
                         <td>
                             <?= date(
                                 'd-m-Y H:i',
                                 strtotime($row['tanggal'])
                             ) ?>
                         </td>
-
                         <td><?= $row['supplier'] ?></td>
-
                         <td><?= $row['nomor_pr'] ?></td>
-
+                        
                         <td>
                             Rp <?= number_format(
                                 $row['total'],
@@ -423,15 +426,18 @@ $stmt = $koneksi->query("
                                 '.'
                             ) ?>
                         </td>
-
                         <td>
                             <a href="detailhispembelian.php?nomor=<?= $row['nomor'] ?>"
                                class="btn btn-info btn-sm">
                                 Detail
                             </a>
                         </td>
+                        <td>
+                            <span class="badge badge-success">
+                                <?= $row['status'] ?>
+                            </span>
+                        </td>
                     </tr>
-
                 <?php endwhile; ?>
             </table>
 

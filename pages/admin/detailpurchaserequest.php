@@ -4,6 +4,16 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_gudang.php';
 
+// Fungsi untuk menghilangkan .00 jika angka bulat, sekaligus format gaya Indonesia
+function formatAngka($angka) {
+    if (fmod((float)$angka, 1) !== 0.0) {
+        // Jika ada desimal, tampilkan dengan 2 angka di belakang koma (misal: 10,50)
+        return number_format($angka, 2, ',', '.');
+    }
+    // Jika bulat, tampilkan tanpa koma (misal: 10)
+    return number_format($angka, 0, ',', '.');
+}
+
 try {
 
     if(!isset($_GET['id'])){
@@ -22,7 +32,7 @@ try {
             u.username
         FROM tPurchaseRequest pr
         INNER JOIN tUser u
-            ON pr.tUser_id = u.id
+            ON pr.reqBy = u.id
         WHERE pr.id = ?
     ");
 
@@ -42,9 +52,8 @@ try {
         b.nama,
         d.jumlah,
         d.satuanBeli,
-        d.keterangan,
-        (d.jumlah * d.keterangan)
-            AS totalPembelian
+        d.konversi,
+        (d.jumlah * d.konversi) AS totalKonversi
     FROM tDetailPurchaseRequest d
     INNER JOIN tBahan b
         ON d.tBahan_kode = b.kode
@@ -62,25 +71,17 @@ try {
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title> CHARA - Detail Purchase Request</title>
-    <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
-    <!-- endinject --> 
-    <!-- plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
-    <!-- endinject -->
     <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">
       <div class="container-scroller">
-      <!-- partial:partials/_navbar.html -->
       <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
           <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
@@ -206,9 +207,7 @@ try {
           </button>
         </div>
       </nav>
-      <!-- partial -->
       <div class="container-fluid page-body-wrapper">
-        <!-- partial:partials/_settings-panel.html -->
         <div class="theme-setting-wrapper">
           <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
           <div id="theme-settings" class="settings-panel">
@@ -234,8 +233,6 @@ try {
             </div>
           </div>
         </div>
-        <!-- partial -->
-        <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
@@ -263,7 +260,6 @@ try {
                 </div>
               </div>
             </div>
-            <!-- SIDEBAR MODUL ADMIN -->
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
@@ -274,13 +270,19 @@ try {
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="../admin/employee.php">
+            <a class="nav-link" href="employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="../admin/logaktivitas.php">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
             </a>
@@ -294,19 +296,19 @@ try {
           <div class="collapse" id="stok">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a>
+                <a class="nav-link" href="bahanbaku.php">Bahan Baku</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="../admin/produk.php">Produk</a>
+                <a class="nav-link" href="produk.php">Produk</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/kategori.php">Kategori</a>
+                <a class="nav-link" href="kategori.php">Kategori</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/resep.php">Resep</a>
+                <a class="nav-link" href="resep.php">Resep</a>
               </li>
             </ul>
           </div>
@@ -320,16 +322,16 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a>
+                <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
               </li>
             </ul>
           </div>
@@ -343,27 +345,26 @@ try {
           <div class="collapse" id="laporan">
             <ul class="nav flex-column sub-menu">
               <li class="nav-item">
-                <a class="nav-link" href="../admin/laporanpenjualan.php">Laporan Penjualan</a>
+                <a class="nav-link" href="laporanpenjualan.php">Laporan Penjualan</a>
               </li>
               
               <li class="nav-item">
-                <a class="nav-link" href="../admin/laporankeuangan.php">Laporan Keuangan</a>
+                <a class="nav-link" href="laporankeuangan.php">Laporan Keuangan</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/aruskas.php">Arus Kas</a>
+                <a class="nav-link" href="aruskas.php">Arus Kas</a>
               </li>
 
               <li class="nav-item">
-                <a class="nav-link" href="../admin/labarugi.php">Laba Rugi</a>
+                <a class="nav-link" href="labarugi.php">Laba Rugi</a>
               </li>
             </ul>
           </div>
           </li>
           <?php endif; ?>
           <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-          <!-- SIDEBAR MODUL KASIR -->
-            <p class = "sidebar-menu-title"> Sales Modules</p>
+          <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
               <a class="nav-link" href="../kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
@@ -378,35 +379,33 @@ try {
           </li>
           <?php endif ?>
           <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
-           <!-- SIDEBAR MODUL GUDANG  -->
-            <p class = "sidebar-menu-title"> Stock Modules</p>
+           <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="bahanbaku.php">
+              <a class="nav-link" href="../gudang/bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="barangmasuk.php">
+              <a class="nav-link" href="../gudang/barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="barangkeluar.php">
+              <a class="nav-link" href="../gudang/barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="purchaserequest.php">
+              <a class="nav-link" href="../gudang/purchaserequest.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
             
             <?php endif ?>
-            <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
           <li class="nav-item">
             <a class="nav-link" href="../settings/ubahpassword.php">
@@ -415,7 +414,6 @@ try {
             </a>
           </li>
       </nav>
-        <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper">
                 <div class="row">
@@ -499,7 +497,7 @@ try {
                                                 <th>Jumlah</th>
                                                 <th>Satuan Beli</th>
                                                 <th>Konversi (Kg/L)</th>
-                                                <th>Total Pembelian</th>
+                                                <th>Total Kuantitas</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -513,25 +511,22 @@ try {
                                                     <?= $row['nama'] ?>
                                                 </td>
                                                 <td>
-                                                    <?= $row['jumlah'] ?>
+                                                    <?= formatAngka($row['jumlah']) ?>
                                                 </td>
                                                 <td>
                                                     <?= $row['satuanBeli'] ?>
                                                 </td>
                                                 <td>
-                                                    <?= $row['keterangan'] ?>
+                                                    <?= formatAngka($row['konversi']) ?>
                                                 </td>
                                                 <td>
-                                                    <?= number_format(
-                                                        $row['totalPembelian'],
-                                                        2
-                                                    ) ?>
+                                                    <?= formatAngka($row['totalKonversi']) ?>
                                                 </td>
                                             </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
                                             <tr>
-                                                <td colspan="5" class="text-center text-muted">
+                                                <td colspan="6" class="text-center text-muted">
                                                     Tidak ada detail barang
                                                 </td>
                                             </tr>
@@ -543,38 +538,22 @@ try {
                             </div>
                         </div>
                     </div>
-          <!-- content-wrapper ends -->
-          <!-- partial:partials/_footer.html -->
+                </div>
           <footer class="footer">
             <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <!-- FOOTER -->
             </div>
           </footer>
-          <!-- partial -->
+          </div>
         </div>
-        <!-- main-panel ends -->
       </div>
-      <!-- page-body-wrapper ends -->
-    </div>
-    <!-- container-scroller -->
-    <!-- base:js -->
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page-->
-    <!-- End plugin js for this page-->
-    <!-- inject:js -->
     <script src="../../js/off-canvas.js"></script>
     <script src="../../js/hoverable-collapse.js"></script>
     <script src="../../js/template.js"></script>
     <script src="../../js/settings.js"></script>
     <script src="../../js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- plugin js for this page -->
     <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
     <script src="../../vendors/chart.js/Chart.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- Custom js for this page-->
     <script src="../../js/dashboard.js"></script>
-    <!-- End custom js for this page-->
-  </body>
-</html>
+    </body>
+</html> 

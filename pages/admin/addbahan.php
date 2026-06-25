@@ -20,25 +20,36 @@ try {
         $satuan = $stmtSatuan->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Ambil kode bahan terakhir
+    // LOGIKA AUTO GENERATE KODE BAHAN
     $stmtLast = $koneksi->query("
         SELECT kode
         FROM tbahan
+        WHERE kode LIKE 'B%'
         ORDER BY kode DESC
         LIMIT 1
     ");
     $lastBahan = $stmtLast->fetch(PDO::FETCH_ASSOC);
-    $kodeTerakhir = $lastBahan ? $lastBahan['kode'] : '-';
 
+    if ($lastBahan) {
+        // Ambil angka dari kode terakhir (misal 'B001' jadi 1)
+        $lastNumber = (int) substr($lastBahan['kode'], 1);
+        $newNumber = $lastNumber + 1;
+    } else {
+        // Jika belum ada data sama sekali, mulai dari 1
+        $newNumber = 1;
+    }
     
+    // Format angka dengan leading zeros menjadi 3 digit (contoh: '001', '012')
+    $kodeOtomatis = 'B' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
     // Proses form saat metode request adalah POST
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $kode       = strtoupper(trim($_POST['kode']));
+        // Ambil kode dari variabel yang digenerate PHP agar lebih aman (tidak bisa diubah via Inspect Element)
+        $kode       = $kodeOtomatis;
         $nama       = trim($_POST['nama']);
         $satuanId   = $_POST['satuan'];
 
-        // Cek apakah kode bahan sudah digunakan
+        // Cek apakah kode bahan sudah digunakan (sebagai pengaman tambahan jika ada request bersamaan)
         $cek = $koneksi->prepare("
             SELECT COUNT(*)
             FROM tbahan
@@ -47,7 +58,7 @@ try {
         $cek->execute([$kode]);
 
         if ($cek->fetchColumn() > 0) {
-            $error = "Kode bahan sudah digunakan.";
+            $error = "Kode bahan sudah digunakan. Silakan muat ulang halaman.";
         } else {
             // Query untuk memasukkan data bahan baru
             $sql = "
@@ -74,25 +85,17 @@ try {
 <html lang="en">
   <head>
     <!-- Required meta tags -->
-     <!-- tes git -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title> CHARA - Tambah Bahan</title>
-    <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
-    <!-- endinject --> 
-    <!-- plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
-    <!-- endinject -->
     <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>
     <div class="container-scroller">
       <div class="container-scroller">
-      <!-- partial:partials/_navbar.html -->
       <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
           <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
@@ -218,9 +221,7 @@ try {
           </button>
         </div>
       </nav>
-      <!-- partial -->
       <div class="container-fluid page-body-wrapper">
-        <!-- partial:partials/_settings-panel.html -->
         <div class="theme-setting-wrapper">
           <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
           <div id="theme-settings" class="settings-panel">
@@ -246,8 +247,6 @@ try {
             </div>
           </div>
         </div>
-        <!-- partial -->
-        <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
         <ul class="nav">
           <li class="nav-item">
@@ -275,7 +274,6 @@ try {
                 </div>
               </div>
             </div>
-            <!-- SIDEBAR MODUL ADMIN -->
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
           </li>
@@ -289,6 +287,12 @@ try {
             <a class="nav-link" href="employee.php">
               <i class="typcn typcn-user menu-icon"></i>
               <span class="menu-title">Employee</span>
+            </a>
+          </li>
+          <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
             </a>
           </li>
           <li class = "nav-item">
@@ -374,8 +378,7 @@ try {
           </li>
           <?php endif; ?>
           <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-          <!-- SIDEBAR MODUL KASIR -->
-            <p class = "sidebar-menu-title"> Sales Modules</p>
+          <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
               <a class="nav-link" href="../kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
@@ -389,9 +392,8 @@ try {
             </a>
           </li>
           <?php endif ?>
-          <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Adminw'): ?>
-           <!-- SIDEBAR MODUL GUDANG  -->
-            <p class = "sidebar-menu-title"> Stock Modules</p>
+          <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
+           <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
               <a class="nav-link" href="../gudang/bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
@@ -411,13 +413,12 @@ try {
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/purchaserequest.php">
+              <a class="nav-link" href="../gudang/purchaserequestadmin.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
             <?php endif ?>
-            <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
           <li class="nav-item">
             <a class="nav-link" href="../settings/ubahpassword.php">
@@ -426,7 +427,6 @@ try {
             </a>
           </li>
       </nav>
-        <!-- partial -->
         <div class="main-panel">
     <div class="content-wrapper">
         <div class="row">
@@ -445,9 +445,9 @@ try {
                                 <input
                                           type="text"
                                           name="kode"
-                                          maxlength="4"
+                                          value="<?= $kodeOtomatis ?>"
                                           class="form-control"
-                                          placeholder="Contoh: B001 - Kode Terakhir: <?= $kodeTerakhir ?>"
+                                          readonly
                                           required>
                             </div>
                             <div class="form-group">
@@ -487,38 +487,21 @@ try {
         </div>
     </div>
 </div>
-          <!-- content-wrapper ends -->
-          <!-- partial:partials/_footer.html -->
           <footer class="footer">
             <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <!-- FOOTER -->
             </div>
           </footer>
-          <!-- partial -->
+          </div>
         </div>
-        <!-- main-panel ends -->
       </div>
-      <!-- page-body-wrapper ends -->
-    </div>
-    <!-- container-scroller -->
-    <!-- base:js -->
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page-->
-    <!-- End plugin js for this page-->
-    <!-- inject:js -->
     <script src="../../js/off-canvas.js"></script>
     <script src="../../js/hoverable-collapse.js"></script>
     <script src="../../js/template.js"></script>
     <script src="../../js/settings.js"></script>
     <script src="../../js/todolist.js"></script>
-    <!-- endinject -->
-    <!-- plugin js for this page -->
     <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
     <script src="../../vendors/chart.js/Chart.min.js"></script>
-    <!-- End plugin js for this page -->
-    <!-- Custom js for this page-->
     <script src="../../js/dashboard.js"></script>
-    <!-- End custom js for this page-->
-  </body>
+    </body>
 </html>

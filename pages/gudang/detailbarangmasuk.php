@@ -1,39 +1,70 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
-require_once '../auth_admin.php';
-
-try {
-
-    $sql = "
-        SELECT
-            b.kode,
-            b.nama,
-            b.stok,
-            b.harga,
-            s.nama AS satuan
-        FROM tbahan b
-        INNER JOIN tsatuan s
-            ON b.tSatuan_id = s.id
-        ORDER BY b.kode ASC
-        ";
-        $stmt = $koneksi->prepare($sql);
-        $stmt->execute();
-        $bahan = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-    die("Error: " . $e->getMessage());
+require_once '../auth_gudang.php';
+$nomor = $_GET['nomor'] ?? '';
+if(empty($nomor)){
+    die('Nomor pembelian tidak ditemukan');
 }
-?>
+/*
+|--------------------------------------------------------------------------
+| HEADER PENERIMAAN BARANG
+|--------------------------------------------------------------------------
+*/
+$stmt = $koneksi->prepare("
+    SELECT
+        p.nomor,
+        p.tanggal,
+        p.total,
+        p.tPurchaseRequest_id,
+        p.status,
+        s.nama AS supplier
 
+    FROM tPembelian p
+
+    JOIN tSupplier s
+        ON p.tSupplier_id = s.id
+
+    WHERE p.nomor = ?
+");
+
+$stmt->execute([$nomor]);
+$data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$data) {
+    die('Data pembelian tidak ditemukan');
+}
+/*
+|--------------------------------------------------------------------------
+| DETAIL BARANG YANG DITERIMA
+|--------------------------------------------------------------------------
+*/
+$stmtDetail = $koneksi->prepare("
+    SELECT
+        d.tBahan_kode,
+        b.nama,
+        d.jumlah,
+        d.satuanBeli,
+        d.harga,
+        d.subtotal
+
+    FROM tDetailPembelian d
+
+    JOIN tBahan b
+        ON d.tBahan_kode = b.kode
+    WHERE d.tPembelian_nomor = ?
+");
+$stmtDetail->execute([$data['nomor']]);
+$detailBarang = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Bahan Baku</title>
+    <title> CHARA - Employees</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -248,7 +279,7 @@ try {
             </a>
           </li>
           <li class = "nav-item">
-            <a class="nav-link" href="biayaoperasional.php">
+            <a class="nav-link" href="../admin/biayaoperasional.php">
               <i class="typcn typcn-document-text menu-icon"></i>
               <span class="menu-title">Biaya Operasional</span>
             </a>
@@ -294,16 +325,16 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
-                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+                <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
+                <a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a>
               </li>
             </ul>
           </div>
@@ -339,13 +370,13 @@ try {
           <!-- SIDEBAR MODUL KASIR -->
             <p class = "sidebar-menu-title"> Sales Modules</p>
             <li class="nav-item">
-              <a class="nav-link" href="../kasir/transaksipenjualan.php">
+              <a class="nav-link" href="pages/kasir/transaksipenjualan.php">
                 <i class="typcn typcn-shopping-cart menu-icon"></i>
                 <span class="menu-title"> Transaksi Penjualan</span>
               </a>
             </li>
           <li class="nav-item">
-            <a class="nav-link" href="../kasir/datapenjualan.php">
+            <a class="nav-link" href="pages/kasir/datapenjualan.php">
               <i class="typcn typcn-chart-bar menu-icon"></i>
               <span class="menu-title"> Data Penjualan</span>
             </a>
@@ -355,30 +386,29 @@ try {
            <!-- SIDEBAR MODUL GUDANG  -->
             <p class = "sidebar-menu-title"> Stock Modules</p>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/bahanbaku.php">
+              <a class="nav-link" href="bahanbaku.php">
                 <i class="typcn typcn-th-large menu-icon"></i>
                 <span class="menu-title"> Bahan Baku</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangmasuk.php">
+              <a class="nav-link" href="barangmasuk.php">
                 <i class="typcn typcn-arrow-down menu-icon"></i>
                 <span class="menu-title"> Barang Masuk </span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/barangkeluar.php">
+              <a class="nav-link" href="barangkeluar.php">
                 <i class="typcn typcn-arrow-up menu-icon"></i>
                 <span class="menu-title"> Barang Keluar</span>
               </a>
             </li>
             <li class = "nav-item">
-              <a class="nav-link" href="../gudang/purchaserequest.php">
+              <a class="nav-link" href="purchaserequest.php">
                 <i class="typcn typcn-arrow-forward-outline menu-icon"></i>
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
-            
             <?php endif ?>
             <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
@@ -396,89 +426,103 @@ try {
                     <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div>
-                                        <h4 class="card-title mb-1">Bahan</h4>
-                                        <p class="text-muted mb-0">
-                                            Kelola bahan yang digunakan sistem.
-                                        </p>
+                              <h4 class="card-title">
+                                    Detail Barang Masuk</h4>
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <table class="table table-borderless">
+                                            <tr>
+                                                <th>No Pembelian</th>
+                                                <td>: <?= $data['nomor'] ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Tanggal Pembelian</th>
+                                                <td>
+                                                    : <?= date(
+                                                        'd-m-Y H:i',
+                                                        strtotime($data['tanggal'])
+                                                    ) ?>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Supplier</th>
+                                                <td>: <?= $data['supplier'] ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Status</th>
+                                                <td>: <?= $data['status'] ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Purchase Request</th>
+                                                <td>: <?= $data['tPurchaseRequest_id'] ?? '-' ?></td>
+                                            </tr>
+                                        </table>
                                     </div>
-                                    <a href="addbahan.php" class="btn btn-primary">
-                                        <i class="typcn typcn-plus"></i>
-                                        Tambah Bahan
-                                    </a>
                                 </div>
                                 <div class="table-responsive">
-                                  <?php if(isset($_GET['success']) && $_GET['success'] == 'delete') : ?>
-                                    <div class="alert alert-success">
-                                        Bahan berhasil dihapus.
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if(isset($_GET['error']) && $_GET['error'] == 'digunakan') : ?>
-                                    <div class="alert alert-warning">
-                                        Bahan tidak dapat dihapus karena masih digunakan oleh produk.
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if(isset($_GET['error']) && $_GET['error'] == 'delete') : ?>
-                                    <div class="alert alert-danger">
-                                        Terjadi kesalahan saat menghapus bahan.
-                                    </div>
-                                    <?php endif; ?>
                                     <table class="table table-bordered table-hover">
-                                      <thead>
-                                          <tr>
-                                              <th>Kode</th>
-                                              <th>Nama Bahan</th>
-                                              <th>Satuan</th>
-                                              <th>Stok</th>
-                                              <th>Harga Satuan Rata-Rata</th>
-                                              <th>Aksi</th>
-                                          </tr>
-                                      </thead>
-                                      <tbody>
-                                          <?php if(count($bahan) > 0): ?>
-                                              <?php foreach($bahan as $row): ?>
-                                              <tr>
-                                                  <td><?= $row['kode'] ?></td>
-                                                  <td><?= $row['nama'] ?></td>
-                                                  <td><?= $row['satuan'] ?></td>
-                                                  <td><?= rtrim(rtrim($row['stok'], '0'), '.') ?></td>
-                                                  <td>
-                                                      Rp <?= number_format($row['harga'], 0, ',', '.') ?> <small class="text-muted">/ <?= $row['satuan'] ?></small>
-                                                      
-                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
-                                                          <br>
-                                                          <small class="text-info">
-                                                              (Rp <?= number_format($row['harga'] / 1000, 2, ',', '.') ?> / <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
-                                                          </small>
-                                                      <?php endif; ?>
-                                                  </td>
-                                                  <td>
-                                                      <a href="editbahan.php?kode=<?= $row['kode'] ?>"
-                                                        class="btn btn-warning btn-sm">
-                                                          Edit
-                                                      </a>
-                                                      <a href="delbahan.php?kode=<?= $row['kode'] ?>"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Apakah anda yakin ingin menghapus bahan ini?')">
-                                                          Hapus
-                                                      </a>
-                                                  </td>
-                                              </tr>
-                                              <?php endforeach; ?>
-                                          <?php else: ?>
-                                              <tr>
-                                                  <td colspan="6" class="text-center text-muted">
-                                                      Belum ada bahan
-                                                  </td>
-                                              </tr>
-                                          <?php endif; ?>
-                                      </tbody>
-                                  </table>
+                                        <thead class="thead-dark">
+                                            <tr>
+                                                <th>Kode</th>
+                                                <th>Nama Bahan</th>
+                                                <th>Jumlah</th>
+                                                <th>Satuan</th>
+                                                <th>Harga</th>
+                                                <th>Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach($detailBarang as $d): ?>
+                                            <tr>
+                                                <td><?= $d['tBahan_kode'] ?></td>
+                                                <td><?= $d['nama'] ?></td>
+                                                <td><?= $d['jumlah'] ?></td>
+                                                <td><?= $d['satuanBeli'] ?></td>
+                                                <td>
+                                                    Rp <?= number_format(
+                                                        $d['harga'],
+                                                        0,
+                                                        ',',
+                                                        '.'
+                                                    ) ?>
+                                                </td>
+                                                <td>
+                                                    Rp <?= number_format(
+                                                        $d['subtotal'],
+                                                        0,
+                                                        ',',
+                                                        '.'
+                                                    ) ?>
+                                                </td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
                                 </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-4 offset-md-8">
+                                        <table class="table table-bordered">
+                                            <tr>
+                                                <th width="70%">
+                                                    Total Pembelian
+                                                </th>
+                                                <td>
+                                                    Rp <?= number_format(
+                                                        $data['total'],
+                                                        0,
+                                                        ',',
+                                                        '.'
+                                                    ) ?>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                                    <a href="barangmasuk.php"
+                                    class="btn btn-secondary">
+                                        Kembali
+                                    </a>
                             </div>
-                        </div>
-                    </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
@@ -512,5 +556,7 @@ try {
     <!-- Custom js for this page-->
     <script src="../../js/dashboard.js"></script>
     <!-- End custom js for this page-->
+    <script>
+    </script>
   </body>
 </html>

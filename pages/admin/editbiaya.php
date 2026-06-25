@@ -1,29 +1,70 @@
-<?php 
-session_start(); 
+<?php
+session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
-try {
+if(!isset($_GET['id'])){
+    header("Location: biayaoperasional.php");
+    exit;
+}
 
-    $sql = "
-        SELECT
-            b.kode,
-            b.nama,
-            b.stok,
-            b.harga,
-            s.nama AS satuan
-        FROM tbahan b
-        INNER JOIN tsatuan s
-            ON b.tSatuan_id = s.id
-        ORDER BY b.kode ASC
-        ";
+$id = $_GET['id'];
+
+// Ambil kategori
+$stmtKategori = $koneksi->prepare("SELECT * FROM tKategoriBiaya ORDER BY jenis ASC");
+$stmtKategori->execute();
+$kategori = $stmtKategori->fetchAll(PDO::FETCH_ASSOC);
+
+// Ambil data biaya
+$sql = "SELECT * FROM tBiayaOperasional WHERE id = :id";
+$stmt = $koneksi->prepare($sql);
+$stmt->bindParam(':id',$id);
+$stmt->execute();
+
+$data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if(!$data){
+    header("Location: biayaoperasional.php");
+    exit;
+}
+
+// Update data
+if(isset($_POST['update'])){
+
+    $tanggal    = $_POST['tanggal'];
+    $kategoriId = $_POST['kategori'];
+    $keterangan = $_POST['keterangan'];
+    $nominal    = $_POST['nominal'];
+    $user       = $_SESSION['id_user'];
+
+    try{
+
+        $sql = "UPDATE tBiayaOperasional SET
+                    tanggal = :tanggal,
+                    keterangan = :keterangan,
+                    nominal = :nominal,
+                    tKategoriBiaya_id = :kategori,
+                    tUser_id = :user
+                WHERE id = :id";
+
         $stmt = $koneksi->prepare($sql);
-        $stmt->execute();
-        $bahan = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-} catch (PDOException $e) {
-    die("Error: " . $e->getMessage());
+        $stmt->bindParam(':tanggal',$tanggal);
+        $stmt->bindParam(':keterangan',$keterangan);
+        $stmt->bindParam(':nominal',$nominal);
+        $stmt->bindParam(':kategori',$kategoriId);
+        $stmt->bindParam(':user',$user);
+        $stmt->bindParam(':id',$id);
+
+        $stmt->execute();
+
+        header("Location: biayaoperasional.php?success=edit");
+        exit;
+
+    }catch(PDOException $e){
+        $error = $e->getMessage();
+    }
 }
 ?>
 
@@ -33,7 +74,7 @@ try {
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Bahan Baku</title>
+    <title> CHARA - Employees</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -68,7 +109,7 @@ try {
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
                 <a class="dropdown-item preview-item">
                   <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
+                    <img src="../../images/faces/face4.jpg" alt="image" class="profile-pic">
                   </div>
                   <div class="preview-item-content flex-grow">
                     <h6 class="preview-subject ellipsis font-weight-normal">David Grey
@@ -378,7 +419,6 @@ try {
                 <span class="menu-title"> Purchase Request</span>
               </a>
             </li>
-            
             <?php endif ?>
             <!-- SIDEBAR MENU SETTINGS -->
             <p class = "sidebar-menu-title"> Settings</p>
@@ -396,89 +436,97 @@ try {
                     <div class="col-lg-12 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div>
-                                        <h4 class="card-title mb-1">Bahan</h4>
-                                        <p class="text-muted mb-0">
-                                            Kelola bahan yang digunakan sistem.
-                                        </p>
-                                    </div>
-                                    <a href="addbahan.php" class="btn btn-primary">
-                                        <i class="typcn typcn-plus"></i>
-                                        Tambah Bahan
-                                    </a>
-                                </div>
-                                <div class="table-responsive">
-                                  <?php if(isset($_GET['success']) && $_GET['success'] == 'delete') : ?>
-                                    <div class="alert alert-success">
-                                        Bahan berhasil dihapus.
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if(isset($_GET['error']) && $_GET['error'] == 'digunakan') : ?>
-                                    <div class="alert alert-warning">
-                                        Bahan tidak dapat dihapus karena masih digunakan oleh produk.
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if(isset($_GET['error']) && $_GET['error'] == 'delete') : ?>
+
+                                <h4 class="card-title">Edit Biaya Operasional</h4>
+                                <p class="card-description">
+                                    Ubah data biaya operasional.
+                                </p>
+
+                                <?php if(isset($error)): ?>
                                     <div class="alert alert-danger">
-                                        Terjadi kesalahan saat menghapus bahan.
+                                        <?= $error ?>
                                     </div>
-                                    <?php endif; ?>
-                                    <table class="table table-bordered table-hover">
-                                      <thead>
-                                          <tr>
-                                              <th>Kode</th>
-                                              <th>Nama Bahan</th>
-                                              <th>Satuan</th>
-                                              <th>Stok</th>
-                                              <th>Harga Satuan Rata-Rata</th>
-                                              <th>Aksi</th>
-                                          </tr>
-                                      </thead>
-                                      <tbody>
-                                          <?php if(count($bahan) > 0): ?>
-                                              <?php foreach($bahan as $row): ?>
-                                              <tr>
-                                                  <td><?= $row['kode'] ?></td>
-                                                  <td><?= $row['nama'] ?></td>
-                                                  <td><?= $row['satuan'] ?></td>
-                                                  <td><?= rtrim(rtrim($row['stok'], '0'), '.') ?></td>
-                                                  <td>
-                                                      Rp <?= number_format($row['harga'], 0, ',', '.') ?> <small class="text-muted">/ <?= $row['satuan'] ?></small>
-                                                      
-                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
-                                                          <br>
-                                                          <small class="text-info">
-                                                              (Rp <?= number_format($row['harga'] / 1000, 2, ',', '.') ?> / <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
-                                                          </small>
-                                                      <?php endif; ?>
-                                                  </td>
-                                                  <td>
-                                                      <a href="editbahan.php?kode=<?= $row['kode'] ?>"
-                                                        class="btn btn-warning btn-sm">
-                                                          Edit
-                                                      </a>
-                                                      <a href="delbahan.php?kode=<?= $row['kode'] ?>"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('Apakah anda yakin ingin menghapus bahan ini?')">
-                                                          Hapus
-                                                      </a>
-                                                  </td>
-                                              </tr>
-                                              <?php endforeach; ?>
-                                          <?php else: ?>
-                                              <tr>
-                                                  <td colspan="6" class="text-center text-muted">
-                                                      Belum ada bahan
-                                                  </td>
-                                              </tr>
-                                          <?php endif; ?>
-                                      </tbody>
-                                  </table>
-                                </div>
+                                <?php endif; ?>
+
+                                <form method="POST">
+
+                                    <div class="form-group">
+                                        <label>Tanggal</label>
+
+                                        <input
+                                            type="datetime-local"
+                                            name="tanggal"
+                                            class="form-control"
+                                            value="<?= date('Y-m-d\TH:i', strtotime($data['tanggal'])) ?>"
+                                            required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Kategori Biaya</label>
+
+                                        <select name="kategori" class="form-control" required>
+
+                                            <?php foreach($kategori as $row): ?>
+
+                                                <option
+                                                    value="<?= $row['id'] ?>"
+                                                    <?= ($row['id']==$data['tKategoriBiaya_id']) ? 'selected' : '' ?>>
+
+                                                    <?= $row['jenis'] ?>
+
+                                                </option>
+
+                                            <?php endforeach; ?>
+
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Keterangan</label>
+
+                                        <textarea
+                                            name="keterangan"
+                                            rows="4"
+                                            class="form-control"
+                                            required><?= $data['keterangan'] ?></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Nominal</label>
+
+                                        <input
+                                            type="number"
+                                            name="nominal"
+                                            class="form-control"
+                                            value="<?= $data['nominal'] ?>"
+                                            required>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        name="update"
+                                        class="btn btn-primary">
+
+                                        Update
+                                    </button>
+
+                                    <a href="biayaoperasional.php"
+                                        class="btn btn-light">
+
+                                        Batal
+                                    </a>
+
+                                </form>
+
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+                                
+
+                    
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">
@@ -510,7 +558,6 @@ try {
     <script src="../../vendors/chart.js/Chart.min.js"></script>
     <!-- End plugin js for this page -->
     <!-- Custom js for this page-->
-    <script src="../../js/dashboard.js"></script>
     <!-- End custom js for this page-->
   </body>
 </html>

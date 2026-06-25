@@ -5,18 +5,19 @@ require_once '../../auth.php';
 require_once '../auth_gudang.php';
 
 try {
-
     $sql = "
-        SELECT
-            pr.id,
-            pr.tanggal,
-            pr.status,   
-            u.username
-        FROM tPurchaseRequest pr
-        INNER JOIN tUser u
-            ON pr.tUser_id = u.id
-        ORDER BY pr.tanggal DESC
-    ";
+    SELECT
+        pr.id,
+        pr.tanggal,
+        pr.status,
+        pr.tanggalApprove,
+        pr.tanggalReject,
+        u.username
+    FROM tPurchaseRequest pr
+    INNER JOIN tUser u
+        ON pr.reqBy = u.id
+    ORDER BY pr.tanggal DESC
+";
 
     $stmt = $koneksi->prepare($sql);
     $stmt->execute();
@@ -173,6 +174,7 @@ try {
             <span class="typcn typcn-th-menu"></span>
           </button>
         </div>
+        </ul> 
       </nav>
       <!-- partial -->
       <div class="container-fluid page-body-wrapper">
@@ -248,6 +250,12 @@ try {
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="../admin/biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="../admin/logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -280,7 +288,7 @@ try {
           </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="stok">
+            <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="Pembelian">
               <i class="typcn typcn-shopping-cart menu-icon"></i>
               <span class="menu-title">Pembelian</span>
               <i class="menu-arrow"></i>
@@ -288,7 +296,7 @@ try {
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="../admin/purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Requests</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a>
@@ -421,10 +429,11 @@ try {
                                 <table class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID Purchase Request</th>
-                                            <th>Tanggal</th>
-                                            <th>Pengajuan Oleh</th>
+                                            <th>ID PR</th>
+                                            <th>Tanggal Pengajuan</th>
+                                            <th>Pengaju</th>
                                             <th>Status</th>
+                                            <th>Tanggal Proses</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
@@ -432,31 +441,58 @@ try {
                                     <?php if(count($pr) > 0): ?>
                                         <?php foreach($pr as $row): ?>
                                         <tr>
-                                            <td><?= $row['id'] ?></td>
-                                            <td>
-                                                <?= date('d/m/Y H:i', strtotime($row['tanggal'])) ?>
-                                            </td>
-                                            <td><?= $row['username'] ?></td>
-                                            <td>
-                                                <?php
-                                                if($row['status'] == 'Pending'){
-                                                    echo '<span class="badge badge-warning">Pending</span>';
-                                                }
-                                                elseif($row['status'] == 'Approved'){
-                                                    echo '<span class="badge badge-success">Approved</span>';
-                                                }
-                                                else{
-                                                    echo '<span class="badge badge-danger">Rejected</span>';
-                                                }
-                                                ?>
-                                            </td>
-                                            <td>
-                                                <a href="detailpurchaserequest.php?id=<?= $row['id'] ?>"
-                                                    class="btn btn-info btn-sm">
-                                                    Detail
-                                                </a>
-                                            </td>
-                                        </tr>
+                                          <td><?= $row['id'] ?></td>
+                                          <td>
+                                              <?= date('d/m/Y H:i', strtotime($row['tanggal'])) ?>
+                                          </td>
+                                          <td><?= $row['username'] ?></td>
+                                          <td>
+                                              <?php
+                                              if($row['status'] == 'Pending'){
+                                                  echo '<span class="badge badge-warning">Pending</span>';
+                                              }
+                                              elseif($row['status'] == 'Approved'){
+                                                  echo '<span class="badge badge-success">Approved</span>';
+                                              }
+                                              else{
+                                                  echo '<span class="badge badge-danger">Rejected</span>';
+                                              }
+                                              ?>
+                                          </td>
+
+                                          <td>
+                                              <?php
+                                              if(
+                                                  $row['status'] == 'Approved'
+                                                  && !empty($row['tanggalApprove'])
+                                              ){
+                                                  echo date(
+                                                      'd/m/Y H:i',
+                                                      strtotime($row['tanggalApprove'])
+                                                  );
+                                              }
+                                              elseif(
+                                                  $row['status'] == 'Rejected'
+                                                  && !empty($row['tanggalReject'])
+                                              ){
+                                                  echo date(
+                                                      'd/m/Y H:i',
+                                                      strtotime($row['tanggalReject'])
+                                                  );
+                                              }
+                                              else{
+                                                  echo '-';
+                                              }
+                                              ?>
+                                          </td>
+
+                                          <td>
+                                              <a href="detailpurchaserequest.php?id=<?= $row['id'] ?>"
+                                                  class="btn btn-info btn-sm">
+                                                  Detail
+                                              </a>
+                                          </td>
+                                      </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>

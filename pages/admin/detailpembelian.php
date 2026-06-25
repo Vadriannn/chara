@@ -1,92 +1,58 @@
 <?php
 session_start();
-require_once '../../koneksi.php';
-require_once '../../auth.php';
-require_once '../auth_admin.php';
+require_once '../../koneksi.php'; // Sesuaikan dengan letak file koneksi database Anda
+require_once '../../auth.php';    // Pastikan user sudah login
 
 $error = "";
+$pembelian = null;
+$items = [];
+
 try {
-    if(isset($_GET['approve'])){
-        $stmt = $koneksi->prepare("
-            UPDATE tPurchaseRequest
-            SET status = 'Approved'
-            WHERE id = ?
-        ");
-        $stmt->execute([
-            $_GET['approve']
-        ]);
-        header("Location: purchaserequest.php");
+    // 1. Validasi parameter 'nomor' nota yang dikirimkan lewat URL (?nomor=xxx)
+    if (!isset($_GET['nomor']) || empty($_GET['nomor'])) {
+        header("Location: pembelian.php");
         exit;
     }
-    if(isset($_GET['reject'])){
-        $stmt = $koneksi->prepare("
-            UPDATE tPurchaseRequest
-            SET status = 'Rejected'
-            WHERE id = ?
-        ");
-        $stmt->execute([
-            $_GET['reject']
-        ]);
-        header("Location: purchaserequest.php");
-        exit;
-    }
-    $purchaseRequest = $koneksi->query("
-        SELECT
-            pr.id,
-            pr.status,
-            pr.tanggal,
-            pb.nomor AS nomor_pembelian,
-            u.username,
+    $nomorNota = intval($_GET['nomor']);
 
-            GROUP_CONCAT(
-                CONCAT(
-                    b.nama,
-                    ' (',
-                    d.jumlah,
-                    ' ',
-                    d.satuanBeli,
-                    ')'
-                )
-                SEPARATOR '<br>'
-            ) AS detail_bahan
-
-        FROM tPurchaseRequest pr
-
-        JOIN tUser u
-            ON pr.tUser_id = u.id
-
-        LEFT JOIN tPembelian pb
-          ON pb.tPurchaseRequest_id = pr.id
-
-        LEFT JOIN tDetailPurchaseRequest d
-            ON pr.id = d.tPurchaseRequest_id
-
-        LEFT JOIN tBahan b
-            ON d.tBahan_kode = b.kode
-
-        GROUP BY
-            pr.id,
-            pr.status,
-            pr.tanggal,
-            u.username
-
-        ORDER BY pr.tanggal DESC
+    // 2. Query untuk mengambil data Master / Header Pembelian
+    $stmtMaster = $koneksi->prepare("
+        SELECT p.*, s.nama AS nama_supplier
+        FROM tPembelian p
+        JOIN tSupplier s ON p.tSupplier_id = s.id
+        WHERE p.nomor = ?
     ");
+    $stmtMaster->execute([$nomorNota]);
+    $pembelian = $stmtMaster->fetch(PDO::FETCH_ASSOC);
 
-}
-catch(PDOException $e){
+    // Jika nomor nota gadungan atau tidak ditemukan di database, tendang balik ke list utama
+    if (!$pembelian) {
+        header("Location: pembelian.php");
+        exit;
+    }
+    // 3. Query SQL JOIN untuk menarik barang apa saja yang dibeli pada nomor nota tersebut
+    // Sesuai relasi ERD: tDetailPembelian berelasi ke tBahan melalui kode bahan baku
+    $stmtDetail = $koneksi->prepare("
+        SELECT d.jumlah, d.satuanBeli, d.harga, d.subtotal, b.nama AS nama_bahan
+        FROM tDetailPembelian d
+        JOIN tBahan b ON d.tBahan_kode = b.kode
+        WHERE d.tPembelian_nomor = ?
+    ");
+    $stmtDetail->execute([$nomorNota]);
+    $items = $stmtDetail->fetchAll(PDO::FETCH_ASSOC);
 
-    $error = $e->getMessage();
-
+} catch (PDOException $e) {
+    $error = "Terjadi kesalahan database: " . $e->getMessage();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Tambah Bahan</title>
+    <title> CHARA - Employees</title>
     <!-- base:css -->
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
@@ -121,7 +87,7 @@ catch(PDOException $e){
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Messages</p>
                 <a class="dropdown-item preview-item">
                   <div class="preview-thumbnail">
-                    <img src="../images/faces/face4.jpg" alt="image" class="profile-pic">
+                    <img src="../../images/faces/face4.jpg" alt="image" class="profile-pic">
                   </div>
                   <div class="preview-item-content flex-grow">
                     <h6 class="preview-subject ellipsis font-weight-normal">David Grey
@@ -301,6 +267,12 @@ catch(PDOException $e){
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -341,7 +313,7 @@ catch(PDOException $e){
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
               <li class ="nav-item">
-                <a class="nav-link" href="purchaserequest.php">Purchase Request</a>
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
               </li>
               <li class ="nav-item">
                 <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
@@ -436,139 +408,114 @@ catch(PDOException $e){
           </li>
       </nav>
         <!-- partial -->
-        <div class="main-panel">
+      <div class="main-panel">
     <div class="content-wrapper">
-    <div class="row">
-        <div class="col-lg-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="card-title mb-0">
-                            Purchase Request
-                        </h4>
-                    </div>
-                    <?php if($error != ""): ?>
-                        <div class="alert alert-danger">
-                            <?= $error ?>
+        <div class="row">
+            <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 class="card-title mb-1">Detail Pengajuan Pembelian</h4>
+                                <p class="text-muted mb-0">
+                                    Melihat rincian bahan baku Nota #<?= htmlspecialchars($pembelian['nomor']) ?>
+                                </p>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID PR</th>
-                                    <th>Tanggal</th>
-                                    <th>Pengaju</th>
-                                    <th>Detail Permintaan</th>
-                                    <th> Detail </th>
-                                    <th>Status</th>
-                                    <th width="180">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php
-                                while(
-                                    $row =
-                                    $purchaseRequest->fetch(PDO::FETCH_ASSOC)
-                                ):
-                                ?>
-                                <tr>
-                                    <td>
-                                        <?= $row['id']; ?>
-                                    </td>
-                                    <td>
-                                        <?= date(
-                                            'd/m/Y H:i',
-                                            strtotime(
-                                                $row['tanggal']
-                                            )
-                                        ); ?>
-                                    </td>
-                                    <td>
-                                        <?= $row['username']; ?>
-                                    </td>
-                                    <td>
-                                        <?= $row['detail_bahan']; ?>
-                                    </td>
-                                    <td>
-                                      <a href="detailpurchaserequest.php?id=<?= $row['id'] ?>"
-                                                    class="btn btn-info btn-sm">
-                                                    Detail
-                                      </a>
-                                    </td>
-                                    <td>
-                                        <?php
-                                        if(
-                                            $row['status']
-                                            == 'Pending'
-                                        ):
-                                        ?>
-                                            <span class="badge badge-warning">
-                                                Pending
-                                            </span>
-                                        <?php
-                                        elseif(
-                                            $row['status']
-                                            == 'Approved'
-                                        ):
-                                        ?>
+                        <?php if($error != "") : ?>
+                            <div class="alert alert-danger">
+                                <?= $error ?>
+                            </div>
+                        <?php endif; ?>
 
-                                            <span class="badge badge-success">
-                                                Approved
-                                            </span>
+                        <div class="row mb-4 bg-light p-3 rounded mx-1">
+                            <div class="col-md-3">
+                                <label class="text-muted mb-1 d-block">Tanggal Pengajuan</label>
+                                <span class="font-weight-bold text-dark">
+                                    <?= date('d-m-Y H:i', strtotime($pembelian['tanggal'])) ?>
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted mb-1 d-block">Supplier</label>
+                                <span class="font-weight-bold text-dark">
+                                    <?= htmlspecialchars($pembelian['nama_supplier']) ?>
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted mb-1 d-block">Total Pembelian</label>
+                                <span class="font-weight-bold text-danger" style="font-size: 1.15rem;">
+                                    Rp <?= number_format($pembelian['total'], 0, ',', '.') ?>
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted mb-1 d-block">Status Validasi</label>
+                                <?php if($pembelian['status'] == 'Menunggu'): ?>
+                                    <span class="badge badge-warning text-dark font-weight-bold p-2">Menunggu ACC</span>
+                                <?php else: ?>
+                                    <span class="badge badge-success font-weight-bold p-2">Selesai</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <h4 class="mb-3 font-weight-bold text-dark">Daftar Bahan Baku Dipesan</h4>
+                        <div class="table-responsive pt-e">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th>Nama Bahan Baku</th>
+                                        <th width="15%" class="text-center">Jumlah Beli</th>
+                                        <th width="15%" class="text-center">Satuan Beli</th>
+                                        <th width="20%" class="text-right">Harga / Satuan</th>
+                                        <th width="20%" class="text-right">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if(count($items) > 0): ?>
+                                        <?php $no = 1; ?>
+                                        <?php foreach($items as $row): ?>
+                                            <tr>
+                                                <td><?= $no++ ?></td>
+                                                <td class="font-weight-bold text-dark">
+                                                    <?= htmlspecialchars($row['nama_bahan']) ?>
+                                                </td>
+                                                <td class="text-center"><?= $row['jumlah'] ?></td>
+                                                <td class="text-center">
+                                                    <span class="badge badge-outline-secondary font-weight-bold">
+                                                        <?= htmlspecialchars($row['satuanBeli']) ?>
+                                                    </span>
+                                                </td>
+                                                <td class="text-right">
+                                                    Rp <?= number_format($row['harga'], 0, ',', '.') ?>
+                                                </td>
+                                                <td class="text-right font-weight-bold text-primary">
+                                                    Rp <?= number_format($row['subtotal'], 0, ',', '.') ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-3">
+                                                Tidak ada rincian item barang pada nota ini.
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4 d-flex justify-content-end">
+                            <a href="pembelian.php" class="btn btn-secondary">
+                                Kembali
+                            </a>
+                        </div>
 
-                                        <?php else: ?>
-
-                                            <span class="badge badge-danger">
-                                                Rejected
-                                            </span>
-
-                                        <?php endif; ?>
-
-                                    </td>
-
-                                    <td>
-
-                                        <?php if($row['status'] == 'Pending'): ?>
-                                            <a
-                                                href="?approve=<?= $row['id']; ?>"
-                                                class="btn btn-success btn-sm"
-                                                onclick="return confirm('Approve purchase request ini?')">
-                                                Approve
-                                            </a>
-                                            <a
-                                                href="?reject=<?= $row['id']; ?>"
-                                                class="btn btn-danger btn-sm"
-                                                onclick="return confirm('Reject purchase request ini?')">
-                                                Reject
-                                            </a>
-                                        <?php elseif($row['status'] == 'Approved' && empty($row['tPembelian_nomor'])): ?>
-                                            <a
-                                                href="buatpembelian.php?pr=<?= $row['id']; ?>"
-                                                class="btn btn-primary btn-sm">
-                                                Buat Pembelian
-                                            </a>
-                                        <?php elseif($row['status'] == 'Approved'): ?>
-                                            <span class="badge badge-success">
-                                                Sudah Dibuat Pembelian
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge badge-danger">
-                                                Ditolak
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <?php endwhile; ?>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-</div>
+                                
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
           <footer class="footer">

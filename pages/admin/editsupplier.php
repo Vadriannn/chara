@@ -288,6 +288,12 @@ try {
             </a>
           </li>
           <li class = "nav-item">
+            <a class="nav-link" href="biayaoperasional.php">
+              <i class="typcn typcn-document-text menu-icon"></i>
+              <span class="menu-title">Biaya Operasional</span>
+            </a>
+          </li>
+          <li class = "nav-item">
             <a class="nav-link" href="logaktivitas.php">
               <i class="typcn typcn-group menu-icon"></i>
               <span class="menu-title">Log Aktivitas</span>
@@ -327,8 +333,14 @@ try {
             </a>
           <div class="collapse" id="pembelian">
             <ul class="nav flex-column sub-menu">
+              <li class ="nav-item">
+                <a class="nav-link" href="purchaserequestadmin.php">Purchase Request</a>
+              </li>
+              <li class ="nav-item">
+                <a class="nav-link" href="hispembelian.php">Histori Pembelian</a>
+              </li>
               <li class="nav-item">
-                <a class="nav-link" href="pengajuanpembelian.php">Pengajuan Pembelian</a>
+                <a class="nav-link" href="pembelian.php">Pengajuan Pembelian</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="daftarsupplier.php">Daftar Supplier</a>
