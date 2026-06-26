@@ -3,8 +3,15 @@ session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 
-// Ambil data penjualan dari database, diurutkan dari yang terbaru
-$stmt = $koneksi->prepare("
+// 1. Ambil tanggal hari ini sebagai default
+$hariIni = date('Y-m-d');
+
+// 2. Tangkap variabel dari form filter, jika kosong otomatis pakai hari ini
+$tglMulai = !empty($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : $hariIni;
+$tglSelesai = !empty($_GET['tgl_selesai']) ? $_GET['tgl_selesai'] : $hariIni;
+
+// 3. Buat query dasar
+$query = "
     SELECT 
         p.nomor,
         p.tanggal,
@@ -13,9 +20,33 @@ $stmt = $koneksi->prepare("
         u.username AS kasir
     FROM tPenjualan p
     LEFT JOIN tUser u ON p.tUser_id = u.id
-    ORDER BY p.tanggal DESC
-");
-$stmt->execute();
+";
+
+$where = [];
+$params = [];
+
+// 4. Tambahkan kondisi filter tanggal
+if ($tglMulai != '') {
+    $where[] = "DATE(p.tanggal) >= ?";
+    $params[] = $tglMulai;
+}
+
+if ($tglSelesai != '') {
+    $where[] = "DATE(p.tanggal) <= ?";
+    $params[] = $tglSelesai;
+}
+
+// 5. Gabungkan kondisi WHERE jika ada
+if (count($where) > 0) {
+    $query .= " WHERE " . implode(" AND ", $where);
+}
+
+// Tambahkan urutan (terbaru di atas)
+$query .= " ORDER BY p.tanggal DESC";
+
+// 6. Eksekusi query
+$stmt = $koneksi->prepare($query);
+$stmt->execute($params);
 $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -184,6 +215,27 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <i class="typcn typcn-plus"></i> Transaksi Baru
                         </a>
                     </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <form method="GET" class="form-inline bg-light p-3 rounded">
+                                <div class="form-group mr-3">
+                                    <label class="mr-2 font-weight-bold">Mulai Tanggal:</label>
+                                    <input type="date" name="tgl_mulai" class="form-control" value="<?= htmlspecialchars($tglMulai) ?>">
+                                </div>
+                                <div class="form-group mr-3">
+                                    <label class="mr-2 font-weight-bold">Sampai Tanggal:</label>
+                                    <input type="date" name="tgl_selesai" class="form-control" value="<?= htmlspecialchars($tglSelesai) ?>">
+                                </div>
+                                <button type="submit" class="btn btn-info btn-sm mr-2">
+                                    <i class="typcn typcn-zoom"></i> Filter
+                                </button>
+                                <a href="datapenjualan.php" class="btn btn-light btn-sm">
+                                    <i class="typcn typcn-refresh"></i> Reset
+                                </a>
+                            </form>
+                        </div>
+                    </div>
                     
                     <div class="table-responsive">
                       <table class="table table-striped table-hover">
@@ -214,7 +266,11 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
                               </tr>
                               <?php endforeach; ?>
                           <?php else: ?>
-                              <tr><td colspan="6" class="text-center text-muted py-4">Belum ada data transaksi penjualan</td></tr>
+                              <tr>
+                                  <td colspan="6" class="text-center text-muted py-4">
+                                      Belum ada data transaksi penjualan pada rentang tanggal tersebut.
+                                  </td>
+                              </tr>
                           <?php endif; ?>
                         </tbody>
                       </table>
