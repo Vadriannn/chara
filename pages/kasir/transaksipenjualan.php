@@ -6,7 +6,7 @@ require_once '../../auth.php';
 $error = "";
 
 try {
-    // Ambil produk aktif untuk dropdown
+    // 1. Ambil produk aktif untuk dropdown
     $produk = $koneksi->query("
         SELECT *
         FROM tProduct
@@ -14,12 +14,29 @@ try {
         ORDER BY nama
     ");
 
+    // 2. AMBIL DATA STOK BAHAN UTK LIVE VALIDASI JAVASCRIPT
+    $stmtBahan = $koneksi->query("SELECT kode, stok FROM tBahan");
+    $stokBahan = [];
+    while($b = $stmtBahan->fetch(PDO::FETCH_ASSOC)) {
+        $stokBahan[$b['kode']] = (float)$b['stok'];
+    }
+
+    // 3. AMBIL DATA RESEP UTK LIVE VALIDASI JAVASCRIPT
+    $stmtResepAll = $koneksi->query("SELECT tProduct_kode, tBahan_kode, jumlah FROM tResep");
+    $resepData = [];
+    while($r = $stmtResepAll->fetch(PDO::FETCH_ASSOC)) {
+        $resepData[$r['tProduct_kode']][] = [
+            'bahan'  => $r['tBahan_kode'],
+            'jumlah' => (float)$r['jumlah']
+        ];
+    }
+
+    // PROSES SIMPAN TRANSAKSI
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $produkArray = $_POST['produk_kode'];
         $qtyArray = $_POST['qty_beli'];
         $metbayar = $_POST['metbayar'];
         
-        // Tangkap input diskon dalam persentase (default 0 jika kosong)
         $diskonPersen = isset($_POST['diskon']) ? (float)$_POST['diskon'] : 0;
 
         if(empty($produkArray)) {
@@ -28,7 +45,7 @@ try {
 
         $koneksi->beginTransaction();
 
-        // 1. Generate nomor penjualan
+        // Generate nomor penjualan
         $stmtNomor = $koneksi->query("
             SELECT nomor
             FROM tPenjualan
@@ -38,7 +55,7 @@ try {
         $last = $stmtNomor->fetch(PDO::FETCH_ASSOC);
         $nomorPenjualan = $last ? $last['nomor'] + 1 : 1;
 
-        // 2. Hitung Subtotal Keranjang
+        // Hitung Subtotal Keranjang
         $subtotalKeranjang = 0;
         foreach($produkArray as $index => $kodeProduk) {
             $qty = (int)$qtyArray[$index];
@@ -48,17 +65,12 @@ try {
             $subtotalKeranjang += ($hargaJual * $qty);
         }
 
-        // Pastikan persentase diskon tidak lebih dari 100% atau kurang dari 0%
         if($diskonPersen > 100) $diskonPersen = 100;
         if($diskonPersen < 0) $diskonPersen = 0;
         
-        // Hitung nominal diskon dari persentase
         $diskonNominal = $subtotalKeranjang * ($diskonPersen / 100);
-        
-        // Total akhir setelah dipotong nominal diskon
         $grandTotal = $subtotalKeranjang - $diskonNominal;
 
-        // 3. Simpan header penjualan (Diskon yang disimpan ke database adalah nominal Rupiah-nya)
         $stmtPenjualan = $koneksi->prepare("
             INSERT INTO tPenjualan (nomor, tanggal, total, diskon, metbayar, tUser_id)
             VALUES (?, NOW(), ?, ?, ?, ?)
@@ -71,7 +83,6 @@ try {
             $_SESSION['id_user']
         ]);
 
-        // 4. Looping untuk Detail Penjualan dan Potong Stok
         $stmtDetail = $koneksi->prepare("
             INSERT INTO tDetailPenjualan (tProduct_kode, tPenjualan_nomor, hpp, harga_jual, jumlah, subtotal)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -101,18 +112,15 @@ try {
         foreach($produkArray as $index => $kodeProduk) {
             $qty = (int)$qtyArray[$index];
 
-            // Ambil data produk
             $stmtProdukInfo = $koneksi->prepare("SELECT hargaJual FROM tProduct WHERE kode = ?");
             $stmtProdukInfo->execute([$kodeProduk]);
             $hargaJual = $stmtProdukInfo->fetchColumn();
             $subtotal = $hargaJual * $qty;
 
-            // Hitung HPP
             $stmtHpp->execute([$kodeProduk]);
             $hpp = $stmtHpp->fetch(PDO::FETCH_ASSOC)['hpp'];
             if(!$hpp) $hpp = 0;
 
-            // Simpan Detail
             $stmtDetail->execute([
                 $kodeProduk,
                 $nomorPenjualan,
@@ -122,7 +130,6 @@ try {
                 $subtotal
             ]);
 
-            // Potong Stok Bahan
             $stmtResep->execute([$kodeProduk]);
             while($resep = $stmtResep->fetch(PDO::FETCH_ASSOC)) {
                 $qtyKeluar = $resep['jumlah'] * $qty;
@@ -133,7 +140,6 @@ try {
                     throw new Exception("Stok bahan ".$resep['tBahan_kode']." tidak mencukupi untuk produk ".$kodeProduk);
                 }
 
-                // Update & Mutasi
                 $updateStok->execute([$stokSesudah, $resep['tBahan_kode']]);
                 
                 $stmtMutasi->execute([
@@ -148,7 +154,8 @@ try {
         }
 
         $koneksi->commit();
-        header("Location: datapenjualan.php?success=1");
+        // Otomatis mengarahkan ke halaman cetak nota detail setelah transaksi sukses disimpan
+        header("Location: detailpenjualan.php?nomor=" . $nomorPenjualan . "&success=1");
         exit;
     }
 
@@ -170,6 +177,18 @@ try {
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
     <link rel="shortcut icon" href="../../images/charaicon.png" />
+    <style>
+        .qty-input-group .btn {
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        .qty-input-group input {
+            font-weight: bold;
+            font-size: 1.1rem;
+            background-color: #fff !important;
+        }
+    </style>
   </head>
   <body>
     <div class="container-scroller">
@@ -235,9 +254,10 @@ try {
             <?php if ($_SESSION['role'] == 'Admin'): ?>
             <p class="sidebar-menu-title"> Admin Modules</p>
             <li class="nav-item"><a class="nav-link" href="../admin/dashboard.php"><i class="typcn typcn-device-desktop menu-icon"></i><span class="menu-title">Dashboard</span></a></li>
-            <li class = "nav-item"><a class="nav-link" href="../admin/employee.php"><i class="typcn typcn-user menu-icon"></i><span class="menu-title">Employee</span></a></li>
-            <li class = "nav-item"><a class="nav-link" href="../admin/biayaoperasional.php"><i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Biaya Operasional</span></a></li>
-            <li class = "nav-item"><a class="nav-link" href="../admin/logaktivitas.php"><i class="typcn typcn-group menu-icon"></i><span class="menu-title">Log Aktivitas</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../admin/employee.php"><i class="typcn typcn-user menu-icon"></i><span class="menu-title">Employee</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../admin/biayaoperasional.php"><i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Biaya Operasional</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../admin/logaktivitas.php"><i class="typcn typcn-group menu-icon"></i><span class="menu-title">Log Aktivitas</span></a></li>
+            
             <li class="nav-item">
               <a class="nav-link" data-toggle="collapse" href="#stok" aria-expanded="false" aria-controls="stok">
                 <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Stok</span><i class="menu-arrow"></i>
@@ -251,19 +271,21 @@ try {
                 </ul>
               </div>
             </li>
+            
             <li class="nav-item">
               <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="pembelian">
                 <i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title">Pembelian</span><i class="menu-arrow"></i>
               </a>
               <div class="collapse" id="pembelian">
                 <ul class="nav flex-column sub-menu">
-                  <li class ="nav-item"><a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a></li>
-                  <li class ="nav-item"><a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a></li>
                   <li class="nav-item"><a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a></li>
                   <li class="nav-item"><a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a></li>
                 </ul>
               </div>
             </li>
+            
             <li class="nav-item">
               <a class="nav-link" data-toggle="collapse" href="#laporan" aria-expanded="false" aria-controls="laporan">
                 <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Laporan</span><i class="menu-arrow"></i>
@@ -281,8 +303,8 @@ try {
 
             <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
               <p class="sidebar-menu-title"> Sales Modules</p>
-              <li class="nav-item"><a class="nav-link" href="../kasir/transaksipenjualan.php"><i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title"> Transaksi Penjualan</span></a></li>
-              <li class="nav-item"><a class="nav-link" href="../kasir/datapenjualan.php"><i class="typcn typcn-chart-bar menu-icon"></i><span class="menu-title"> Data Penjualan</span></a></li>
+              <li class="nav-item"><a class="nav-link" href="transaksipenjualan.php"><i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title"> Transaksi Penjualan</span></a></li>
+              <li class="nav-item"><a class="nav-link" href="datapenjualan.php"><i class="typcn typcn-chart-bar menu-icon"></i><span class="menu-title"> Data Penjualan</span></a></li>
             <?php endif ?>
 
             <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
@@ -302,86 +324,108 @@ try {
           <div class="content-wrapper">
             <div class="row">
               <div class="col-lg-12 grid-margin stretch-card">
-                <div class="card">
+                <div class="card shadow-sm border-0">
                   <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                       <h4 class="card-title mb-0">Transaksi Penjualan</h4>
-                      <a href="datapenjualan.php" class="btn btn-primary">Data Penjualan</a>
+                      <a href="datapenjualan.php" class="btn btn-primary btn-sm">Daftar Penjualan</a>
                     </div>
                     
                     <?php if($error != "") : ?>
-                      <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                      <div class="alert alert-danger p-2"><?= htmlspecialchars($error) ?></div>
                     <?php endif; ?>
 
                     <form method="POST">
-                      <div class="row bg-light p-3 mb-4 rounded align-items-end">
-                          <div class="col-md-6">
-                              <label>Pilih Produk</label>
-                              <select id="produkSelect" class="form-control">
-                                  <option value="">-- Pilih Produk --</option>
-                                  <?php while($p = $produk->fetch(PDO::FETCH_ASSOC)): ?>
-                                      <option 
-                                          value="<?= $p['kode']; ?>" 
-                                          data-nama="<?= $p['nama']; ?>"
-                                          data-harga="<?= $p['hargaJual']; ?>">
-                                          <?= $p['nama']; ?> - Rp <?= number_format($p['hargaJual'],0,',','.'); ?>
-                                      </option>
-                                  <?php endwhile; ?>
-                              </select>
-                          </div>
-                          <div class="col-md-3">
-                              <label>Qty</label>
-                              <input type="number" id="qtyProduk" class="form-control" min="1" value="1">
-                          </div>
-                          <div class="col-md-3">
-                              <button type="button" class="btn btn-success btn-block" onclick="tambahKeranjang()">
-                                  Tambah ke Keranjang
-                              </button>
+                      <div class="bg-light p-3 mb-4 rounded border">
+                          <div class="row align-items-end">
+                              <div class="col-md-5">
+                                  <div class="form-group mb-md-0">
+                                      <label class="font-weight-bold">Pilih Produk</label>
+                                      <select id="produkSelect" class="form-control" onchange="updateMaxUI()">
+                                          <option value="">-- Pilih Produk --</option>
+                                          <?php while($p = $produk->fetch(PDO::FETCH_ASSOC)): ?>
+                                              <option 
+                                                  value="<?= $p['kode']; ?>" 
+                                                  data-nama="<?= $p['nama']; ?>"
+                                                  data-harga="<?= $p['hargaJual']; ?>">
+                                                  <?= $p['nama']; ?> - Rp <?= number_format($p['hargaJual'],0,',','.'); ?>
+                                              </option>
+                                          <?php endwhile; ?>
+                                      </select>
+                                  </div>
+                              </div>
+                              <div class="col-md-3">
+                                  <div class="form-group mb-md-0">
+                                      <label class="font-weight-bold d-flex justify-content-between">
+                                          <span>Qty</span>
+                                          <span id="maxQtyLabel" class="text-danger small font-weight-bold"></span>
+                                      </label>
+                                      <div class="input-group qty-input-group">
+                                          <div class="input-group-prepend">
+                                              <button class="btn btn-outline-info" type="button" onclick="changeQty(-1)">-</button>
+                                          </div>
+                                          <input type="number" id="qtyProduk" class="form-control text-center" min="1" value="1" readonly>
+                                          <div class="input-group-append">
+                                              <button class="btn btn-outline-info" type="button" onclick="changeQty(1)">+</button>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 mt-3 mt-md-0">
+                                  <button type="button" id="btnTambah" class="btn btn-success btn-block" onclick="tambahKeranjang()">
+                                      <i class="typcn typcn-shopping-cart"></i> Tambah Item
+                                  </button>
+                              </div>
                           </div>
                       </div>
 
-                      <table class="table table-bordered">
-                        <thead>
-                          <tr>
-                            <th>Produk</th>
-                            <th>Harga</th>
-                            <th>Qty</th>
-                            <th>Subtotal</th>
-                            <th width="100">Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody id="tabelKeranjangBody">
+                      <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-hover table-sm">
+                          <thead class="bg-light">
+                            <tr>
+                              <th>Produk</th>
+                              <th class="text-right">Harga</th>
+                              <th class="text-center">Qty</th>
+                              <th class="text-right">Subtotal</th>
+                              <th width="80" class="text-center">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody id="tabelKeranjangBody">
                             </tbody>
-                      </table>
+                        </table>
+                      </div>
 
                       <div class="row mt-3 mb-4">
                           <div class="col-md-5 offset-md-7">
-                              <table class="table table-borderless text-right">
-                                  <tr>
-                                      <th class="align-middle">Subtotal</th>
-                                      <td><h4>Rp <span id="subtotalDisplay">0</span></h4></td>
-                                  </tr>
-                                  <tr>
-                                      <th class="align-middle">Diskon (%)</th>
-                                      <td>
-                                          <input type="number" name="diskon" id="inputDiskon" class="form-control text-right" min="0" max="100" step="0.1" value="0" placeholder="0" oninput="hitungTotalAkhir()">
-                                          <small id="nominalDiskonDisplay" class="text-danger d-block mt-1 font-weight-bold">- Rp 0</small>
-                                      </td>
-                                  </tr>
-                                  <tr>
-                                      <th class="align-middle">Grand Total</th>
-                                      <td><h2 class="text-success mb-0">Rp <span id="grandTotalDisplay">0</span></h2></td>
-                                  </tr>
-                              </table>
+                              <div class="p-3 rounded border shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #00c689 !important;">
+                                  <table class="table table-borderless text-right mb-0">
+                                      <tr>
+                                          <th class="align-middle py-1">Subtotal</th>
+                                          <td class="py-1"><h5 class="mb-0">Rp <span id="subtotalDisplay">0</span></h5></td>
+                                      </tr>
+                                      <tr>
+                                          <th class="align-middle py-2 border-bottom">Diskon (%)</th>
+                                          <td class="py-2 border-bottom">
+                                              <input type="number" name="diskon" id="inputDiskon" class="form-control form-control-sm text-right float-right w-50" min="0" max="100" step="0.1" value="0" placeholder="0" oninput="hitungTotalAkhir()">
+                                              <div class="clearfix"></div>
+                                              <small id="nominalDiskonDisplay" class="text-danger d-block mt-1 font-weight-bold">- Rp 0</small>
+                                          </td>
+                                      </tr>
+                                      <tr>
+                                          <th class="align-middle py-3"><h5>Grand Total</h5></th>
+                                          <td class="py-3"><h3 class="text-success mb-0 font-weight-bold">Rp <span id="grandTotalDisplay">0</span></h3></td>
+                                      </tr>
+                                  </table>
+                              </div>
                           </div>
                       </div>
 
                       <div id="hiddenCartData"></div>
 
-                      <div class="row">
+                      <div class="row align-items-end">
                           <div class="col-md-4">
-                              <div class="form-group">
-                                  <label>Metode Pembayaran</label>
+                              <div class="form-group mb-0">
+                                  <label class="font-weight-bold">Metode Pembayaran</label>
                                   <select name="metbayar" class="form-control" required>
                                       <option value="Tunai">Tunai</option>
                                       <option value="QRIS">QRIS</option>
@@ -389,17 +433,19 @@ try {
                                   </select>
                               </div>
                           </div>
+                          <div class="col-md-8 text-right mt-4 mt-md-0">
+                              <a href="transaksipenjualan.php" class="btn btn-light mr-2">Reset</a>
+                              <button type="submit" class="btn btn-primary" onclick="return validasiSubmit()">Proses Pembayaran</button>
+                          </div>
                       </div>
 
-                      <button type="submit" class="btn btn-danger" onclick="return validasiSubmit()">Simpan Transaksi</button>
-                      <a href="datapenjualan.php" class="btn btn-light">Batal</a>
                     </form>
-
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          <footer class="footer"></footer>
         </div>
       </div>
     </div>
@@ -412,8 +458,91 @@ try {
     <script src="../../js/todolist.js"></script>
     
     <script>
+    // DATA ASSIGNMENT DARI BACKEND PHP
+    const stokBahanAsli = <?= json_encode($stokBahan); ?>;
+    const resepProduk = <?= json_encode($resepData); ?>;
+    
+    // VARIABEL STATE JS
+    let stokBahanCurrent = Object.assign({}, stokBahanAsli); 
     let subtotalKeranjang = 0;
     
+    // LIVE LOGIC: HITUNG MAKSIMAL PORSI DARI SISA BAHAN GUDANG
+    function hitungMaxPorsi(kodeProduk) {
+        let resep = resepProduk[kodeProduk];
+        if (!resep || resep.length === 0) return 999; 
+        
+        let maxPorsi = Infinity;
+        resep.forEach(item => {
+            let sisaStok = stokBahanCurrent[item.bahan] || 0;
+            let bisaBikin = Math.floor(sisaStok / item.jumlah);
+            if (bisaBikin < maxPorsi) {
+                maxPorsi = bisaBikin;
+            }
+        });
+        
+        return maxPorsi === Infinity ? 0 : maxPorsi;
+    }
+
+    // UPDATE UI UNTUK DATA MAKSIMAL
+    function updateMaxUI() {
+        let select = document.getElementById('produkSelect');
+        let maxLabel = document.getElementById('maxQtyLabel');
+        let inputQty = document.getElementById('qtyProduk');
+        let btnTambah = document.getElementById('btnTambah');
+        
+        if(select.value === '') {
+            maxLabel.innerText = '';
+            inputQty.value = 1;
+            btnTambah.disabled = false;
+            return;
+        }
+        
+        let max = hitungMaxPorsi(select.value);
+        
+        if (max === 999) {
+            maxLabel.innerText = '(Stok: Bebas)';
+        } else {
+            maxLabel.innerText = `(Maks: ${max})`;
+        }
+        
+        let currentInput = parseInt(inputQty.value) || 0;
+        if (max === 0) {
+            inputQty.value = 0;
+            btnTambah.disabled = true;
+        } else {
+            btnTambah.disabled = false;
+            if (currentInput > max) inputQty.value = max;
+            if (currentInput === 0 && max > 0) inputQty.value = 1;
+        }
+    }
+
+    // INTERAKSI TOMBOL PLUS MINUS
+    function changeQty(delta) {
+        let select = document.getElementById('produkSelect');
+        if(select.value === '') return;
+        
+        let max = hitungMaxPorsi(select.value);
+        let input = document.getElementById('qtyProduk');
+        let currentVal = parseInt(input.value) || 0;
+        
+        let newVal = currentVal + delta;
+        
+        if (max === 0) {
+            input.value = 0;
+            return;
+        }
+
+        if (newVal < 1) newVal = 1;
+        if (newVal > max) {
+            let lbl = document.getElementById('maxQtyLabel');
+            lbl.style.color = 'red';
+            setTimeout(() => lbl.style.color = '', 500);
+            newVal = max;
+        }
+        
+        input.value = newVal;
+    }
+
     function tambahKeranjang(){
         let select = document.getElementById('produkSelect');
         if(select.value == '') {
@@ -423,19 +552,32 @@ try {
 
         let kode = select.value;
         if(document.querySelector(`#cart_${kode}`)){
-            alert('Produk sudah ada di keranjang! Hapus baris terlebih dahulu jika ingin merubah quantity.');
+            alert('Produk sudah ada di keranjang! Hapus baris di bawah terlebih dahulu jika ingin merubah quantity.');
             return;
+        }
+
+        let qty = parseInt(document.getElementById('qtyProduk').value) || 0;
+        let max = hitungMaxPorsi(kode);
+
+        if(qty <= 0){
+            alert('Stok tidak mencukupi atau Qty tidak valid!');
+            return;
+        }
+
+        if(qty > max){
+            alert('Jumlah pesanan melebihi batas ketersediaan bahan baku di gudang!');
+            return;
+        }
+
+        // POTONG LIVE STOK DI PROGRAM JS
+        if (resepProduk[kode]) {
+            resepProduk[kode].forEach(item => {
+                stokBahanCurrent[item.bahan] -= (item.jumlah * qty);
+            });
         }
 
         let nama = select.options[select.selectedIndex].dataset.nama;
         let harga = parseFloat(select.options[select.selectedIndex].dataset.harga);
-        let qty = parseInt(document.getElementById('qtyProduk').value) || 0;
-
-        if(qty <= 0){
-            alert('Quantity harus lebih dari 0');
-            return;
-        }
-
         let subtotalBaris = harga * qty;
 
         let tbody = document.getElementById('tabelKeranjangBody');
@@ -443,12 +585,12 @@ try {
         row.setAttribute('id', 'row_' + kode);
 
         row.innerHTML = `
-            <td>${nama}</td>
-            <td>Rp ${harga.toLocaleString('id-ID')}</td>
-            <td>${qty}</td>
-            <td>Rp ${subtotalBaris.toLocaleString('id-ID')}</td>
-            <td>
-                <button type="button" class="btn btn-danger btn-sm" onclick="hapusBaris(this, ${subtotalBaris}, '${kode}')">Hapus</button>
+            <td class="align-middle font-weight-bold">${nama}</td>
+            <td class="text-right align-middle">Rp ${harga.toLocaleString('id-ID')}</td>
+            <td class="text-center align-middle">${qty}</td>
+            <td class="text-right font-weight-bold text-primary align-middle">Rp ${subtotalBaris.toLocaleString('id-ID')}</td>
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-danger btn-sm py-1 px-2" onclick="hapusBaris(this, ${subtotalBaris}, '${kode}', ${qty})">&times;</button>
             </td>
         `;
 
@@ -463,24 +605,32 @@ try {
             </div>
         `);
 
-        document.getElementById('produkSelect').value = '';
+        select.value = '';
         document.getElementById('qtyProduk').value = '1';
+        updateMaxUI(); 
     }
 
-    function hapusBaris(btn, subtotalBaris, kode){
+    function hapusBaris(btn, subtotalBaris, kode, qty){
+        // KEMBALIKAN LIVE STOK DI PROGRAM JS
+        if (resepProduk[kode]) {
+            resepProduk[kode].forEach(item => {
+                stokBahanCurrent[item.bahan] += (item.jumlah * qty);
+            });
+        }
+
         subtotalKeranjang -= subtotalBaris;
         hitungTotalAkhir(); 
         
         btn.closest('tr').remove();
         let hiddenInput = document.getElementById('cart_' + kode);
         if(hiddenInput) hiddenInput.remove();
+
+        updateMaxUI(); 
     }
 
     function hitungTotalAkhir() {
-        // Ambil input persen diskon
         let diskonPersen = parseFloat(document.getElementById('inputDiskon').value) || 0;
         
-        // Batasi persen agar tidak lebih dari 100 atau kurang dari 0
         if(diskonPersen > 100) {
             diskonPersen = 100;
             document.getElementById('inputDiskon').value = 100;
@@ -489,13 +639,9 @@ try {
             document.getElementById('inputDiskon').value = 0;
         }
 
-        // Kalkulasi nominal rupiah yang didiskon
         let nominalDiskon = subtotalKeranjang * (diskonPersen / 100);
-        
-        // Kalkulasi total akhir
         let grandTotal = subtotalKeranjang - nominalDiskon;
 
-        // Tampilkan ke UI
         document.getElementById('subtotalDisplay').innerText = subtotalKeranjang.toLocaleString('id-ID');
         document.getElementById('nominalDiskonDisplay').innerText = '- Rp ' + nominalDiskon.toLocaleString('id-ID');
         document.getElementById('grandTotalDisplay').innerText = grandTotal.toLocaleString('id-ID');
@@ -503,10 +649,10 @@ try {
 
     function validasiSubmit() {
         if(subtotalKeranjang === 0) {
-            alert("Keranjang masih kosong!");
+            alert("Keranjang masih kosong! Silakan tambahkan produk terlebih dahulu.");
             return false;
         }
-        return true;
+        return confirm("Apakah Anda yakin ingin memproses transaksi ini?");
     }
     </script>
   </body>
