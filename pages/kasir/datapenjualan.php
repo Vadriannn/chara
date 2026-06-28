@@ -3,14 +3,17 @@ session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 
-// 1. Ambil tanggal hari ini sebagai default
-$hariIni = date('Y-m-d');
+// 1. Set zona waktu secara eksplisit agar PHP dan MySQL sinkron
+date_default_timezone_set('Asia/Jakarta');
 
-// 2. Tangkap variabel dari form filter, jika kosong otomatis pakai hari ini
-$tglMulai = !empty($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : $hariIni;
+// 2. Ambil tanggal hari ini dan tanggal 1 awal bulan ini
+$hariIni = date('Y-m-d');
+$awalBulan = date('Y-m-01');
+
+// JIKA KOSONG: Mulai dari awal bulan, sampai hari ini.
+$tglMulai = !empty($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : $awalBulan;
 $tglSelesai = !empty($_GET['tgl_selesai']) ? $_GET['tgl_selesai'] : $hariIni;
 
-// 3. Buat query dasar
 $query = "
     SELECT 
         p.nomor,
@@ -63,34 +66,118 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
   </head>
   <body>
     <div class="container-scroller">
-      
-      <?php include '../header.php'; ?>
+      <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+        <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
+          <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
+          <a class="navbar-brand brand-logo-mini" href="../../index.php"><img src="../../images/logo-mini.svg" alt="logo"/></a>
+        </div>
+        <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
+          <ul class="navbar-nav navbar-nav-right">
+            <li class="nav-item nav-profile dropdown">
+              <a class="nav-link dropdown-toggle pl-0 pr-0" href="#" data-toggle="dropdown" id="profileDropdown">
+                <i class="typcn typcn-user-outline mr-0"></i>
+                <span class="nav-profile-name"> <?php echo $_SESSION['nama']; ?></span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
+                <a class="dropdown-item"><i class="typcn typcn-cog text-primary"></i>Settings</a>
+                <a class="dropdown-item" href="../logout.php"><i class="typcn typcn-power text-primary"></i>Logout</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
       
       <div class="container-fluid page-body-wrapper">
-        <div class="theme-setting-wrapper">
-          <div id="settings-trigger"><i class="typcn typcn-cog-outline"></i></div>
-          <div id="theme-settings" class="settings-panel">
-            <i class="settings-close typcn typcn-delete-outline"></i>
-            <p class="settings-heading">SIDEBAR SKINS</p>
-            <div class="sidebar-bg-options" id="sidebar-light-theme"><div class="img-ss rounded-circle bg-light border mr-3"></div>Light</div>
-            <div class="sidebar-bg-options selected" id="sidebar-dark-theme"><div class="img-ss rounded-circle bg-dark border mr-3"></div>Dark</div>
-            <p class="settings-heading mt-2">HEADER SKINS</p>
-            <div class="color-tiles mx-0 px-4">
-              <div class="tiles success"></div><div class="tiles warning"></div><div class="tiles danger"></div>
-              <div class="tiles primary"></div><div class="tiles info"></div><div class="tiles dark"></div>
-              <div class="tiles default border"></div>
-            </div>
-          </div>
-        </div>
-        
-        <?php include '../sidebar.php'; ?>
+        <nav class="sidebar sidebar-offcanvas" id="sidebar">
+          <ul class="nav">
+            <li class="nav-item">
+              <div class="d-flex sidebar-profile">
+                <div class="sidebar-profile-image">
+                  <img src="../../images/faces/face29.png" alt="image">
+                  <span class="sidebar-status-indicator"></span>
+                </div>
+                <div class="sidebar-profile-name">
+                  <p class="sidebar-name"><?php echo $_SESSION['nama']; ?></p>
+                  <p class="sidebar-designation"><?php echo $_SESSION['role']; ?></p>
+                </div>
+              </div>
+            </li>
+            
+            <?php if ($_SESSION['role'] == 'Admin'): ?>
+            <p class="sidebar-menu-title"> Admin Modules</p>
+            <li class="nav-item"><a class="nav-link" href="../admin/dashboard.php"><i class="typcn typcn-device-desktop menu-icon"></i><span class="menu-title">Dashboard</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../admin/employee.php"><i class="typcn typcn-user menu-icon"></i><span class="menu-title">Employee</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../admin/biayaoperasional.php"><i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Biaya Operasional</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="../admin/logaktivitas.php"><i class="typcn typcn-group menu-icon"></i><span class="menu-title">Log Aktivitas</span></a></li>
+            
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="collapse" href="#stok" aria-expanded="false" aria-controls="stok">
+                <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Stok</span><i class="menu-arrow"></i>
+              </a>
+              <div class="collapse" id="stok">
+                <ul class="nav flex-column sub-menu">
+                  <li class="nav-item"><a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/produk.php">Produk</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/kategori.php">Kategori</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/resep.php">Resep</a></li>
+                </ul>
+              </div>
+            </li>
+            
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="pembelian">
+                <i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title">Pembelian</span><i class="menu-arrow"></i>
+              </a>
+              <div class="collapse" id="pembelian">
+                <ul class="nav flex-column sub-menu">
+                  <li class="nav-item"><a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a></li>
+                </ul>
+              </div>
+            </li>
+            
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="collapse" href="#laporan" aria-expanded="false" aria-controls="laporan">
+                <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Laporan</span><i class="menu-arrow"></i>
+              </a>
+              <div class="collapse" id="laporan">
+                <ul class="nav flex-column sub-menu">
+                  <li class="nav-item"><a class="nav-link" href="../admin/laporanpenjualan.php">Laporan Penjualan</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/laporankeuangan.php">Laporan Keuangan</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/aruskas.php">Arus Kas</a></li>
+                  <li class="nav-item"><a class="nav-link" href="../admin/labarugi.php">Laba Rugi</a></li>
+                </ul>
+              </div>
+            </li>
+            <?php endif; ?>
+
+            <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
+              <p class="sidebar-menu-title"> Sales Modules</p>
+              <li class="nav-item"><a class="nav-link" href="transaksipenjualan.php"><i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title"> Transaksi Penjualan</span></a></li>
+              <li class="nav-item"><a class="nav-link" href="datapenjualan.php"><i class="typcn typcn-chart-bar menu-icon"></i><span class="menu-title"> Data Penjualan</span></a></li>
+            <?php endif ?>
+
+            <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
+              <p class="sidebar-menu-title"> Stock Modules</p>
+              <li class="nav-item"><a class="nav-link" href="../gudang/bahanbaku.php"><i class="typcn typcn-th-large menu-icon"></i><span class="menu-title"> Bahan Baku</span></a></li>
+              <li class="nav-item"><a class="nav-link" href="../gudang/barangmasuk.php"><i class="typcn typcn-arrow-down menu-icon"></i><span class="menu-title"> Barang Masuk </span></a></li>
+              <li class="nav-item"><a class="nav-link" href="../gudang/barangkeluar.php"><i class="typcn typcn-arrow-up menu-icon"></i><span class="menu-title"> Barang Keluar</span></a></li>
+              <li class="nav-item"><a class="nav-link" href="../gudang/purchaserequest.php"><i class="typcn typcn-arrow-forward-outline menu-icon"></i><span class="menu-title"> Purchase Request</span></a></li>
+            <?php endif ?>
+            
+            <p class="sidebar-menu-title"> Settings</p>
+            <li class="nav-item"><a class="nav-link" href="../settings/ubahpassword.php"><i class="typcn typcn-key menu-icon"></i><span class="menu-title"> Ubah Password</span></a></li>
+          </ul>
+        </nav>
 
         <div class="main-panel">
           <div class="content-wrapper">
             
             <?php if(isset($_GET['success']) && $_GET['success'] == '1') : ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    Transaksi penjualan berhasil disimpan!
+                    Transaksi penjualan berhasil diproses!
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -99,14 +186,12 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <div class="row">
               <div class="col-lg-12 grid-margin stretch-card">
-                <div class="card">
+                <div class="card shadow-sm border-0">
                   <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h4 class="card-title text-primary mb-1">
-                                <i class="typcn typcn-chart-bar"></i> Data Penjualan
-                            </h4>
-                            <p class="text-muted mb-0">Daftar riwayat transaksi penjualan produk.</p>
+                            <h4 class="card-title text-dark mb-1">Riwayat Data Penjualan</h4>
+                            <p class="text-muted mb-0">Kelola dan pantau seluruh transaksi penjualan harian.</p>
                         </div>
                         <a href="transaksipenjualan.php" class="btn btn-primary btn-sm">
                             <i class="typcn typcn-plus"></i> Transaksi Baru
@@ -115,19 +200,19 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <form method="GET" class="form-inline bg-light p-3 rounded">
+                            <form method="GET" class="form-inline bg-light p-3 rounded border">
                                 <div class="form-group mr-3">
-                                    <label class="mr-2 font-weight-bold">Mulai Tanggal:</label>
-                                    <input type="date" name="tgl_mulai" class="form-control" value="<?= htmlspecialchars($tglMulai) ?>">
+                                    <label class="mr-2 font-weight-bold text-dark">Mulai Tanggal:</label>
+                                    <input type="date" name="tgl_mulai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglMulai) ?>">
                                 </div>
                                 <div class="form-group mr-3">
-                                    <label class="mr-2 font-weight-bold">Sampai Tanggal:</label>
-                                    <input type="date" name="tgl_selesai" class="form-control" value="<?= htmlspecialchars($tglSelesai) ?>">
+                                    <label class="mr-2 font-weight-bold text-dark">Sampai Tanggal:</label>
+                                    <input type="date" name="tgl_selesai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglSelesai) ?>">
                                 </div>
                                 <button type="submit" class="btn btn-info btn-sm mr-2">
                                     <i class="typcn typcn-zoom"></i> Filter
                                 </button>
-                                <a href="datapenjualan.php" class="btn btn-light btn-sm">
+                                <a href="datapenjualan.php" class="btn btn-secondary btn-sm">
                                     <i class="typcn typcn-refresh"></i> Reset
                                 </a>
                             </form>
@@ -135,15 +220,15 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     
                     <div class="table-responsive">
-                      <table class="table table-striped table-hover">
-                        <thead class="thead-light">
+                      <table class="table table-bordered table-hover">
+                        <thead class="bg-light">
                           <tr>
-                            <th>No Penjualan</th>
-                            <th>Tanggal Waktu</th>
-                            <th>Kasir</th>
-                            <th>Metode Bayar</th>
-                            <th>Total Belanja</th>
-                            <th class="text-center">Aksi</th>
+                            <th class="font-weight-bold text-dark">No. Nota</th>
+                            <th class="font-weight-bold text-dark">Tanggal Waktu</th>
+                            <th class="font-weight-bold text-dark">Kasir</th>
+                            <th class="font-weight-bold text-dark text-center">Metode Bayar</th>
+                            <th class="font-weight-bold text-dark text-right">Total Belanja</th>
+                            <th class="font-weight-bold text-dark text-center">Aksi</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -151,13 +236,15 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
                               <?php foreach($dataPenjualan as $row): ?>
                               <tr>
                                   <td class="font-weight-bold">PJ-<?= str_pad($row['nomor'], 4, '0', STR_PAD_LEFT) ?></td>
-                                  <td><?= date('d/m/Y H:i', strtotime($row['tanggal'])) ?></td>
-                                  <td><?= htmlspecialchars($row['kasir'] ?: 'Tidak diketahui') ?></td>
-                                  <td><span class="badge badge-info"><?= $row['metbayar'] ?></span></td>
-                                  <td class="text-success font-weight-bold">Rp <?= number_format($row['total'], 0, ',', '.') ?></td>
+                                  <td><?= date('d/m/Y H:i', strtotime($row['tanggal'])) ?> WIB</td>
+                                  <td><?= htmlspecialchars($row['kasir'] ?: 'Sistem') ?></td>
                                   <td class="text-center">
-                                      <a href="detailpenjualan.php?nomor=<?= $row['nomor'] ?>" class="btn btn-primary btn-sm">
-                                        <i class="typcn typcn-eye"></i> Detail
+                                      <span class="badge badge-outline-info font-weight-bold"><?= $row['metbayar'] ?></span>
+                                  </td>
+                                  <td class="text-right font-weight-bold">Rp <?= number_format($row['total'], 0, ',', '.') ?></td>
+                                  <td class="text-center">
+                                      <a href="detailpenjualan.php?nomor=<?= $row['nomor'] ?>" class="btn btn-primary btn-sm px-3">
+                                        Detail
                                       </a>
                                   </td>
                               </tr>
@@ -178,18 +265,11 @@ $dataPenjualan = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
           </div>
-          <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between"></div>
-          </footer>
+          <footer class="footer"></footer>
         </div>
       </div>
     </div>
-    
     <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <script src="../../js/off-canvas.js"></script>
-    <script src="../../js/hoverable-collapse.js"></script>
     <script src="../../js/template.js"></script>
-    <script src="../../js/settings.js"></script>
-    <script src="../../js/todolist.js"></script>
   </body>
 </html>
