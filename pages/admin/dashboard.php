@@ -5,528 +5,366 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
+// 1. Total Pendapatan Bulan Ini
+$stmtPendapatan = $koneksi->query("
+    SELECT SUM(total) as total 
+    FROM tPenjualan 
+    WHERE MONTH(tanggal) = MONTH(CURRENT_DATE()) AND YEAR(tanggal) = YEAR(CURRENT_DATE())
+");
+$pendapatan = $stmtPendapatan->fetchColumn() ?: 0;
+
+// 2. Total Transaksi Bulan Ini
+$stmtTransaksi = $koneksi->query("
+    SELECT COUNT(*) as jumlah 
+    FROM tPenjualan 
+    WHERE MONTH(tanggal) = MONTH(CURRENT_DATE()) AND YEAR(tanggal) = YEAR(CURRENT_DATE())
+");
+$jumlahTransaksi = $stmtTransaksi->fetchColumn() ?: 0;
+
+// 3. Total Pengeluaran Bulan Ini
+$stmtPengeluaran = $koneksi->query("
+    SELECT SUM(nominal) as total 
+    FROM tArusKas 
+    WHERE jenis = 'Keluar' AND MONTH(tanggal) = MONTH(CURRENT_DATE()) AND YEAR(tanggal) = YEAR(CURRENT_DATE())
+");
+$pengeluaran = $stmtPengeluaran->fetchColumn() ?: 0;
+
+// 4. Laba Bersih
+$labaBersih = $pendapatan - $pengeluaran;
+
+// 5. Stok Kritis
+$stmtStok = $koneksi->query("
+    SELECT b.kode, b.nama, b.stok, s.nama as satuan
+    FROM tBahan b
+    JOIN tSatuan s ON b.tSatuan_id = s.id
+    WHERE b.stok <= 50
+    ORDER BY b.stok ASC
+    LIMIT 6
+");
+$stokKritis = $stmtStok->fetchAll(PDO::FETCH_ASSOC);
+
+// 6. Log Aktivitas Terbaru
+$stmtLog = $koneksi->query("
+    SELECT l.*, u.username
+    FROM tLog l
+    LEFT JOIN tUser u ON l.tUser_id = u.id
+    ORDER BY l.waktu DESC
+    LIMIT 6
+");
+$logAktivitas = $stmtLog->fetchAll(PDO::FETCH_ASSOC);
+
+// 7. Transaksi Terakhir
+$stmtRecentSales = $koneksi->query("
+    SELECT nomor, tanggal as waktu, total, metbayar as metode, 'Selesai' as status
+    FROM tPenjualan
+    ORDER BY tanggal DESC
+    LIMIT 6
+");
+$recentSales = $stmtRecentSales->fetchAll(PDO::FETCH_ASSOC);
+
 $nama = $_SESSION['nama'];
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
 ?>
-          <div class="content-wrapper">
-            <div class="row">
-              <div class="col-sm-6">
-                <h3 class="mb-0 font-weight-bold"> <?php echo $_SESSION['nama']; ?></h3>
-              </div>
-              <div class="col-sm-6">
-                <div class="d-flex align-items-center justify-content-md-end">
-                  <div class="mb-3 mb-xl-0 pr-1">
-                      <div class="dropdown">
-                        <button class="btn bg-white btn-sm dropdown-toggle btn-icon-text border mr-2" type="button" id="dropdownMenu3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="typcn typcn-calendar-outline mr-2"></i>Last 7 days
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuSizeButton3" data-x-placement="top-start">
-                          <h6 class="dropdown-header">Last 14 days</h6>
-                          <a class="dropdown-item" href="#">Last 21 days</a>
-                          <a class="dropdown-item" href="#">Last 28 days</a>
-                        </div>
-                      </div>
-                  </div>
-                  <div class="pr-1 mb-3 mr-2 mb-xl-0">
-                    <button type="button" class="btn btn-sm bg-white btn-icon-text border"><i class="typcn typcn-arrow-forward-outline mr-2"></i>Export</button>
-                  </div>
-                  <div class="pr-1 mb-3 mb-xl-0">
-                    <button type="button" class="btn btn-sm bg-white btn-icon-text border"><i class="typcn typcn-info-large-outline mr-2"></i>info</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row  mt-3">
-              <div class="col-xl-5 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Sessions by Channel</h4>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row">
-                          <div class="col-lg-6">
-                            <div id="circleProgress6" class="progressbar-js-circle rounded p-3"></div>
-                          </div>
-                          <div class="col-lg-6">
-                            <ul class="session-by-channel-legend">
-                              <li>
-                                <div>Firewalls(3)</div>
-                                <div>4(100%)</div>
-                              </li>
-                              <li>
-                                <div>Ports(12)</div>
-                                <div>12(100%)</div>
-                              </li>
-                              <li>
-                                <div>Servers(233)</div>
-                                <div>2(100%)</div>
-                              </li>
-                              <li>
-                                <div>Firewalls(3)</div>
-                                <div>7(100%)</div>
-                              </li>
-                              <li>
-                                <div>Firewalls(3)</div>
-                                <div>6(70%)</div>
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-xl-3 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Events</h4>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row">
-                          <div class="col-sm-12">
-                            <div class="d-flex justify-content-between mb-md-5 mt-3">
-                              <div class="small">Critical</div>
-                              <div class="text-danger small">Error</div>
-                              <div  class="text-warning small">Warning</div>
-                            </div>
-                            <canvas id="eventChart"></canvas>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-xl-4 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Device stats</h4>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row">
-                          <div class="col-sm-12">
-                            <div class="d-flex justify-content-between mb-4">
-                              <div>Uptime</div>
-                              <div class="text-muted">195 Days, 8 hours</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div>First Seen</div>
-                              <div class="text-muted">23 Sep 2019, 2.04PM</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div>Collected time</div>
-                              <div class="text-muted">23 Sep 2019, 2.04PM</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div>Memory space</div>
-                              <div class="text-muted">168.3GB</div>
-                            </div>
-                            <div class="progress progress-md mt-4">
-                              <div class="progress-bar bg-success" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-xl-3 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Sessions by Channel</h4>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="row">
-                          <div class="col-sm-12">
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="font-weight-medium">Empolyee Name</div>
-                              <div class="font-weight-medium">This Month</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Connor Chandler</div>
-                              <div class="small">$ 4909</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Russell Floyd</div>
-                              <div class="small">$857</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Douglas White</div>
-                              <div class="small">$612	</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Alta Fletcher </div>
-                              <div class="small">$233</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Marguerite Pearson</div>
-                              <div class="small">$233</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Leonard Gutierrez</div>
-                              <div class="small">$35</div>
-                            </div>
-                            <div class="d-flex justify-content-between mb-4">
-                              <div class="text-secondary font-weight-medium">Helen Benson</div>
-                              <div class="small">$43</div>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <div class="text-secondary font-weight-medium">Helen Benson</div>
-                                <div class="small">$43</div>
-                              </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-xl-6 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Sales Analytics</h4>
-                      <button type="button" class="btn btn-sm btn-light">Month</button>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="d-md-flex mb-4">
-                          <div class="mr-md-5 mb-4">
-                            <h5 class="mb-1"><i class="typcn typcn-globe-outline mr-1"></i>Online</h5>
-                            <h2 class="text-primary mb-1 font-weight-bold">23,342</h2>
-                          </div>
-                          <div class="mr-md-5 mb-4">
-                            <h5 class="mb-1"><i class="typcn typcn-archive mr-1"></i>Offline</h5>
-                            <h2 class="text-secondary mb-1 font-weight-bold">13,221</h2>
-                          </div>
-                          <div class="mr-md-5 mb-4">
-                            <h5 class="mb-1"><i class="typcn typcn-tags mr-1"></i>Marketing</h5>
-                            <h2 class="text-warning mb-1 font-weight-bold">1,542</h2>
-                          </div>
-                        </div>
-                        <canvas id="salesanalyticChart"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-xl-3 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Card Title</h4>
-                    </div>
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="mb-5">
-                          <div class="mr-1">
-                            <div class="text-info mb-1">
-                              Total Earning
-                            </div>
-                            <h2 class="mb-2 mt-2 font-weight-bold">287,493$</h2>
-                            <div class="font-weight-bold">
-                              1.4%  Since Last Month
-                            </div>
-                          </div>
-                          <hr>
-                          <div class="mr-1">
-                            <div class="text-info mb-1">
-                              Total Earning
-                            </div>
-                            <h2 class="mb-2 mt-2  font-weight-bold">87,493</h2>
-                            <div class="font-weight-bold">
-                              5.43%  Since Last Month
-                            </div>
-                          </div>
-                        </div>
-                        <canvas id="barChartStacked"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-lg-12 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">E-Commerce Analytics</h4>
-                    </div>
-                    <div class="row">
-                      <div class="col-lg-9">
-                        <div class="d-sm-flex justify-content-between">
-                          <div class="dropdown">
-                            <button class="btn bg-white btn-sm dropdown-toggle btn-icon-text pl-0" type="button" id="dropdownMenuSizeButton4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Mon,1 Oct 2019 - Tue,2 Oct 2019
-                            </button>
-                            <div class="dropdown-menu" aria-labelledby="dropdownMenuSizeButton4" data-x-placement="top-start">
-                              <h6 class="dropdown-header">Mon,17 Oct 2019 - Tue,25 Oct 2019</h6>
-                              <a class="dropdown-item" href="#">Tue,18 Oct 2019 - Wed,26 Oct 2019</a>
-                              <a class="dropdown-item" href="#">Wed,19 Oct 2019 - Thu,26 Oct 2019</a>
-                            </div>
-                          </div>
-                          <div>
-                            <button type="button" class="btn btn-sm btn-light mr-2">Day</button>
-                            <button type="button" class="btn btn-sm btn-light mr-2">Week</button>
-                            <button type="button" class="btn btn-sm btn-light">Month</button>
-                          </div>
-                        </div>
-                        <div class="chart-container mt-4">
-                          <canvas id="ecommerceAnalytic"></canvas>
-                        </div>
-                      </div>
-                      <div class="col-lg-3">
+<style>
+    .premium-card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .premium-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .bg-gradient-primary-custom {
+        background: linear-gradient(135deg, #4b49ac 0%, #29285f 100%);
+        color: white;
+    }
+    .bg-gradient-success-custom {
+        background: linear-gradient(135deg, #248AFA 0%, #17549C 100%);
+        color: white;
+    }
+    .bg-gradient-warning-custom {
+        background: linear-gradient(135deg, #FFC100 0%, #E68A00 100%);
+        color: white;
+    }
+    .bg-gradient-danger-custom {
+        background: linear-gradient(135deg, #f35a5a 0%, #c43c3c 100%);
+        color: white;
+    }
+    .stat-icon {
+        font-size: 3rem;
+        opacity: 0.8;
+    }
+    .table-premium th {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        background-color: #f8f9fa;
+        color: #495057;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .table-premium td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+    }
+    .timeline-log {
+        position: relative;
+        padding-left: 30px;
+        list-style: none;
+    }
+    .timeline-log::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 8px;
+        width: 2px;
+        background-color: #e9ecef;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background-color: #4b49ac;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        left: -27px;
+        top: 4px;
+        box-shadow: 0 0 0 2px rgba(75, 73, 172, 0.2);
+    }
+</style>
+
+<div class="content-wrapper bg-light">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h3 class="mb-1 font-weight-bold text-dark">Selamat Datang, <?= htmlspecialchars($nama) ?>!</h3>
+            <p class="text-muted">Ini adalah ringkasan performa bisnis Anda bulan ini.</p>
+        </div>
+        <div class="col-md-6 d-flex justify-content-md-end">
+            <span class="badge badge-info p-2 px-3 shadow-sm" style="font-size: 14px;">
+                <i class="typcn typcn-calendar-outline mr-2"></i> Bulan <?= date('F Y') ?>
+            </span>
+        </div>
+    </div>
+
+    <!-- Top Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm bg-gradient-success-custom">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="text-success font-weight-bold">Inbound</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">Current</div>
-                            <div class="text-muted">38.34M</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">Average</div>
-                            <div class="text-muted">38.34M</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">Maximum</div>
-                            <div class="text-muted">68.14M</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">60th %</div>
-                            <div class="text-muted">168.3GB</div>
-                          </div>
+                            <p class="mb-1 text-white font-weight-medium">Total Pendapatan</p>
+                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($pendapatan, 0, ',', '.') ?></h3>
                         </div>
-                        <hr>
-                        <div class="mt-4">
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="text-success font-weight-bold">Outbound</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">Current</div>
-                            <div class="text-muted">458.77M</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">Average</div>
-                            <div class="text-muted">1.45K</div>
-                          </div>
-                          <div class="d-flex justify-content-between mb-3">
-                            <div class="font-weight-medium">Maximum</div>
-                            <div class="text-muted">15.50K</div>
-                          </div>
-                          <div class="d-flex justify-content-between">
-                            <div class="font-weight-medium">60th %</div>
-                            <div class="text-muted">45.5</div>
-                          </div>
-                        </div>
-                      </div>
+                        <i class="typcn typcn-chart-line-outline stat-icon"></i>
                     </div>
-                  </div>
+                    <small class="text-white-50">Total penjualan kotor bulan ini</small>
                 </div>
-              </div>
             </div>
-            <div class="row">
-              <div class="col-lg-4 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Sale Analysis Trend</h4>
+        </div>
+
+        <div class="col-md-3 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm bg-gradient-danger-custom">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="mb-1 text-white font-weight-medium">Pengeluaran</p>
+                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($pengeluaran, 0, ',', '.') ?></h3>
+                        </div>
+                        <i class="typcn typcn-arrow-down-thick stat-icon"></i>
                     </div>
-                    <div class="mt-2">
-                      <div class="d-flex justify-content-between">
-                        <small>Order Value</small>
-                        <small>155.5%</small>
-                      </div>
-                      <div class="progress progress-md  mt-2">
-                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 80%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
-                      </div>
-                    </div>
-                    <div class="mt-4">
-                      <div class="d-flex justify-content-between">
-                        <small>Total Products</small>
-                        <small>238.2%</small>
-                      </div>
-                      <div class="progress progress-md  mt-2">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 50%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
-                      </div>
-                    </div>
-                    <div class="mt-4 mb-5">
-                      <div class="d-flex justify-content-between">
-                        <small>Quantity</small>
-                        <small>23.30%</small>
-                      </div>
-                      <div class="progress progress-md mt-2">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 70%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
-                      </div>
-                    </div>
-                    <canvas id="salesTopChart"></canvas>
-                  </div>
+                    <small class="text-white-50">Pembelian & Operasional bulan ini</small>
                 </div>
-              </div>
-              <div class="col-lg-8 d-flex grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between">
-                      <h4 class="card-title mb-3">Project status</h4>
+            </div>
+        </div>
+
+        <div class="col-md-3 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm bg-gradient-primary-custom">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="mb-1 text-white font-weight-medium">Laba Bersih</p>
+                            <h3 class="font-weight-bold mb-0">
+                                <?php if($labaBersih < 0): ?>
+                                    - Rp <?= number_format(abs($labaBersih), 0, ',', '.') ?>
+                                <?php else: ?>
+                                    Rp <?= number_format($labaBersih, 0, ',', '.') ?>
+                                <?php endif; ?>
+                            </h3>
+                        </div>
+                        <i class="typcn typcn-briefcase stat-icon"></i>
+                    </div>
+                    <small class="text-white-50">Pendapatan dikurangi pengeluaran</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm bg-white">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <p class="mb-1 text-muted font-weight-medium">Total Transaksi</p>
+                            <h3 class="font-weight-bold mb-0 text-dark"><?= number_format($jumlahTransaksi, 0, ',', '.') ?></h3>
+                        </div>
+                        <div class="icon-rounded bg-light text-primary p-3 rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="typcn typcn-shopping-cart stat-icon text-primary m-0" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Jumlah struk bulan ini</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Row -->
+    <div class="row mb-4">
+        <!-- Peringatan Stok -->
+        <div class="col-lg-6 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm w-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0 font-weight-bold text-dark">Peringatan Stok Kritis</h4>
+                        <a href="../gudang/bahanbaku.php" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>
+                    </div>
+                    <?php if(count($stokKritis) > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-premium table-borderless w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Bahan Baku</th>
+                                        <th class="text-center">Sisa Stok</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($stokKritis as $b): 
+                                        $badgeClass = ($b['stok'] <= 10) ? 'badge-danger' : 'badge-warning';
+                                        $statusText = ($b['stok'] <= 10) ? 'Sangat Kritis' : 'Hampir Habis';
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <p class="mb-0 font-weight-bold text-dark"><?= htmlspecialchars($b['nama']) ?></p>
+                                            <small class="text-muted"><?= htmlspecialchars($b['kode']) ?></small>
+                                        </td>
+                                        <td class="text-center">
+                                            <h5 class="mb-0 font-weight-bold <?= ($b['stok'] <= 10) ? 'text-danger' : 'text-warning' ?>">
+                                                <?= number_format($b['stok'], 2, ',', '.') ?>
+                                            </h5>
+                                            <small class="text-muted"><?= htmlspecialchars($b['satuan']) ?></small>
+                                        </td>
+                                        <td>
+                                            <span class="badge <?= $badgeClass ?> px-2 py-1 rounded-pill"><?= $statusText ?></span>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-5">
+                            <i class="typcn typcn-tick text-success" style="font-size: 4rem;"></i>
+                            <h5 class="mt-3 text-muted">Stok Aman</h5>
+                            <p class="text-muted">Tidak ada bahan baku yang mencapai limit kritis.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Aktivitas -->
+        <div class="col-lg-6 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm w-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0 font-weight-bold text-dark">Aktivitas Terkini</h4>
+                        <a href="logaktivitas.php" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Riwayat Log</a>
+                    </div>
+                    <ul class="timeline-log m-0 pl-4 mt-3">
+                        <?php if(count($logAktivitas) > 0): ?>
+                            <?php foreach($logAktivitas as $log): ?>
+                                <li class="timeline-item">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="font-weight-bold text-dark"><?= htmlspecialchars($log['aktivitas']) ?></span>
+                                        <span class="text-muted small"><?= date('H:i, d M', strtotime($log['waktu'])) ?></span>
+                                    </div>
+                                    <p class="mb-1 text-muted" style="line-height: 1.4; font-size: 13px;">
+                                        <?= htmlspecialchars($log['keterangan']) ?>
+                                    </p>
+                                    <small class="text-primary font-weight-bold">
+                                        Oleh: <?= htmlspecialchars($log['username']) ?> 
+                                        <span class="text-muted font-weight-normal px-1">&bull;</span> 
+                                        <?= htmlspecialchars($log['modul']) ?>
+                                    </small>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <li class="text-center py-4 text-muted">Belum ada aktivitas.</li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Third Row: Recent Transactions -->
+    <div class="row">
+        <div class="col-12 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm w-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0 font-weight-bold text-dark">Transaksi Kasir Terakhir</h4>
+                        <a href="laporanpenjualan.php" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">Laporan Penjualan</a>
                     </div>
                     <div class="table-responsive">
-                      <table class="table">
-                        <tbody>
-                          <tr>
-                            <td>
-                              <div class="d-flex">
-                                <img class="img-sm rounded-circle mb-md-0 mr-2" src="../../images/faces/face30.png" alt="profile image">
-                                <div>
-                                  <div> Company</div>
-                                  <div class="font-weight-bold mt-1">volkswagen</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              Budget
-                              <div class="font-weight-bold  mt-1">$2322 </div>
-                            </td>
-                            <td>
-                              Status
-                              <div class="font-weight-bold text-success  mt-1">88% </div>
-                            </td>
-                            <td>
-                              Deadline
-                              <div class="font-weight-bold  mt-1">07 Nov 2019</div>
-                            </td>
-                            <td>
-                              <button type="button" class="btn btn-sm btn-secondary">edit actions</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <div class="d-flex">
-                                <img class="img-sm rounded-circle mb-md-0 mr-2" src="../../images/faces/face31.png" alt="profile image">
-                                <div>
-                                  <div> Company</div>
-                                  <div class="font-weight-bold  mt-1">Land Rover</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              Budget
-                              <div class="font-weight-bold  mt-1">$12022  </div>
-                            </td>
-                            <td>
-                              Status
-                              <div class="font-weight-bold text-success  mt-1">70% </div>
-                            </td>
-                            <td>
-                              Deadline
-                              <div class="font-weight-bold  mt-1">08 Nov 2019</div>
-                            </td>
-                            <td>
-                              <button type="button" class="btn btn-sm btn-secondary">edit actions</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <div class="d-flex">
-                                <img class="img-sm rounded-circle mb-md-0 mr-2" src="../../images/faces/face32.png" alt="profile image">
-                                <div>
-                                  <div> Company</div>
-                                  <div class="font-weight-bold  mt-1">Bentley </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              Budget
-                              <div class="font-weight-bold  mt-1">$8,725</div>
-                            </td>
-                            <td>
-                              Status
-                              <div class="font-weight-bold text-success  mt-1">87% </div>
-                            </td>
-                            <td>
-                              Deadline
-                              <div class="font-weight-bold  mt-1">11 Jun 2019</div>
-                            </td>
-                            <td>
-                              <button type="button" class="btn btn-sm btn-secondary">edit actions</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <div class="d-flex">
-                                <img class="img-sm rounded-circle mb-md-0 mr-2" src="../../images/faces/face33.png" alt="profile image">
-                                <div>
-                                  <div> Company</div>
-                                  <div class="font-weight-bold  mt-1">Morgan </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              Budget
-                              <div class="font-weight-bold  mt-1">$5,220 </div>
-                            </td>
-                            <td>
-                              Status
-                              <div class="font-weight-bold text-success  mt-1">65% </div>
-                            </td>
-                            <td>
-                              Deadline
-                              <div class="font-weight-bold  mt-1">26 Oct 2019</div>
-                            </td>
-                            <td>
-                              <button type="button" class="btn btn-sm btn-secondary">edit actions</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <div class="d-flex">
-                                <img class="img-sm rounded-circle mb-md-0 mr-2" src="../../images/faces/face34.png" alt="profile image">
-                                <div>
-                                  <div> Company</div>
-                                  <div class="font-weight-bold  mt-1">volkswagen</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              Budget
-                              <div class="font-weight-bold  mt-1">$2322 </div>
-                            </td>
-                            <td>
-                              Status
-                              <div class="font-weight-bold text-success mt-1">88% </div>
-                            </td>
-                            <td>
-                              Deadline
-                              <div class="font-weight-bold  mt-1">07 Nov 2019</div>
-                            </td>
-                            <td>
-                              <button type="button" class="btn btn-sm btn-secondary">edit actions</button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                        <table class="table table-premium w-100 table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nomor Struk</th>
+                                    <th>Waktu Transaksi</th>
+                                    <th>Metode Pembayaran</th>
+                                    <th class="text-right">Total Nominal</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if(count($recentSales) > 0): ?>
+                                    <?php foreach($recentSales as $sale): 
+                                        $badgeSale = ($sale['status'] == 'Selesai') ? 'badge-success' : 'badge-danger';
+                                    ?>
+                                        <tr>
+                                            <td class="font-weight-bold text-dark">#<?= htmlspecialchars($sale['nomor']) ?></td>
+                                            <td><?= date('d M Y, H:i', strtotime($sale['waktu'])) ?></td>
+                                            <td><?= htmlspecialchars($sale['metode']) ?></td>
+                                            <td class="text-right font-weight-bold text-primary">Rp <?= number_format($sale['total'], 0, ',', '.') ?></td>
+                                            <td class="text-center">
+                                                <span class="badge <?= $badgeSale ?> rounded-pill px-3 py-1"><?= htmlspecialchars($sale['status']) ?></span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">Belum ada transaksi penjualan.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
-                  </div>
                 </div>
-              </div>
             </div>
-          </div>
+        </div>
+    </div>
+
+</div>
+
 <?php 
-// ==========================================
-// PANGGIL TEMPLATE FOOTER DI SINI
-// ==========================================
 require_once '../includes/footer.php'; 
 ?>
