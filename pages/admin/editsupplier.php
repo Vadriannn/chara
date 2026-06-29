@@ -57,6 +57,7 @@ try {
                 $nama,
                 $id
             ]);
+            catatLog($koneksi, "Ubah Supplier", "Mengubah supplier (" . $supplier['nama'] . ") menjadi: " . $nama, "Master Data");
             header("Location: daftarsupplier.php?success=edit");
             exit;
         }

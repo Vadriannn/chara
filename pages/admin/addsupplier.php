@@ -30,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt = $koneksi->prepare($sql);
             $stmt->execute([$nama]);
             
+            catatLog($koneksi, "Tambah Supplier", "Menambahkan supplier: " . $nama, "Master Data");
+            
             header("Location: daftarsupplier.php?success=add");
             exit;
         }

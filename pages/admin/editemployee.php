@@ -71,6 +71,9 @@ try {
                     $id
                 ]);
             }
+            
+            catatLog($koneksi, "Ubah Pengguna", "Mengubah data pengguna (ID: " . $id . ") dengan username: " . $username, "Admin", $id);
+            
             header('location:employee.php');
             exit;
         }

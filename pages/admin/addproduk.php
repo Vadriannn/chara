@@ -110,6 +110,8 @@ try {
             }
         }
         
+        catatLog($koneksi, "Tambah Produk", "Menambahkan produk baru: " . $nama . " beserta resepnya", "Master Data", $kode);
+        
         $koneksi->commit();
         header("Location: produk.php?success=add");
         exit;

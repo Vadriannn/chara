@@ -92,12 +92,25 @@ if(isset($_POST['simpan'])){
         ");
         $stmt->execute([$total, $nomorPembelian]);
 
+        // Catat ke tArusKas (Pengeluaran)
+        $stmtArusKas = $koneksi->prepare("
+            INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tPembelian_nomor)
+            VALUES (NOW(), 'Keluar', 'Pembelian', ?, ?, ?)
+        ");
+        $stmtArusKas->execute([
+            $total, 
+            'Pembelian Bahan dari PR #' . $pr,
+            $nomorPembelian
+        ]);
+
         $stmtPRUpdate = $koneksi->prepare("
             UPDATE tPurchaseRequest
             SET status = 'Approved'
             WHERE id = ?
         ");
         $stmtPRUpdate->execute([$pr]);
+        
+        catatLog($koneksi, "Approve Purchase Request", "Menyetujui PR #" . $pr . " dan menjadikannya Pembelian", "Gudang", $nomorPembelian);
 
         $koneksi->commit();
 

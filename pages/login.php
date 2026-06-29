@@ -19,6 +19,9 @@
                 $_SESSION['nama'] = $baris['username'];
                 $_SESSION['is_auth'] = true;
                 $_SESSION['role'] = $baris['role'];
+                
+                catatLog($koneksi, "Login", "Pengguna berhasil login ke dalam sistem", "Auth");
+                
                 header('location:../index.php');
             }
             else {

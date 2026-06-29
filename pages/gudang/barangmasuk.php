@@ -128,6 +128,8 @@ if(isset($_GET['receive'])){
         ");
         $stmt->execute([$nomor]);
         
+        catatLog($koneksi, "Terima Barang", "Menerima barang dari pembelian #" . $nomor, "Gudang", $nomor);
+        
         $koneksi->commit();
         header("Location: barangmasuk.php?success=receive");
         exit;
@@ -166,25 +168,47 @@ $dataMenunggu = $stmt->fetchAll(PDO::FETCH_ASSOC);
 | DATA RIWAYAT BARANG MASUK (DITERIMA)
 |--------------------------------------------------------------------------
 */
-$stmtRiwayat = $koneksi->prepare("
+$search_bahan = isset($_GET['search_bahan']) ? trim($_GET['search_bahan']) : '';
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+
+$queryRiwayat = "
     SELECT
-        p.nomor,
-        pb.tanggal AS tanggal_terima,
-        p.total,
-        p.status,
-        s.nama AS supplier,
+        m.tanggal AS tanggal_terima,
+        m.referensi AS nomor,
+        m.qty,
+        m.stokSebelum,
+        m.stokSesudah,
+        b.nama AS nama_bahan,
+        st.nama AS satuan,
         u.username AS penerima
-    FROM tPembelian p
-    JOIN tSupplier s
-        ON p.tSupplier_id = s.id
-    JOIN tPenerimaanBarang pb
-        ON p.nomor = pb.tPembelian_nomor
-    LEFT JOIN tUser u
-        ON pb.tUser_id = u.id
-    WHERE p.status = 'Diterima'
-    ORDER BY pb.tanggal DESC
-");
-$stmtRiwayat->execute();
+    FROM tMutasiStok m
+    JOIN tBahan b ON m.tBahan_kode = b.kode
+    JOIN tsatuan st ON b.tSatuan_id = st.id
+    LEFT JOIN tUser u ON m.tUser_id = u.id
+    WHERE m.jenis = 'Pembelian'
+";
+$paramsRiwayat = [];
+
+if ($search_bahan !== '') {
+    $queryRiwayat .= " AND b.nama LIKE :search_bahan";
+    $paramsRiwayat['search_bahan'] = "%$search_bahan%";
+}
+
+if ($start_date !== '') {
+    $queryRiwayat .= " AND DATE(m.tanggal) >= :start_date";
+    $paramsRiwayat['start_date'] = $start_date;
+}
+
+if ($end_date !== '') {
+    $queryRiwayat .= " AND DATE(m.tanggal) <= :end_date";
+    $paramsRiwayat['end_date'] = $end_date;
+}
+
+$queryRiwayat .= " ORDER BY m.tanggal DESC";
+
+$stmtRiwayat = $koneksi->prepare($queryRiwayat);
+$stmtRiwayat->execute($paramsRiwayat);
 $dataRiwayat = $stmtRiwayat->fetchAll(PDO::FETCH_ASSOC);
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
@@ -246,7 +270,6 @@ require_once '../includes/sidebar.php';
                         </div>
                     </div>
                 </div>
-
                 <!-- TABEL 2: RIWAYAT BARANG MASUK -->
                 <div class="row">
                     <div class="col-lg-12 grid-margin stretch-card">
@@ -256,34 +279,54 @@ require_once '../includes/sidebar.php';
                                     <i class="typcn typcn-tick"></i> Riwayat Barang Masuk
                                 </h4>
                                 <p class="text-muted">Daftar barang yang sudah berhasil diterima dan masuk ke stok gudang.</p>
+                                
+                                <form method="GET" class="form-inline mb-4">
+                                    <input type="text" name="search_bahan" class="form-control mr-2 mb-2" placeholder="Nama Bahan Baku" value="<?= htmlspecialchars($search_bahan) ?>">
+                                    <input type="date" name="start_date" class="form-control mr-2 mb-2" value="<?= htmlspecialchars($start_date) ?>">
+                                    <span class="mr-2 mb-2"> s/d </span>
+                                    <input type="date" name="end_date" class="form-control mr-2 mb-2" value="<?= htmlspecialchars($end_date) ?>">
+                                    <button type="submit" class="btn btn-primary mb-2 mr-2">Filter</button>
+                                    <a href="barangmasuk.php" class="btn btn-secondary mb-2">Reset</a>
+                                </form>
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-hover">
-                                        <thead class="thead-light">
+                                    <table class="table table-bordered">
+                                        <thead>
                                             <tr>
-                                                <th>No Pembelian</th>
-                                                <th>Waktu Diterima</th>
-                                                <th>Supplier</th>
-                                                <th>Diterima Oleh</th>
-                                                <th>Status</th>
-                                                <th class="text-center">Aksi</th>
+                                                <th width="5%">No</th>
+                                                <th width="15%">Tanggal Terima</th>
+                                                <th width="15%">No. Referensi (PB)</th>
+                                                <th>Nama Bahan Baku</th>
+                                                <th class="text-center">Stok Awal</th>
+                                                <th class="text-center text-success">Penambahan (Qty)</th>
+                                                <th class="text-center">Sisa Stok</th>
+                                                <th>Penerima</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                         <?php if(count($dataRiwayat) > 0): ?>
-                                            <?php foreach($dataRiwayat as $row): ?>
+                                            <?php $no = 1; foreach($dataRiwayat as $row): ?>
                                             <tr>
-                                                <td class="font-weight-bold">PB-<?= str_pad($row['nomor'], 4, '0', STR_PAD_LEFT) ?></td>
+                                                <td><?= $no++ ?></td>
                                                 <td><?= date('d/m/Y H:i', strtotime($row['tanggal_terima'])) ?></td>
-                                                <td><?= $row['supplier'] ?></td>
-                                                <td><?= $row['penerima'] ?: 'Sistem' ?></td>
-                                                <td><span class="badge badge-success"><?= $row['status'] ?></span></td>
-                                                <td class="text-center">
-                                                    <a href="detailbarangmasuk.php?nomor=<?= $row['nomor'] ?>" class="btn btn-info btn-sm">Detail</a>
+                                                <td class="font-weight-bold">PB-<?= str_pad($row['nomor'], 4, '0', STR_PAD_LEFT) ?></td>
+                                                <td class="font-weight-bold"><?= htmlspecialchars($row['nama_bahan']) ?></td>
+                                                <td class="text-center text-muted">
+                                                    <?= rtrim(rtrim($row['stokSebelum'], '0'), '.') ?>
+                                                    <small><?= htmlspecialchars($row['satuan']) ?></small>
                                                 </td>
+                                                <td class="text-center font-weight-bold text-success">
+                                                    + <?= rtrim(rtrim($row['qty'], '0'), '.') ?>
+                                                    <small><?= htmlspecialchars($row['satuan']) ?></small>
+                                                </td>
+                                                <td class="text-center font-weight-bold">
+                                                    <?= rtrim(rtrim($row['stokSesudah'], '0'), '.') ?>
+                                                    <small><?= htmlspecialchars($row['satuan']) ?></small>
+                                                </td>
+                                                <td><?= htmlspecialchars($row['penerima'] ?: 'Sistem') ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="6" class="text-center text-muted py-4">Belum ada riwayat barang masuk</td></tr>
+                                            <tr><td colspan="8" class="text-center text-muted py-4">Belum ada riwayat barang masuk</td></tr>
                                         <?php endif; ?>
                                         </tbody>
                                     </table>

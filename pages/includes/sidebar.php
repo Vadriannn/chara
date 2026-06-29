@@ -51,7 +51,7 @@
     </li>
     <li class="nav-item">
       <a class="nav-link" href="../admin/logaktivitas.php">
-        <i class="typcn typcn-group menu-icon"></i>
+        <i class="typcn typcn-clipboard menu-icon"></i>
         <span class="menu-title">Log Aktivitas</span>
       </a>
     </li>

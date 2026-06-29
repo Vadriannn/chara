@@ -82,6 +82,8 @@ try {
                   $item['konversi']
               ]);
             }
+            
+            catatLog($koneksi, "Buat Purchase Request", "Membuat PR baru", "Gudang", $idPR);
 
             header("Location: purchaserequest.php?success=add");
             exit;
@@ -125,7 +127,7 @@ require_once '../includes/sidebar.php';
                                                 <select id="bahanSelect" class="form-control form-control-sm">
                                                     <option value="">-- Pilih Bahan --</option>
                                                     <?php while($bahan = $bahanBaku->fetch(PDO::FETCH_ASSOC)): ?>
-                                                        <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuan="<?= $bahan['satuan']; ?>">
+                                                        <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuan="<?= $bahan['satuan']; ?>" <?= (isset($_GET['bahan']) && $_GET['bahan'] == $bahan['kode']) ? 'selected' : '' ?>>
                                                             <?= $bahan['nama']; ?>
                                                         </option>
                                                     <?php endwhile; ?>

@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->execute([
                 $nama
             ]);
+            catatLog($koneksi, "Tambah Kategori", "Menambahkan kategori: " . $nama, "Master Data");
             header("Location: kategori.php?success=1");
             exit;
         }

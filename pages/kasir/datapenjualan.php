@@ -15,6 +15,14 @@ $awalBulan = date('Y-m-01');
 $tglMulai = !empty($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : $awalBulan;
 $tglSelesai = !empty($_GET['tgl_selesai']) ? $_GET['tgl_selesai'] : $hariIni;
 
+$searchNota = isset($_GET['search_nota']) ? trim($_GET['search_nota']) : '';
+$filterKasir = isset($_GET['filter_kasir']) ? $_GET['filter_kasir'] : '';
+$filterMetbayar = isset($_GET['filter_metbayar']) ? $_GET['filter_metbayar'] : '';
+
+// Ambil daftar kasir untuk dropdown filter
+$stmtKasir = $koneksi->query("SELECT id, username FROM tUser ORDER BY username ASC");
+$kasirList = $stmtKasir->fetchAll(PDO::FETCH_ASSOC);
+
 $query = "
     SELECT 
         p.nomor,
@@ -38,6 +46,21 @@ if ($tglMulai != '') {
 if ($tglSelesai != '') {
     $where[] = "DATE(p.tanggal) <= ?";
     $params[] = $tglSelesai;
+}
+
+if ($searchNota != '') {
+    $where[] = "p.nomor LIKE ?";
+    $params[] = "%$searchNota%";
+}
+
+if ($filterKasir != '') {
+    $where[] = "p.tUser_id = ?";
+    $params[] = $filterKasir;
+}
+
+if ($filterMetbayar != '') {
+    $where[] = "p.metbayar = ?";
+    $params[] = $filterMetbayar;
 }
 
 // 5. Gabungkan kondisi WHERE jika ada
@@ -82,21 +105,47 @@ require_once '../includes/sidebar.php';
 
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <form method="GET" class="form-inline mb-2">
-                                <div class="form-group mr-3">
-                                    <label class="mr-2 font-weight-bold text-dark">Mulai Tanggal:</label>
-                                    <input type="date" name="tgl_mulai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglMulai) ?>">
+                            <form method="GET" class="mb-3">
+                                <div class="row align-items-end">
+                                    <div class="col-md-2 mb-3">
+                                        <label class="font-weight-bold text-dark">Mulai Tanggal</label>
+                                        <input type="date" name="tgl_mulai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglMulai) ?>">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="font-weight-bold text-dark">Sampai Tanggal</label>
+                                        <input type="date" name="tgl_selesai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglSelesai) ?>">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="font-weight-bold text-dark">No. Nota</label>
+                                        <input type="text" name="search_nota" class="form-control form-control-sm" placeholder="Cari No Nota..." value="<?= htmlspecialchars($searchNota) ?>">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="font-weight-bold text-dark">Kasir</label>
+                                        <select name="filter_kasir" class="form-control form-control-sm">
+                                            <option value="">Semua Kasir</option>
+                                            <?php foreach($kasirList as $k): ?>
+                                                <option value="<?= $k['id'] ?>" <?= ($filterKasir == $k['id']) ? 'selected' : '' ?>><?= htmlspecialchars($k['username']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="font-weight-bold text-dark">Metode Bayar</label>
+                                        <select name="filter_metbayar" class="form-control form-control-sm">
+                                            <option value="">Semua Metode</option>
+                                            <option value="Tunai" <?= ($filterMetbayar == 'Tunai') ? 'selected' : '' ?>>Tunai</option>
+                                            <option value="QRIS" <?= ($filterMetbayar == 'QRIS') ? 'selected' : '' ?>>QRIS</option>
+                                            <option value="Debit" <?= ($filterMetbayar == 'Debit') ? 'selected' : '' ?>>Debit</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <button type="submit" class="btn btn-info btn-sm btn-block mb-2">
+                                            <i class="typcn typcn-zoom"></i> Filter
+                                        </button>
+                                        <a href="datapenjualan.php" class="btn btn-secondary btn-sm btn-block">
+                                            <i class="typcn typcn-refresh"></i> Reset
+                                        </a>
+                                    </div>
                                 </div>
-                                <div class="form-group mr-3">
-                                    <label class="mr-2 font-weight-bold text-dark">Sampai Tanggal:</label>
-                                    <input type="date" name="tgl_selesai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglSelesai) ?>">
-                                </div>
-                                <button type="submit" class="btn btn-info mr-2">
-                                    <i class="typcn typcn-zoom"></i> Filter
-                                </button>
-                                <a href="datapenjualan.php" class="btn btn-secondary">
-                                    <i class="typcn typcn-refresh"></i> Reset
-                                </a>
                             </form>
                         </div>
                     </div>

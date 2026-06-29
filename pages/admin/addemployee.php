@@ -28,6 +28,9 @@ try {
                 $password,
                 $role
             ]);
+            
+            catatLog($koneksi, "Tambah Pengguna", "Mendaftarkan pengguna baru: " . $username, "Admin");
+            
             header("Location: employee.php");
             exit;
         }

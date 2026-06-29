@@ -48,6 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 sha1($password_baru),
                 $id_user
             ]);
+            
+            catatLog($koneksi, "Ubah Password", "Mengubah password akun sendiri", "Pengaturan Akun", $id_user);
 
             $pesan = "Password berhasil diubah.";
         }

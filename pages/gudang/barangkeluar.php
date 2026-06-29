@@ -1,0 +1,123 @@
+<?php 
+session_start(); 
+$page_title = "CHARA - Barang Keluar (Penjualan)";
+require_once '../../koneksi.php';
+require_once '../../auth.php';
+require_once '../auth_gudang.php';
+
+try {
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    
+    $query = "
+        SELECT
+            m.tanggal,
+            m.referensi,
+            m.qty,
+            m.stokSebelum,
+            m.stokSesudah,
+            b.nama AS nama_bahan,
+            s.nama AS satuan,
+            u.username AS kasir
+        FROM tMutasiStok m
+        JOIN tbahan b ON m.tBahan_kode = b.kode
+        JOIN tsatuan s ON b.tSatuan_id = s.id
+        LEFT JOIN tuser u ON m.tUser_id = u.id
+        WHERE m.jenis = 'Penjualan'
+    ";
+    
+    $params = [];
+    if ($search != '') {
+        $query .= " AND (m.referensi LIKE :search OR b.nama LIKE :search) ";
+        $params['search'] = "%$search%";
+    }
+    
+    $query .= " ORDER BY m.tanggal DESC";
+    
+    $stmt = $koneksi->prepare($query);
+    $stmt->execute($params);
+    $mutasi = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (PDOException $e) {
+    die("Error: " . $e->getMessage());
+}
+require_once '../includes/header.php';
+require_once '../includes/sidebar.php';
+?>
+            <div class="content-wrapper">
+                <div class="row">
+                    <div class="col-lg-12 grid-margin stretch-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div>
+                                        <h4 class="card-title mb-1">History Pengurangan Stok</h4>
+                                        <p class="text-muted mb-0">
+                                            Catatan barang keluar yang diakibatkan oleh transaksi penjualan kasir.
+                                        </p>
+                                    </div>
+                                    <form method="GET" class="form-inline">
+                                        <div class="input-group">
+                                            <input type="text" name="search" class="form-control" placeholder="Cari nota / nama bahan..." value="<?= htmlspecialchars($search) ?>">
+                                            <div class="input-group-append">
+                                                <button class="btn btn-primary" type="submit">Cari</button>
+                                                <?php if($search != ''): ?>
+                                                    <a href="barangkeluar.php" class="btn btn-secondary">Reset</a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                      <thead>
+                                          <tr>
+                                              <th width="5%">No</th>
+                                              <th width="15%">Tanggal Waktu</th>
+                                              <th width="15%">No. Referensi (Nota)</th>
+                                              <th>Nama Bahan Baku</th>
+                                              <th class="text-center">Stok Awal</th>
+                                              <th class="text-center text-danger">Pengurangan (Qty)</th>
+                                              <th class="text-center">Sisa Stok</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody>
+                                          <?php if(count($mutasi) > 0): ?>
+                                              <?php $no = 1; foreach($mutasi as $row): ?>
+                                              <tr>
+                                                  <td><?= $no++ ?></td>
+                                                  <td><?= date('d-m-Y H:i', strtotime($row['tanggal'])) ?></td>
+                                                  <td class="font-weight-bold">#<?= htmlspecialchars($row['referensi']) ?></td>
+                                                  <td class="font-weight-bold"><?= htmlspecialchars($row['nama_bahan']) ?></td>
+                                                  <td class="text-center text-muted">
+                                                      <?= rtrim(rtrim($row['stokSebelum'], '0'), '.') ?> 
+                                                      <small><?= htmlspecialchars($row['satuan']) ?></small>
+                                                  </td>
+                                                  <td class="text-center font-weight-bold text-danger">
+                                                      - <?= rtrim(rtrim($row['qty'], '0'), '.') ?> 
+                                                      <small><?= htmlspecialchars($row['satuan']) ?></small>
+                                                  </td>
+                                                  <td class="text-center font-weight-bold">
+                                                      <?= rtrim(rtrim($row['stokSesudah'], '0'), '.') ?> 
+                                                      <small><?= htmlspecialchars($row['satuan']) ?></small>
+                                                  </td>
+                                              </tr>
+                                              <?php endforeach; ?>
+                                          <?php else: ?>
+                                              <tr>
+                                                  <td colspan="8" class="text-center py-4 text-muted">Belum ada history pengeluaran barang.</td>
+                                              </tr>
+                                          <?php endif; ?>
+                                      </tbody>
+                                  </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<?php 
+// ==========================================
+// PANGGIL TEMPLATE FOOTER DI SINI
+// ==========================================
+require_once '../includes/footer.php'; 
+?>

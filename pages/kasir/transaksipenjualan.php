@@ -30,11 +30,16 @@ try {
     }
 
     // 4. AMBIL DATA RESEP UTK LIVE VALIDASI JAVASCRIPT
-    $stmtResepAll = $koneksi->query("SELECT tProduct_kode, tBahan_kode, jumlah FROM tResep");
+    $stmtResepAll = $koneksi->query("
+        SELECT r.tProduct_kode, r.tBahan_kode, r.jumlah, b.nama AS nama_bahan 
+        FROM tResep r
+        JOIN tBahan b ON r.tBahan_kode = b.kode
+    ");
     $resepData = [];
     while($r = $stmtResepAll->fetch(PDO::FETCH_ASSOC)) {
         $resepData[$r['tProduct_kode']][] = [
             'bahan'  => $r['tBahan_kode'],
+            'nama_bahan' => $r['nama_bahan'],
             'jumlah' => (float)$r['jumlah']
         ];
     }
@@ -82,6 +87,17 @@ try {
         ");
         $stmtPenjualan->execute([
             $nomorPenjualan, $grandTotal, $diskonNominal, $metbayar, $_SESSION['id_user']
+        ]);
+
+        // Catat ke tArusKas (Pemasukan)
+        $stmtArusKas = $koneksi->prepare("
+            INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tPenjualan_nomor)
+            VALUES (NOW(), 'Masuk', 'Penjualan', ?, ?, ?)
+        ");
+        $stmtArusKas->execute([
+            $grandTotal, 
+            'Pendapatan dari Nota #' . $nomorPenjualan,
+            $nomorPenjualan
         ]);
 
         // Siapkan Statement untuk Detail dan Modifier
@@ -161,6 +177,8 @@ try {
                 ]);
             }
         }
+        
+        catatLog($koneksi, "Transaksi Penjualan", "Melakukan penjualan dengan total Rp " . number_format($grandTotal, 0, ',', '.'), "Kasir", $nomorPenjualan);
 
         $koneksi->commit();
         header("Location: detailpenjualan.php?nomor=" . $nomorPenjualan . "&success=1");
@@ -337,21 +355,30 @@ require_once '../includes/footer.php';
     let subtotalKeranjang = 0;
     let itemIndexCounter = 0; // Digunakan sebagai kunci unik untuk tiap baris keranjang
     
+    let limitBahanText = "";
+
     // HITUNG MAKSIMAL PORSI DARI SISA BAHAN GUDANG
     function hitungMaxPorsi(kodeProduk) {
+        limitBahanText = "";
         let resep = resepProduk[kodeProduk];
         if (!resep || resep.length === 0) return 999; 
         
         let maxPorsi = Infinity;
+        let penyebabKurang = "";
+
         resep.forEach(item => {
             let sisaStok = stokBahanCurrent[item.bahan] || 0;
             let bisaBikin = Math.floor(sisaStok / item.jumlah);
             if (bisaBikin < maxPorsi) {
                 maxPorsi = bisaBikin;
+                penyebabKurang = item.nama_bahan;
             }
         });
         
-        return maxPorsi === Infinity ? 0 : maxPorsi;
+        if (maxPorsi === Infinity) return 0;
+        
+        limitBahanText = penyebabKurang;
+        return maxPorsi;
     }
 
     function updateMaxUI() {
@@ -371,8 +398,14 @@ require_once '../includes/footer.php';
         
         if (max === 999) {
             maxLabel.innerText = '(Stok: Bebas)';
+            maxLabel.classList.remove('text-danger');
         } else {
-            maxLabel.innerText = `(Maks: ${max})`;
+            if (max === 0) {
+                maxLabel.innerHTML = `(Maks: 0) - <span class="text-danger">Bahan <b>${limitBahanText}</b> kurang!</span>`;
+            } else {
+                maxLabel.innerText = `(Maks: ${max})`;
+                maxLabel.classList.remove('text-danger');
+            }
         }
         
         let currentInput = parseInt(inputQty.value) || 0;

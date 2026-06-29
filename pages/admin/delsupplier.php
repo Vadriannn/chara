@@ -30,7 +30,14 @@ try {
         WHERE id = ?
     ");
 
+    $stmtNama = $koneksi->prepare("SELECT nama FROM tsupplier WHERE id = ?");
+    $stmtNama->execute([$id]);
+    $namaSup = $stmtNama->fetchColumn();
+
     $hapus->execute([$id]);
+    if($namaSup) {
+        catatLog($koneksi, "Hapus Supplier", "Menghapus supplier: " . $namaSup, "Master Data");
+    }
 
     header("Location: daftarsupplier.php?success=delete");
     exit;

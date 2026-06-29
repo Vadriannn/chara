@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $nama,
                 $id
             ]);
+            catatLog($koneksi, "Ubah Kategori", "Mengubah kategori (" . $kategori['nama'] . ") menjadi: " . $nama, "Master Data");
             $pesan = "Kategori berhasil diperbarui.";
             // refresh data terbaru
             $stmt->execute([$id]);

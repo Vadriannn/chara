@@ -43,6 +43,8 @@ try {
             $sql = "INSERT INTO tbahan (kode, nama, stok, harga, tSatuan_id) VALUES (?, ?, 0, 0, ?)";
             $stmt = $koneksi->prepare($sql);
             $stmt->execute([$kode, $nama, $satuanId]);
+            
+            catatLog($koneksi, "Tambah Bahan Baku", "Menambahkan bahan: " . $nama, "Master Data", $kode);
 
             header("Location: bahanbaku.php?success=add");
             exit;

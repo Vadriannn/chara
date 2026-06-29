@@ -36,6 +36,22 @@ if(isset($_POST['simpan'])){
         $stmt->bindParam(':user',$user);
 
         $stmt->execute();
+        
+        $biayaId = $koneksi->lastInsertId();
+
+        // Catat ke tArusKas (Pengeluaran)
+        $stmtArusKas = $koneksi->prepare("
+            INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tBiayaOperasional_id)
+            VALUES (?, 'Keluar', 'Biaya Operasional', ?, ?, ?)
+        ");
+        $stmtArusKas->execute([
+            $tanggal . ' ' . date('H:i:s'),
+            $nominal, 
+            'Biaya Operasional: ' . $keterangan,
+            $biayaId
+        ]);
+        
+        catatLog($koneksi, "Tambah Biaya Operasional", "Mencatat biaya operasional: " . $keterangan . " sejumlah Rp " . number_format($nominal, 0, ',', '.'), "Keuangan", $biayaId);
 
         header("Location: biayaoperasional.php?success=add");
         exit;

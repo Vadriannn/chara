@@ -16,4 +16,17 @@ try {
     // 2. Jika gagal, langsung matikan proses dan tampilkan alasannya!
     die("Koneksi Database Gagal: " . $e->getMessage()); 
 }
+
+if (!function_exists('catatLog')) {
+    function catatLog($koneksi, $aktivitas, $keterangan, $modul, $referensi = '-') {
+        if(isset($_SESSION['id_user'])) {
+            try {
+                $stmt = $koneksi->prepare("INSERT INTO tLog (aktivitas, keterangan, waktu, modul, referensi, tUser_id) VALUES (?, ?, NOW(), ?, ?, ?)");
+                $stmt->execute([$aktivitas, $keterangan, $modul, $referensi, $_SESSION['id_user']]);
+            } catch (Exception $e) {
+                // Abaikan error log agar tidak memblokir transaksi utama
+            }
+        }
+    }
+}
 ?>

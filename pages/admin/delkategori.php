@@ -30,7 +30,14 @@ try {
         WHERE id = ?
     ");
 
+    $stmtNama = $koneksi->prepare("SELECT nama FROM tkategori WHERE id = ?");
+    $stmtNama->execute([$id]);
+    $namaKat = $stmtNama->fetchColumn();
+
     $hapus->execute([$id]);
+    if($namaKat) {
+        catatLog($koneksi, "Hapus Kategori", "Menghapus kategori: " . $namaKat, "Master Data");
+    }
 
     header("Location: kategori.php?success=delete");
     exit;

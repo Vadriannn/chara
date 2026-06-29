@@ -30,7 +30,15 @@ try {
         WHERE kode = ?
     ");
 
+    $stmtNama = $koneksi->prepare("SELECT nama FROM tbahan WHERE kode = ?");
+    $stmtNama->execute([$kode]);
+    $namaBahan = $stmtNama->fetchColumn();
+
     $hapus->execute([$kode]);
+    
+    if($namaBahan) {
+        catatLog($koneksi, "Hapus Bahan Baku", "Menghapus bahan baku: " . $namaBahan, "Master Data", $kode);
+    }
 
     header("Location: bahanbaku.php?success=delete");
     exit;

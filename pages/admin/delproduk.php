@@ -35,13 +35,14 @@ try {
     |--------------------------------------------------------------------------
     */
     $cek = $koneksi->prepare("
-        SELECT kode
+        SELECT kode, nama
         FROM tproduct
         WHERE kode = ?
     ");
     $cek->execute([$kode]);
+    $produk = $cek->fetch(PDO::FETCH_ASSOC);
 
-    if ($cek->rowCount() == 0) {
+    if (!$produk) {
         echo "
         <script>
             alert('Produk tidak ditemukan!');
@@ -85,6 +86,9 @@ try {
     | Commit
     |--------------------------------------------------------------------------
     */
+    
+    catatLog($koneksi, "Hapus Produk", "Menghapus produk: " . $produk['nama'], "Master Data", $kode);
+    
     $koneksi->commit();
 
     echo "

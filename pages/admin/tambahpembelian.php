@@ -101,6 +101,20 @@ try {
         }
     }
 
+    // Catat ke tArusKas (Pengeluaran)
+    $stmtArusKas = $koneksi->prepare("
+        INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tPembelian_nomor)
+        VALUES (?, 'Keluar', 'Pembelian', ?, ?, ?)
+    ");
+    $stmtArusKas->execute([
+        $tanggal . ' ' . date('H:i:s'),
+        $total, 
+        'Pembelian Langsung',
+        $nomor
+    ]);
+    
+    catatLog($koneksi, "Tambah Pembelian Langsung", "Melakukan pembelian langsung tanpa PR", "Pembelian", $nomor);
+
     $koneksi->commit();
     header("Location: pembelian.php?success=add");
     exit;
