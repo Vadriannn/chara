@@ -1,5 +1,6 @@
 <?php
 session_start();
+$page_title = "CHARA - Tambah Purchase Request";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_gudang.php';
@@ -116,7 +117,7 @@ require_once '../includes/sidebar.php';
                                 <hr class="mt-2 mb-3">
                                 <h6 class="mb-3 text-primary">Form Detail Kebutuhan Barang</h6>
 
-                                <div class="bg-light p-3 mb-3 rounded border">
+                                <div class="mb-3">
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group mb-2">
@@ -153,7 +154,7 @@ require_once '../includes/sidebar.php';
                                     </div>
                                     <div class="row mt-1">
                                         <div class="col-md-12 text-right">
-                                            <button type="button" class="btn btn-success btn-sm" onclick="tambahBarang()">
+                                            <button type="button" class="btn btn-primary" onclick="tambahBarang()">
                                                 <i class="typcn typcn-plus"></i> Tambah ke Daftar
                                             </button>
                                         </div>
@@ -161,8 +162,8 @@ require_once '../includes/sidebar.php';
                                 </div>
 
                                 <div class="table-responsive mb-3">
-                                    <table class="table table-bordered table-hover table-sm">
-                                        <thead style="background-color: #f4f5f7;">
+                                    <table class="table table-bordered">
+                                        <thead>
                                             <tr>
                                                 <th>Bahan</th>
                                                 <th>Jumlah Permintaan</th>

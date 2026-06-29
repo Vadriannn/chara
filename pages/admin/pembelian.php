@@ -1,5 +1,6 @@
 <?php
 session_start();
+$page_title = "CHARA - Histori Pembelian";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php'; 
@@ -61,9 +62,9 @@ require_once '../includes/sidebar.php';
                         <?php endif; ?>
 
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
+                            <table class="table table-bordered">
                                 <thead>
-                                    <tr class="bg-light">
+                                    <tr>
                                         <th width="5%">No</th>
                                         <th width="15%">No. Nota</th>
                                         <th>Tanggal</th>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+$page_title = "CHARA - Daftar Produk";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';

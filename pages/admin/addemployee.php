@@ -1,5 +1,6 @@
 <?php 
 session_start(); 
+$page_title = "CHARA - Tambah Karyawan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
@@ -38,7 +39,6 @@ try {
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
 ?>
-
             <!-- TABEL -->
              <div class="content-wrapper">
                 <div class="row">

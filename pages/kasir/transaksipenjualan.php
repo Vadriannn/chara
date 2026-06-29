@@ -1,5 +1,6 @@
 <?php
 session_start();
+$page_title = "CHARA - Tambah Transaksi Penjualan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 
@@ -177,13 +178,12 @@ require_once '../includes/sidebar.php';
 ?>
 
           <div class="content-wrapper">
-            <div class="row">
               <div class="col-lg-12 grid-margin stretch-card">
-                <div class="card shadow-sm border-0">
+                <div class="card">
                   <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
                       <h4 class="card-title mb-0">Transaksi Penjualan (Kasir)</h4>
-                      <a href="datapenjualan.php" class="btn btn-secondary btn-sm">Daftar Penjualan</a>
+                      <a href="datapenjualan.php" class="btn btn-secondary">Daftar Penjualan</a>
                     </div>
                     
                     <?php if($error != "") : ?>
@@ -191,7 +191,7 @@ require_once '../includes/sidebar.php';
                     <?php endif; ?>
 
                     <form method="POST">
-                      <div class="bg-light p-4 mb-4 rounded border">
+                      <div class="mb-4">
                           <div class="row">
                               <div class="col-md-8">
                                   <div class="form-group mb-3">
@@ -248,16 +248,16 @@ require_once '../includes/sidebar.php';
                                   </select>
                               </div>
                               <div class="col-md-4 mt-4 mt-md-0">
-                                  <button type="button" id="btnTambah" class="btn btn-success btn-lg btn-block" onclick="tambahKeranjang()">
-                                      <i class="typcn typcn-shopping-cart"></i> Tambah Item
+                                  <button type="button" id="btnTambah" class="btn btn-primary w-100" onclick="tambahKeranjang()">
+                                      <i class="typcn typcn-plus"></i> Tambah Item
                                   </button>
                               </div>
                           </div>
                       </div>
 
                       <div class="table-responsive mb-4">
-                        <table class="table table-bordered table-hover">
-                          <thead class="bg-light">
+                        <table class="table table-bordered">
+                          <thead>
                             <tr>
                               <th>Produk & Kustomisasi</th>
                               <th class="text-right">Harga</th>
@@ -273,7 +273,7 @@ require_once '../includes/sidebar.php';
 
                       <div class="row mt-3 mb-4">
                           <div class="col-md-5 offset-md-7">
-                              <div class="p-3 rounded border shadow-sm" style="background-color: #f8f9fa; border-left: 4px solid #00c689 !important;">
+                              <div class="p-3">
                                   <table class="table table-borderless text-right mb-0">
                                       <tr>
                                           <th class="align-middle py-1">Subtotal</th>
@@ -310,8 +310,8 @@ require_once '../includes/sidebar.php';
                               </div>
                           </div>
                           <div class="col-md-8 text-right mt-4 mt-md-0">
-                              <a href="transaksipenjualan.php" class="btn btn-light btn-lg mr-2">Reset</a>
-                              <button type="submit" class="btn btn-primary btn-lg" onclick="return validasiSubmit()">Proses Pembayaran</button>
+                              <a href="transaksipenjualan.php" class="btn btn-light mr-2">Reset</a>
+                              <button type="submit" class="btn btn-primary" onclick="return validasiSubmit()">Proses Pembayaran</button>
                           </div>
                       </div>
 
@@ -319,7 +319,6 @@ require_once '../includes/sidebar.php';
                   </div>
                 </div>
               </div>
-            </div>
           </div>
 <?php 
 // ==========================================

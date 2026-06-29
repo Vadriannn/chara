@@ -1,5 +1,6 @@
 <?php
 session_start();
+$page_title = "CHARA - Detail Histori Pembelian";
 require_once '../../koneksi.php'; // Sesuaikan dengan letak file koneksi database Anda
 require_once '../../auth.php';    // Pastikan user sudah login
 
@@ -66,7 +67,7 @@ require_once '../includes/sidebar.php';
                             </div>
                         <?php endif; ?>
 
-                        <div class="row mb-4 bg-light p-3 rounded mx-1">
+                        <div class="row mb-4 mx-1">
                             <div class="col-md-3">
                                 <label class="text-muted mb-1 d-block">Tanggal Pengajuan</label>
                                 <span class="font-weight-bold text-dark">

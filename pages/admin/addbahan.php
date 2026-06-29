@@ -1,5 +1,7 @@
 <?php
 session_start();
+
+$page_title = "CHARA - Tambah Bahan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';

@@ -1,5 +1,6 @@
 <?php 
 session_start(); 
+$page_title = "CHARA - Detail Histori Pembelian";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_gudang.php';

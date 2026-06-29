@@ -1,5 +1,6 @@
 <?php
 session_start();
+$page_title = "CHARA - Detail Penjualan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 
@@ -65,9 +66,8 @@ require_once '../includes/sidebar.php';
                 </div>
             <?php endif; ?>
 
-            <div class="row">
               <div class="col-lg-12 grid-margin stretch-card">
-                <div class="card shadow-sm border-0">
+                <div class="card">
                   <div class="card-body">
                     
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -95,7 +95,7 @@ require_once '../includes/sidebar.php';
 
                     <div class="table-responsive pt-3">
                       <table class="table table-bordered">
-                        <thead class="bg-light">
+                        <thead>
                           <tr>
                             <th width="5%" class="font-weight-bold text-dark">No</th>
                             <th class="font-weight-bold text-dark">Produk & Kustomisasi</th>
@@ -120,7 +120,7 @@ require_once '../includes/sidebar.php';
                           </tr>
                           <?php endforeach; ?>
                         </tbody>
-                        <tfoot class="bg-light">
+                        <tfoot>
                             <tr>
                                 <th colspan="4" class="text-right border-top border-bottom-0 py-2">Subtotal Awal</th>
                                 <td class="text-right border-top border-bottom-0 py-2">Rp <?= number_format($subtotalAwal, 0, ',', '.') ?></td>
@@ -140,7 +140,6 @@ require_once '../includes/sidebar.php';
                   </div>
                 </div>
               </div>
-            </div>
 
           </div>
 <?php 
