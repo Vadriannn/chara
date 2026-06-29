@@ -62,6 +62,45 @@ $stmtRecentSales = $koneksi->query("
 ");
 $recentSales = $stmtRecentSales->fetchAll(PDO::FETCH_ASSOC);
 
+// 8. Analisis Performa Bisnis (Bulan Ini)
+$stmtHppDashboard = $koneksi->query("
+    SELECT SUM(dp.hpp * dp.jumlah)
+    FROM tDetailPenjualan dp
+    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
+    WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
+");
+$hppDashboard = $stmtHppDashboard->fetchColumn() ?: 0;
+$labaKotorDashboard = $pendapatan - $hppDashboard;
+
+$marginLabaKotor = 0;
+if ($pendapatan > 0) {
+    $marginLabaKotor = ($labaKotorDashboard / $pendapatan) * 100;
+}
+
+$stmtTerlaris = $koneksi->query("
+    SELECT pr.nama, SUM(dp.jumlah) as total_qty
+    FROM tDetailPenjualan dp
+    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
+    JOIN tProduct pr ON dp.tProduct_kode = pr.kode
+    WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
+    GROUP BY pr.kode, pr.nama
+    ORDER BY total_qty DESC
+    LIMIT 1
+");
+$produkTerlaris = $stmtTerlaris->fetch(PDO::FETCH_ASSOC);
+
+$stmtLabaTerbesar = $koneksi->query("
+    SELECT pr.nama, SUM((dp.harga_jual - dp.hpp) * dp.jumlah) as total_laba
+    FROM tDetailPenjualan dp
+    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
+    JOIN tProduct pr ON dp.tProduct_kode = pr.kode
+    WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
+    GROUP BY pr.kode, pr.nama
+    ORDER BY total_laba DESC
+    LIMIT 1
+");
+$produkLabaTerbesar = $stmtLabaTerbesar->fetch(PDO::FETCH_ASSOC);
+
 $nama = $_SESSION['nama'];
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
@@ -220,6 +259,48 @@ require_once '../includes/sidebar.php';
                         </div>
                     </div>
                     <small class="text-muted">Jumlah struk bulan ini</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analisis Performa Bisnis -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="card-title text-dark mb-3">Analisis Performa Bisnis</h4>
+        </div>
+        <div class="col-md-4 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm border-0 w-100" style="background-color: #e8f5e9; border-left: 5px solid #2e7d32 !important;">
+                <div class="card-body p-4">
+                    <h6 class="text-muted mb-1 text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Margin Laba Kotor</h6>
+                    <h3 class="mb-0 text-dark font-weight-bold"><?= number_format($marginLabaKotor, 2, ',', '.') ?>%</h3>
+                    <small class="text-muted d-block mt-2">Persentase keuntungan dari total penjualan</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm border-0 w-100" style="background-color: #e3f2fd; border-left: 5px solid #1565c0 !important;">
+                <div class="card-body p-4">
+                    <h6 class="text-muted mb-1 text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Produk Terlaris</h6>
+                    <h3 class="mb-0 text-dark font-weight-bold text-truncate" title="<?= $produkTerlaris ? htmlspecialchars($produkTerlaris['nama']) : 'Belum ada' ?>">
+                        <?= $produkTerlaris ? htmlspecialchars($produkTerlaris['nama']) : 'Belum ada data' ?>
+                    </h3>
+                    <?php if($produkTerlaris): ?>
+                        <small class="text-primary font-weight-bold d-block mt-2"><?= $produkTerlaris['total_qty'] ?> porsi terjual bulan ini</small>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 grid-margin stretch-card">
+            <div class="card premium-card shadow-sm border-0 w-100" style="background-color: #fff3e0; border-left: 5px solid #ef6c00 !important;">
+                <div class="card-body p-4">
+                    <h6 class="text-muted mb-1 text-uppercase font-weight-bold" style="letter-spacing: 0.5px;">Penyumbang Laba Terbesar</h6>
+                    <h3 class="mb-0 text-dark font-weight-bold text-truncate" title="<?= $produkLabaTerbesar ? htmlspecialchars($produkLabaTerbesar['nama']) : 'Belum ada' ?>">
+                        <?= $produkLabaTerbesar ? htmlspecialchars($produkLabaTerbesar['nama']) : 'Belum ada data' ?>
+                    </h3>
+                    <?php if($produkLabaTerbesar): ?>
+                        <small class="text-success font-weight-bold d-block mt-2">Menghasilkan Laba Rp <?= number_format($produkLabaTerbesar['total_laba'], 0, ',', '.') ?></small>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

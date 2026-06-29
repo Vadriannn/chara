@@ -75,7 +75,10 @@ require_once '../includes/sidebar.php';
                             <h4 class="card-title mb-1">Rincian Penjualan</h4>
                             <p class="text-muted mb-0">Detail item produk untuk Nota #PJ-<?= str_pad($penjualan['nomor'], 4, '0', STR_PAD_LEFT) ?></p>
                         </div>
-                        <a href="datapenjualan.php" class="btn btn-secondary">Kembali</a>
+                        <div>
+                            <a href="cetakstruk.php?nomor=<?= $penjualan['nomor'] ?>" target="_blank" class="btn btn-primary mr-2"><i class="typcn typcn-printer mr-1"></i> Cetak Struk</a>
+                            <a href="datapenjualan.php" class="btn btn-secondary">Kembali</a>
+                        </div>
                     </div>
 
                     <div class="row mb-4">
