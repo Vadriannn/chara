@@ -401,23 +401,12 @@ catch(PDOException $e) {
                     </div>
                 </div>
             </div>
-          <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between"></div>
-          </footer>
-        </div>
-      </div>
-    </div>
-
-    <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <script src="../../js/off-canvas.js"></script>
-    <script src="../../js/hoverable-collapse.js"></script>
-    <script src="../../js/template.js"></script>
-    <script src="../../js/settings.js"></script>
-    <script src="../../js/todolist.js"></script>
-    <script src="../../vendors/progressbar.js/progressbar.min.js"></script>
-    <script src="../../vendors/chart.js/Chart.min.js"></script>
-    <script src="../../js/dashboard.js"></script>
-    
+<?php 
+// ==========================================
+// PANGGIL TEMPLATE FOOTER DI SINI
+// ==========================================
+require_once '../includes/footer.php'; 
+?>
     <script>
     let grandTotalPembelian = 0;
 
@@ -513,5 +502,3 @@ catch(PDOException $e) {
         document.getElementById('inputHiddenTotal').value = grandTotalPembelian;
     }
     </script>
-  </body>
-</html>

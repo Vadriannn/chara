@@ -172,147 +172,10 @@ try {
     }
     $error = $e->getMessage();
 }
+require_once '../includes/header.php';
+require_once '../includes/sidebar.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title> CHARA - Transaksi Penjualan</title>
-    <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
-    <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
-    <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
-    <link rel="shortcut icon" href="../../images/charaicon.png" />
-    <style>
-        .qty-input-group .btn {
-            padding: 0.5rem 1rem;
-            font-size: 1.2rem;
-            line-height: 1;
-        }
-        .qty-input-group input {
-            font-weight: bold;
-            font-size: 1.1rem;
-            background-color: #fff !important;
-        }
-        .mod-label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-            color: #6c757d;
-        }
-    </style>
-  </head>
-  <body>
-    <div class="container-scroller">
-      <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
-        <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
-          <a class="navbar-brand brand-logo" href="../../index.php"><img src="../../images/logochara.png" alt="logo"/></a>
-          <a class="navbar-brand brand-logo-mini" href="../../index.php"><img src="../../images/logo-mini.svg" alt="logo"/></a>
-        </div>
-        <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end">
-          <ul class="navbar-nav navbar-nav-right">
-            <li class="nav-item nav-profile dropdown">
-              <a class="nav-link dropdown-toggle pl-0 pr-0" href="#" data-toggle="dropdown" id="profileDropdown">
-                <i class="typcn typcn-user-outline mr-0"></i>
-                <span class="nav-profile-name"> <?php echo $_SESSION['nama']; ?></span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="profileDropdown">
-                <a class="dropdown-item"><i class="typcn typcn-cog text-primary"></i>Settings</a>
-                <a class="dropdown-item" href="../logout.php"><i class="typcn typcn-power text-primary"></i>Logout</a>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      
-      <div class="container-fluid page-body-wrapper">
-        <nav class="sidebar sidebar-offcanvas" id="sidebar">
-          <ul class="nav">
-            <li class="nav-item">
-              <div class="d-flex sidebar-profile">
-                <div class="sidebar-profile-image">
-                  <img src="../../images/faces/face29.png" alt="image">
-                  <span class="sidebar-status-indicator"></span>
-                </div>
-                <div class="sidebar-profile-name">
-                  <p class="sidebar-name"><?php echo $_SESSION['nama']; ?></p>
-                  <p class="sidebar-designation"><?php echo $_SESSION['role']; ?></p>
-                </div>
-              </div>
-            </li>
-            
-            <?php if ($_SESSION['role'] == 'Admin'): ?>
-            <p class="sidebar-menu-title"> Admin Modules</p>
-            <li class="nav-item"><a class="nav-link" href="../admin/dashboard.php"><i class="typcn typcn-device-desktop menu-icon"></i><span class="menu-title">Dashboard</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="../admin/employee.php"><i class="typcn typcn-user menu-icon"></i><span class="menu-title">Employee</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="../admin/biayaoperasional.php"><i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Biaya Operasional</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="../admin/logaktivitas.php"><i class="typcn typcn-group menu-icon"></i><span class="menu-title">Log Aktivitas</span></a></li>
-            
-            <li class="nav-item">
-              <a class="nav-link" data-toggle="collapse" href="#stok" aria-expanded="false" aria-controls="stok">
-                <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Stok</span><i class="menu-arrow"></i>
-              </a>
-              <div class="collapse" id="stok">
-                <ul class="nav flex-column sub-menu">
-                  <li class="nav-item"><a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/produk.php">Produk</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/kategori.php">Kategori</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/resep.php">Resep</a></li>
-                </ul>
-              </div>
-            </li>
-            
-            <li class="nav-item">
-              <a class="nav-link" data-toggle="collapse" href="#pembelian" aria-expanded="false" aria-controls="pembelian">
-                <i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title">Pembelian</span><i class="menu-arrow"></i>
-              </a>
-              <div class="collapse" id="pembelian">
-                <ul class="nav flex-column sub-menu">
-                  <li class="nav-item"><a class="nav-link" href="../admin/purchaserequestadmin.php">Purchase Request</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/hispembelian.php">Histori Pembelian</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/pembelian.php">Pengajuan Pembelian</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/daftarsupplier.php">Daftar Supplier</a></li>
-                </ul>
-              </div>
-            </li>
-            
-            <li class="nav-item">
-              <a class="nav-link" data-toggle="collapse" href="#laporan" aria-expanded="false" aria-controls="laporan">
-                <i class="typcn typcn-document-text menu-icon"></i><span class="menu-title">Laporan</span><i class="menu-arrow"></i>
-              </a>
-              <div class="collapse" id="laporan">
-                <ul class="nav flex-column sub-menu">
-                  <li class="nav-item"><a class="nav-link" href="../admin/laporanpenjualan.php">Laporan Penjualan</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/laporankeuangan.php">Laporan Keuangan</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/aruskas.php">Arus Kas</a></li>
-                  <li class="nav-item"><a class="nav-link" href="../admin/labarugi.php">Laba Rugi</a></li>
-                </ul>
-              </div>
-            </li>
-            <?php endif; ?>
-
-            <?php if ($_SESSION['role'] == 'Kasir' or $_SESSION['role'] == 'Admin'): ?>
-              <p class="sidebar-menu-title"> Sales Modules</p>
-              <li class="nav-item"><a class="nav-link" href="transaksipenjualan.php"><i class="typcn typcn-shopping-cart menu-icon"></i><span class="menu-title"> Transaksi Penjualan</span></a></li>
-              <li class="nav-item"><a class="nav-link" href="datapenjualan.php"><i class="typcn typcn-chart-bar menu-icon"></i><span class="menu-title"> Data Penjualan</span></a></li>
-            <?php endif ?>
-
-            <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
-              <p class="sidebar-menu-title"> Stock Modules</p>
-              <li class="nav-item"><a class="nav-link" href="../gudang/bahanbaku.php"><i class="typcn typcn-th-large menu-icon"></i><span class="menu-title"> Bahan Baku</span></a></li>
-              <li class="nav-item"><a class="nav-link" href="../gudang/barangmasuk.php"><i class="typcn typcn-arrow-down menu-icon"></i><span class="menu-title"> Barang Masuk </span></a></li>
-              <li class="nav-item"><a class="nav-link" href="../gudang/barangkeluar.php"><i class="typcn typcn-arrow-up menu-icon"></i><span class="menu-title"> Barang Keluar</span></a></li>
-              <li class="nav-item"><a class="nav-link" href="../gudang/purchaserequest.php"><i class="typcn typcn-arrow-forward-outline menu-icon"></i><span class="menu-title"> Purchase Request</span></a></li>
-            <?php endif ?>
-            
-            <p class="sidebar-menu-title"> Settings</p>
-            <li class="nav-item"><a class="nav-link" href="../settings/ubahpassword.php"><i class="typcn typcn-key menu-icon"></i><span class="menu-title"> Ubah Password</span></a></li>
-          </ul>
-        </nav>
-
-        <div class="main-panel">
           <div class="content-wrapper">
             <div class="row">
               <div class="col-lg-12 grid-margin stretch-card">
@@ -458,13 +321,12 @@ try {
               </div>
             </div>
           </div>
-          <footer class="footer"></footer>
-        </div>
-      </div>
-    </div>
-    
-    <script src="../../vendors/js/vendor.bundle.base.js"></script>
-    <script src="../../js/template.js"></script>
+<?php 
+// ==========================================
+// PANGGIL TEMPLATE FOOTER DI SINI
+// ==========================================
+require_once '../includes/footer.php'; 
+?>
     
     <script>
     // DATA DARI BACKEND PHP
@@ -687,5 +549,3 @@ try {
         return confirm("Apakah Anda yakin ingin memproses transaksi ini?");
     }
     </script>
-  </body>
-</html>
