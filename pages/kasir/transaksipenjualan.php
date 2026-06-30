@@ -131,6 +131,10 @@ try {
             VALUES (NOW(), 'Penjualan', ?, ?, ?, ?, ?, ?)
         ");
 
+        // Aggregate kebutuhan bahan
+        $totalBahanKeluar = [];
+        $stmtGetStok = $koneksi->prepare("SELECT stok FROM tBahan WHERE kode = ?");
+
         // Proses tiap item di keranjang
         foreach($produkArray as $index => $kodeProduk) {
             $qty = (int)$qtyArray[$index];
@@ -159,23 +163,35 @@ try {
                 }
             }
 
-            // 4. Potong Stok Bahan
+            // 4. Hitung Total Kebutuhan Bahan per Produk
             $stmtResep->execute([$kodeProduk]);
             while($resep = $stmtResep->fetch(PDO::FETCH_ASSOC)) {
+                $bahanKode = $resep['tBahan_kode'];
                 $qtyKeluar = $resep['jumlah'] * $qty;
-                $stokSebelum = $resep['stok'];
-                $stokSesudah = $stokSebelum - $qtyKeluar;
-
-                if($stokSesudah < 0){
-                    throw new Exception("Sistem ditahan: Stok bahan ".$resep['tBahan_kode']." tidak mencukupi untuk memproses produk ".$kodeProduk.".");
-                }
-
-                $updateStok->execute([$stokSesudah, $resep['tBahan_kode']]);
                 
-                $stmtMutasi->execute([
-                    $qtyKeluar, $stokSebelum, $stokSesudah, 'PJ-'.$nomorPenjualan, $resep['tBahan_kode'], $_SESSION['id_user']
-                ]);
+                if(!isset($totalBahanKeluar[$bahanKode])) {
+                    $totalBahanKeluar[$bahanKode] = 0;
+                }
+                $totalBahanKeluar[$bahanKode] += $qtyKeluar;
             }
+        }
+
+        // 5. Potong Stok Bahan & Catat Mutasi Sekaligus
+        foreach($totalBahanKeluar as $bahanKode => $qtyKeluar) {
+            $stmtGetStok->execute([$bahanKode]);
+            $stokSebelum = $stmtGetStok->fetchColumn();
+            
+            $stokSesudah = $stokSebelum - $qtyKeluar;
+
+            if($stokSesudah < 0){
+                throw new Exception("Sistem ditahan: Stok bahan ".$bahanKode." tidak mencukupi untuk memproses keseluruhan pesanan.");
+            }
+
+            $updateStok->execute([$stokSesudah, $bahanKode]);
+            
+            $stmtMutasi->execute([
+                $qtyKeluar, $stokSebelum, $stokSesudah, 'PJ-'.$nomorPenjualan, $bahanKode, $_SESSION['id_user']
+            ]);
         }
         
         catatLog($koneksi, "Transaksi Penjualan", "Melakukan penjualan dengan total Rp " . number_format($grandTotal, 0, ',', '.'), "Kasir", $nomorPenjualan);

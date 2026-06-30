@@ -60,6 +60,23 @@ if(isset($_POST['update'])){
 
         $stmt->execute();
 
+        // Update juga di tArusKas
+        $stmtUpdateKas = $koneksi->prepare("
+            UPDATE tArusKas SET
+                tanggal = :tanggal,
+                nominal = :nominal,
+                sumber = :sumber
+            WHERE tBiayaOperasional_id = :id
+        ");
+        $stmtUpdateKas->execute([
+            ':tanggal' => $tanggal,
+            ':nominal' => $nominal,
+            ':sumber'  => 'Biaya Operasional: ' . $keterangan,
+            ':id'      => $id
+        ]);
+
+        catatLog($koneksi, "Edit Biaya Operasional", "Mengubah biaya operasional: " . $keterangan . " menjadi Rp " . number_format($nominal, 0, ',', '.'), "Keuangan", $id);
+
         header("Location: biayaoperasional.php?success=edit");
         exit;
 

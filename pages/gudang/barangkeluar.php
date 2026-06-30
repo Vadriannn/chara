@@ -6,6 +6,10 @@ require_once '../../auth.php';
 require_once '../auth_gudang.php';
 
 try {
+    date_default_timezone_set('Asia/Jakarta');
+    $hariIni = date('Y-m-d');
+    $tglMulai = !empty($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : $hariIni;
+    $tglSelesai = !empty($_GET['tgl_selesai']) ? $_GET['tgl_selesai'] : $hariIni;
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     
     $query = "
@@ -23,9 +27,13 @@ try {
         JOIN tsatuan s ON b.tSatuan_id = s.id
         LEFT JOIN tuser u ON m.tUser_id = u.id
         WHERE m.jenis = 'Penjualan'
+          AND DATE(m.tanggal) >= :tgl_mulai AND DATE(m.tanggal) <= :tgl_selesai
     ";
     
-    $params = [];
+    $params = [
+        ':tgl_mulai' => $tglMulai,
+        ':tgl_selesai' => $tglSelesai
+    ];
     if ($search != '') {
         $query .= " AND (m.referensi LIKE :search OR b.nama LIKE :search) ";
         $params['search'] = "%$search%";
@@ -55,18 +63,27 @@ require_once '../includes/sidebar.php';
                                             Catatan barang keluar yang diakibatkan oleh transaksi penjualan kasir.
                                         </p>
                                     </div>
-                                    <form method="GET" class="form-inline">
-                                        <div class="input-group">
-                                            <input type="text" name="search" class="form-control" placeholder="Cari nota / nama bahan..." value="<?= htmlspecialchars($search) ?>">
-                                            <div class="input-group-append">
-                                                <button class="btn btn-primary" type="submit">Cari</button>
-                                                <?php if($search != ''): ?>
-                                                    <a href="barangkeluar.php" class="btn btn-secondary">Reset</a>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </form>
                                 </div>
+                                <form method="GET" class="mb-4 w-100">
+                                    <div class="row align-items-end">
+                                        <div class="col-md-3 mb-3">
+                                            <label class="font-weight-bold text-dark">Mulai Tanggal</label>
+                                            <input type="date" name="tgl_mulai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglMulai) ?>">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="font-weight-bold text-dark">Sampai Tanggal</label>
+                                            <input type="date" name="tgl_selesai" class="form-control form-control-sm" value="<?= htmlspecialchars($tglSelesai) ?>">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="font-weight-bold text-dark">Pencarian</label>
+                                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari nota / nama bahan..." value="<?= htmlspecialchars($search) ?>">
+                                        </div>
+                                        <div class="col-md-2 mb-3">
+                                            <button type="submit" class="btn btn-info btn-sm mb-2">Filter</button>
+                                            <a href="barangkeluar.php" class="btn btn-secondary btn-sm mb-2">Reset</a>
+                                        </div>
+                                    </div>
+                                </form>
                                 <div class="table-responsive">
                                     <table class="table table-bordered">
                                       <thead>
