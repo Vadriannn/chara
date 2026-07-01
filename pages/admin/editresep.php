@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             foreach($_POST['bahan'] as $i => $kodeBahan){
                 $jumlah = $_POST['jumlah'][$i];
+                $satuanId = $_POST['satuan'][$i];
                 if($jumlah <= 0){
                     continue;
                 }
@@ -48,17 +49,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     (
                         tProduct_kode,
                         tBahan_kode,
+                        tSatuan_id,
                         jumlah
                     )
                     VALUES
                     (
-                        ?, ?, ?
+                        ?, ?, ?, ?
                     )
                 ";
                 $stmtInsert = $koneksi->prepare($sqlInsert);
                 $stmtInsert->execute([
                     $kodeProduk,
                     $kodeBahan,
+                    $satuanId,
                     $jumlah
                 ]);
             }
@@ -106,19 +109,12 @@ try {
         SELECT
             r.tBahan_kode,
             r.jumlah,
+            r.tSatuan_id,
             b.nama AS nama_bahan,
-            CASE
-                WHEN LOWER(s.nama) = 'kg'
-                    THEN 'Gram'
-                WHEN LOWER(s.nama) = 'liter'
-                    THEN 'Ml'
-                ELSE s.nama
-            END AS satuan
+            b.tSatuan_id as satuan_stok_id
         FROM tresep r
         INNER JOIN tbahan b
             ON r.tBahan_kode = b.kode
-        INNER JOIN tsatuan s
-            ON b.tSatuan_id = s.id
         WHERE r.tProduct_kode = ?
     ";
 
@@ -149,6 +145,14 @@ try {
     $stmtBahan->execute();
 
     $semuaBahan = $stmtBahan->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Ambil data satuan
+    $stmtSatuan = $koneksi->query("SELECT * FROM tsatuan ORDER BY nama");
+    $satuanList = $stmtSatuan->fetchAll(PDO::FETCH_ASSOC);
+
+    // Ambil data konversi untuk JS
+    $konvAll = $koneksi->query("SELECT * FROM tkonversisatuan");
+    $konversiList = $konvAll->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
     die("Error : ".$e->getMessage());
@@ -207,9 +211,23 @@ require_once '../includes/sidebar.php';
                                                         </select>
                                                     </td>
 
-                                                    <!-- INI YANG DIPERBAIKI -->
-                                                    <td class="satuan">
-                                                        <?= $r['satuan']; ?>
+                                                    <td>
+                                                        <select name="satuan[]" class="form-control" required>
+                                                            <option value="" disabled>Pilih</option>
+                                                            <?php 
+                                                            $satuanSelected = $r['tSatuan_id'] == 0 ? $r['satuan_stok_id'] : $r['tSatuan_id'];
+                                                            $allowedSatuan = [$r['satuan_stok_id']];
+                                                            foreach($konversiList as $k) {
+                                                                if ($k['SatuanBesar_id'] == $r['satuan_stok_id']) {
+                                                                    $allowedSatuan[] = $k['SatuanKecil_id'];
+                                                                }
+                                                            }
+                                                            foreach($satuanList as $s): 
+                                                                if (in_array($s['id'], $allowedSatuan)):
+                                                            ?>
+                                                                <option value="<?= $s['id'] ?>" <?= ($s['id'] == $satuanSelected) ? 'selected' : '' ?>><?= $s['nama'] ?></option>
+                                                            <?php endif; endforeach; ?>
+                                                        </select>
                                                     </td>
 
                                                     <td>
@@ -263,24 +281,41 @@ require_once '../includes/sidebar.php';
 require_once '../includes/footer.php'; 
 ?>
     <script>
+        const dataKonversi = <?= json_encode($konversiList) ?>;
+        const dataSatuan = <?= json_encode($satuanList) ?>;
+
+        function getNamaSatuan(idSatuan) {
+            for (let s of dataSatuan) {
+                if (s.id == idSatuan) return s.nama;
+            }
+            return '-';
+        }
+
         function tambahBaris(){
             let tbody = document.querySelector("tbody");
             let row = tbody.insertRow();
             row.innerHTML = `
                 <td>
-                    <select name="bahan[]" class="form-control" onchange="ubahSatuan(this)">
+                    <select name="bahan[]" class="form-control" onchange="ubahSatuan(this)" required>
                         <option value="" selected disabled>
                             -- Pilih Bahan Baku --
                         </option>
 
                         <?php foreach($semuaBahan as $b){ ?>
-                            <option value="<?= $b['kode']; ?>">
+                            <option value="<?= $b['kode']; ?>" data-satuanid="<?= $b['tSatuan_id']; ?>">
                                 <?= $b['nama']; ?>
                             </option>
                         <?php } ?>
                     </select>
                 </td>
-                <td class="satuan">-</td>
+                <td>
+                    <select name="satuan[]" class="form-control" required>
+                        <option value="" selected disabled>Pilih</option>
+                        <?php foreach($satuanList as $s): ?>
+                            <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
                 <td>
                     <input
                         type="number"
@@ -301,41 +336,34 @@ require_once '../includes/footer.php';
             `;
         }
         function ubahSatuan(select){
-            let data = {
-                <?php foreach($semuaBahan as $b){ ?>
-                    "<?= $b['kode']; ?>": "<?= $b['satuan']; ?>",
-                <?php } ?>
-            };
             let kodeDipilih = select.value;
-            let semuaSelect =
-                document.querySelectorAll(
-                    'select[name="bahan[]"]'
-                );
+            let semuaSelect = document.querySelectorAll('select[name="bahan[]"]');
             let jumlahSama = 0;
             semuaSelect.forEach(function(item){
-
                 if(item.value === kodeDipilih){
                     jumlahSama++;
                 }
-
             });
             if(jumlahSama > 1){
-
                 alert("Bahan baku sudah dipilih!");
-
                 select.value = "";
-
-                select.closest("tr")
-                      .querySelector(".satuan")
-                      .innerHTML = "-";
-
                 return;
             }
-            let satuanCell =
-                select.closest("tr")
-                      .querySelector(".satuan");
 
-            satuanCell.innerHTML =
-                data[kodeDipilih] ?? "-";
+            let idSatuanStock = select.options[select.selectedIndex].dataset.satuanid;
+            let satuanDropdown = select.closest("tr").querySelector('select[name="satuan[]"]');
+            
+            satuanDropdown.innerHTML = '<option value="" selected disabled>Pilih</option>';
+            if (!idSatuanStock) return;
+
+            let baseUnitName = getNamaSatuan(idSatuanStock);
+            satuanDropdown.insertAdjacentHTML('beforeend', `<option value="${idSatuanStock}">${baseUnitName}</option>`);
+
+            for (let k of dataKonversi) {
+                if (k.SatuanBesar_id == idSatuanStock) {
+                    let unitName = getNamaSatuan(k.SatuanKecil_id);
+                    satuanDropdown.insertAdjacentHTML('beforeend', `<option value="${k.SatuanKecil_id}">${unitName}</option>`);
+                }
+            }
         }
-        </script>
+    </script>

@@ -3,6 +3,7 @@ session_start();
 $page_title = "CHARA - Tambah Transaksi Penjualan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
+require_once '../auth_kasir.php';
 
 $error = "";
 
@@ -22,6 +23,10 @@ try {
     $sugarMods = array_filter($allModifiers, function($m) { return $m['kategori'] == 'Sugar'; });
     $iceMods = array_filter($allModifiers, function($m) { return $m['kategori'] == 'Ice'; });
 
+    // 2.1 Ambil data member
+    $stmtMember = $koneksi->query("SELECT * FROM tMember ORDER BY Nama");
+    $members = $stmtMember->fetchAll(PDO::FETCH_ASSOC);
+
     // 3. AMBIL DATA STOK BAHAN UTK LIVE VALIDASI JAVASCRIPT
     $stmtBahan = $koneksi->query("SELECT kode, stok FROM tBahan");
     $stokBahan = [];
@@ -31,16 +36,18 @@ try {
 
     // 4. AMBIL DATA RESEP UTK LIVE VALIDASI JAVASCRIPT
     $stmtResepAll = $koneksi->query("
-        SELECT r.tProduct_kode, r.tBahan_kode, r.jumlah, b.nama AS nama_bahan 
+        SELECT r.tProduct_kode, r.tBahan_kode, r.jumlah, b.nama AS nama_bahan,
+               IFNULL(k.Konversi, 1) AS nilai_konversi
         FROM tResep r
         JOIN tBahan b ON r.tBahan_kode = b.kode
+        LEFT JOIN tkonversisatuan k ON k.SatuanBesar_id = b.tSatuan_id AND k.SatuanKecil_id = r.tSatuan_id
     ");
     $resepData = [];
     while($r = $stmtResepAll->fetch(PDO::FETCH_ASSOC)) {
         $resepData[$r['tProduct_kode']][] = [
             'bahan'  => $r['tBahan_kode'],
             'nama_bahan' => $r['nama_bahan'],
-            'jumlah' => (float)$r['jumlah']
+            'jumlah' => (float)$r['jumlah'] / (float)$r['nilai_konversi']
         ];
     }
 
@@ -52,7 +59,14 @@ try {
         $produkArray = $_POST['produk_kode'] ?? [];
         $qtyArray = $_POST['qty_beli'] ?? [];
         $metbayar = $_POST['metbayar'];
-        $diskonPersen = isset($_POST['diskon']) ? (float)$_POST['diskon'] : 0;
+        $stmtSet = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_diskon_nominal'");
+        $poin_diskon_nominal = 0;
+        if ($rowSet = $stmtSet->fetch(PDO::FETCH_ASSOC)) {
+            $poin_diskon_nominal = (float)$rowSet['setting_value'];
+        }
+        $diskonNominal = $redeemPoin * $poin_diskon_nominal;
+        $tMember_id = empty($_POST['member_id']) ? null : $_POST['member_id'];
+        $redeemPoin = empty($_POST['redeem_poin']) ? 0 : (int)$_POST['redeem_poin'];
 
         if(empty($produkArray)) {
             throw new Exception("Keranjang belanja kosong!");
@@ -75,19 +89,47 @@ try {
             $subtotalKeranjang += ($hargaJual * $qty);
         }
 
-        if($diskonPersen > 100) $diskonPersen = 100;
-        if($diskonPersen < 0) $diskonPersen = 0;
-        $diskonNominal = $subtotalKeranjang * ($diskonPersen / 100);
+        if ($diskonNominal > $subtotalKeranjang) {
+            $diskonNominal = $subtotalKeranjang;
+        }
         $grandTotal = $subtotalKeranjang - $diskonNominal;
 
         // Simpan Master Penjualan
         $stmtPenjualan = $koneksi->prepare("
-            INSERT INTO tPenjualan (nomor, tanggal, total, diskon, metbayar, tUser_id)
-            VALUES (?, NOW(), ?, ?, ?, ?)
+            INSERT INTO tPenjualan (nomor, tanggal, total, diskon, metbayar, tUser_id, tMember_noHp)
+            VALUES (?, NOW(), ?, ?, ?, ?, ?)
         ");
         $stmtPenjualan->execute([
-            $nomorPenjualan, $grandTotal, $diskonNominal, $metbayar, $_SESSION['id_user']
+            $nomorPenjualan, $grandTotal, $diskonNominal, $metbayar, $_SESSION['id_user'], $tMember_id
         ]);
+        
+        // Logika Poin Member
+        if ($tMember_id) {
+            // Ambil poin kelipatan dari setting
+            $poinKelipatan = 50000;
+            try {
+                $stmtSet = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_kelipatan'");
+                if ($rowSet = $stmtSet->fetch(PDO::FETCH_ASSOC)) {
+                    $poinKelipatan = (int)$rowSet['setting_value'];
+                }
+            } catch(PDOException $e) {}
+            
+            if ($poinKelipatan <= 0) $poinKelipatan = 1; // Cegah division by zero
+            $poinDidapat = floor($grandTotal / $poinKelipatan);
+            
+            $stmtCekPoin = $koneksi->prepare("SELECT Poin FROM tMember WHERE noHp = ?");
+            $stmtCekPoin->execute([$tMember_id]);
+            $currentPoin = $stmtCekPoin->fetchColumn();
+            
+            if ($redeemPoin > $currentPoin) {
+                throw new Exception("Poin yang diredeem melebih poin aktif member!");
+            }
+            
+            $poinAkhir = $currentPoin + $poinDidapat - $redeemPoin;
+            
+            $stmtUpdateMember = $koneksi->prepare("UPDATE tMember SET Poin = ? WHERE noHp = ?");
+            $stmtUpdateMember->execute([$poinAkhir, $tMember_id]);
+        }
 
         // Catat ke tArusKas (Pemasukan)
         $stmtArusKas = $koneksi->prepare("
@@ -119,9 +161,11 @@ try {
         ");
 
         $stmtResep = $koneksi->prepare("
-            SELECT r.tBahan_kode, r.jumlah, b.stok
+            SELECT r.tBahan_kode, r.jumlah, b.stok,
+                   IFNULL(k.Konversi, 1) AS nilai_konversi
             FROM tResep r
             JOIN tBahan b ON r.tBahan_kode = b.kode
+            LEFT JOIN tkonversisatuan k ON k.SatuanBesar_id = b.tSatuan_id AND k.SatuanKecil_id = r.tSatuan_id
             WHERE r.tProduct_kode = ?
         ");
 
@@ -167,7 +211,7 @@ try {
             $stmtResep->execute([$kodeProduk]);
             while($resep = $stmtResep->fetch(PDO::FETCH_ASSOC)) {
                 $bahanKode = $resep['tBahan_kode'];
-                $qtyKeluar = $resep['jumlah'] * $qty;
+                $qtyKeluar = ($resep['jumlah'] / $resep['nilai_konversi']) * $qty;
                 
                 if(!isset($totalBahanKeluar[$bahanKode])) {
                     $totalBahanKeluar[$bahanKode] = 0;
@@ -291,6 +335,22 @@ require_once '../includes/sidebar.php';
 
                       <div class="table-responsive mb-4">
                         <table class="table table-bordered">
+                              <style>
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border: 1px solid #ebedf2 !important;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px !important;
+            padding-left: 0 !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+    </style>
+</head>
                           <thead>
                             <tr>
                               <th>Produk & Kustomisasi</th>
@@ -314,10 +374,20 @@ require_once '../includes/sidebar.php';
                                           <td class="py-1"><h5 class="mb-0">Rp <span id="subtotalDisplay">0</span></h5></td>
                                       </tr>
                                       <tr>
-                                          <th class="align-middle py-2 border-bottom">Diskon (%)</th>
-                                          <td class="py-2 border-bottom">
-                                              <input type="number" name="diskon" id="inputDiskon" class="form-control form-control-sm text-right float-right w-50" min="0" max="100" step="0.1" value="0" placeholder="0" oninput="hitungTotalAkhir()">
-                                              <div class="clearfix"></div>
+                                          <th class="align-middle py-2 border-bottom">Poin Tersedia</th>
+                                          <td class="text-right py-2 border-bottom">
+                                              <input type="text" id="poinTersedia" class="form-control form-control-sm text-right float-right w-50" value="0" readonly>
+                                          </td>
+                                      </tr>
+                                      <tr>
+                                          <th class="align-middle py-2 border-bottom">Redeem Poin</th>
+                                          <td class="text-right py-2 border-bottom">
+                                              <input type="number" name="redeem_poin" id="redeemPoin" class="form-control form-control-sm text-right float-right w-50" min="0" value="0" placeholder="0" oninput="hitungTotalAkhir()">
+                                          </td>
+                                      </tr>
+                                      <tr>
+                                          <th class="align-middle py-2 border-bottom">Diskon Poin</th>
+                                          <td class="text-right py-2 border-bottom">
                                               <small id="nominalDiskonDisplay" class="text-danger d-block mt-1 font-weight-bold">- Rp 0</small>
                                           </td>
                                       </tr>
@@ -332,8 +402,19 @@ require_once '../includes/sidebar.php';
 
                       <div id="hiddenCartData"></div>
 
-                      <div class="row align-items-end">
-                          <div class="col-md-4">
+                      <div class="row">
+                          <div class="col-md-3">
+                              <div class="form-group mb-3">
+                                  <label class="font-weight-bold">Member (Opsional)</label>
+                                  <select name="member_id" id="memberSelect" class="w-100" onchange="cekPoinMember()">
+                                      <option value=""></option>
+                                      <?php foreach($members as $m): ?>
+                                          <option value="<?= $m['noHp'] ?>" data-poin="<?= $m['Poin'] ?>"><?= $m['Nama'] ?> (<?= htmlspecialchars($m['noHp']) ?>)</option>
+                                      <?php endforeach; ?>
+                                  </select>
+                              </div>
+                          </div>
+                          <div class="col-md-3">
                               <div class="form-group mb-0">
                                   <label class="font-weight-bold">Metode Pembayaran</label>
                                   <select name="metbayar" class="form-control" required>
@@ -343,7 +424,7 @@ require_once '../includes/sidebar.php';
                                   </select>
                               </div>
                           </div>
-                          <div class="col-md-8 text-right mt-4 mt-md-0">
+                          <div class="col-md-6 text-right mt-4 mt-md-0">
                               <a href="transaksipenjualan.php" class="btn btn-light mr-2">Reset</a>
                               <button type="submit" class="btn btn-primary" onclick="return validasiSubmit()">Proses Pembayaran</button>
                           </div>
@@ -360,7 +441,24 @@ require_once '../includes/sidebar.php';
 // ==========================================
 require_once '../includes/footer.php'; 
 ?>
-    
+            <script>
+                // Fetch dynamic discount point value
+                const poinDiskonNominal = <?php 
+                    $pdn = 0;
+                    try {
+                        $s = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_diskon_nominal'");
+                        if($r = $s->fetch(PDO::FETCH_ASSOC)) $pdn = (float)$r['setting_value'];
+                    } catch(Exception $e){}
+                    echo $pdn;
+                ?>;
+    // Initialize select2
+    $(document).ready(function() {
+        $('#memberSelect').select2({
+            placeholder: "-- Bukan Member --",
+            allowClear: true
+        });
+    });
+    </script>
     <script>
     // DATA DARI BACKEND PHP
     const stokBahanAsli = <?= json_encode($stokBahan); ?>;
@@ -571,17 +669,13 @@ require_once '../includes/footer.php';
     }
 
     function hitungTotalAkhir() {
-        let diskonPersen = parseFloat(document.getElementById('inputDiskon').value) || 0;
+        let redeemPoin = parseInt(document.getElementById('redeemPoin').value) || 0;
+        let nominalDiskon = redeemPoin * poinDiskonNominal;
         
-        if(diskonPersen > 100) {
-            diskonPersen = 100;
-            document.getElementById('inputDiskon').value = 100;
-        } else if(diskonPersen < 0) {
-            diskonPersen = 0;
-            document.getElementById('inputDiskon').value = 0;
+        if (nominalDiskon > subtotalKeranjang) {
+            nominalDiskon = subtotalKeranjang;
         }
-
-        let nominalDiskon = subtotalKeranjang * (diskonPersen / 100);
+        
         let grandTotal = subtotalKeranjang - nominalDiskon;
 
         document.getElementById('subtotalDisplay').innerText = subtotalKeranjang.toLocaleString('id-ID');
@@ -589,11 +683,70 @@ require_once '../includes/footer.php';
         document.getElementById('grandTotalDisplay').innerText = grandTotal.toLocaleString('id-ID');
     }
 
+    function formatRibuan(angka, prefix) {
+        let number_string = angka.toString().replace(/[^,\d]/g, ''),
+        split   = number_string.split(','),
+        sisa    = split[0].length % 3,
+        rupiah  = split[0].substr(0, sisa),
+        ribuan  = split[0].substr(sisa).match(/\d{3}/gi);
+        
+        if (ribuan) {
+            separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+        
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
+
+    // Format Rupiah untuk input Bayar
+    document.querySelectorAll('#inputBayar').forEach(function(input) {
+        input.type = 'text'; // change type number to text for formatting
+        input.addEventListener('keyup', function(e) {
+            this.value = formatRibuan(this.value);
+        });
+    });
+
     function validasiSubmit() {
         if(subtotalKeranjang === 0) {
             alert("Keranjang masih kosong! Silakan tambahkan produk terlebih dahulu.");
             return false;
         }
+        
+        // Remove formatting before submit
+        let inputDiskon = document.getElementById('inputDiskon');
+        if (inputDiskon) inputDiskon.value = inputDiskon.value.replace(/\./g, '');
+        
+        let inputBayar = document.getElementById('inputBayar');
+        if (inputBayar) inputBayar.value = inputBayar.value.replace(/\./g, '');
+
+        let redeemPoin = document.getElementById('inputRedeemPoin').value;
+        let selectMember = document.getElementById('memberSelect');
+        if (selectMember.value !== '' && redeemPoin !== '' && parseInt(redeemPoin) > 0) {
+            // Validasi redeem poin vs diskon nominal tak perlu di sini karena otomatis
+                return false;
+            }
+        }
+        
         return confirm("Apakah Anda yakin ingin memproses transaksi ini?");
+    }
+    
+    function cekPoinMember() {
+        let select = document.getElementById('memberSelect');
+        let poinTersedia = document.getElementById('poinTersedia');
+        let redeemPoin = document.getElementById('redeemPoin');
+        
+        if (select.value !== '') {
+            let maxPoin = parseInt(select.options[select.selectedIndex].dataset.poin) || 0;
+            poinTersedia.value = maxPoin;
+            redeemPoin.max = maxPoin;
+            redeemPoin.placeholder = 'Maks: ' + maxPoin;
+        } else {
+            poinTersedia.value = '0';
+            redeemPoin.value = '0';
+            redeemPoin.max = '0';
+            redeemPoin.placeholder = '0';
+        }
+        hitungTotalAkhir();
     }
     </script>

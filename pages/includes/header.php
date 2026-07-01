@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="../../vendors/typicons.font/font/typicons.css">
     <link rel="stylesheet" href="../../vendors/css/vendor.bundle.base.css">
     <link rel="stylesheet" href="../../css/vertical-layout-light/style.css">
+    <link rel="stylesheet" href="../../vendors/select2/select2.min.css">
     <link rel="shortcut icon" href="../../images/charaicon.png" />
   </head>
   <body>

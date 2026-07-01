@@ -34,6 +34,14 @@ try {
         ORDER BY b.nama
     ");
     
+    // Ambil data satuan
+    $satuanAll = $koneksi->query("SELECT * FROM tsatuan ORDER BY nama");
+    $satuanList = $satuanAll->fetchAll(PDO::FETCH_ASSOC);
+
+    // Ambil data konversi untuk JS
+    $konvAll = $koneksi->query("SELECT * FROM tkonversisatuan");
+    $konversiList = $konvAll->fetchAll(PDO::FETCH_ASSOC);
+    
     // Ambil kode produk terakhir
     $stmtLast = $koneksi->query("
         SELECT kode
@@ -88,24 +96,30 @@ try {
             $status
         ]);
         
-        if(isset($_POST['resep'])){
-            foreach($_POST['resep'] as $kodeBahan => $jumlahKonversi){
+        if(isset($_POST['resep_bahan'])){
+            for ($i = 0; $i < count($_POST['resep_bahan']); $i++) {
+                $kodeBahan = $_POST['resep_bahan'][$i];
+                $jumlahInput = $_POST['resep_jumlah'][$i];
+                $satuanId = $_POST['resep_satuan'][$i];
+
                 $stmtResep = $koneksi->prepare("
                     INSERT INTO tResep
                     (
                         tProduct_kode,
                         tBahan_kode,
+                        tSatuan_id,
                         jumlah
                     )
                     VALUES
                     (
-                        ?, ?, ?
+                        ?, ?, ?, ?
                     )
                 ");
                 $stmtResep->execute([
                     $kode,
                     $kodeBahan,
-                    $jumlahKonversi // Nilai yang masuk sudah dikonversi ke Kg/Liter (desimal)
+                    $satuanId,
+                    $jumlahInput
                 ]);
             }
         }
@@ -174,7 +188,7 @@ require_once '../includes/sidebar.php';
                           $bahanBaku->execute();
                           while($bahan = $bahanBaku->fetch(PDO::FETCH_ASSOC)):
                           ?>
-                            <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuan="<?= $bahan['satuan_resep']; ?>" data-satuanstok="<?= $bahan['satuan_stok']; ?>" data-harga="<?= $bahan['harga']; ?>">
+                            <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuanid="<?= $bahan['satuan_stok'] ?>" data-harga="<?= $bahan['harga']; ?>">
                               <?= $bahan['nama']; ?>
                             </option>
                           <?php endwhile; ?>
@@ -186,7 +200,12 @@ require_once '../includes/sidebar.php';
                       </div>
                       <div class="col-md-2">
                         <label>Satuan</label>
-                        <input type="text" id="satuanBahan" class="form-control" readonly>
+                        <select id="satuanBahan" class="form-control">
+                            <option value="">Pilih</option>
+                            <?php foreach($satuanList as $s): ?>
+                                <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
                       </div>
                       <div class="col-md-2">
                         <label>&nbsp;</label>
@@ -231,43 +250,71 @@ require_once '../includes/sidebar.php';
 require_once '../includes/footer.php'; 
 ?>
 <script>
+    const dataKonversi = <?= json_encode($konversiList) ?>;
+    
+    // Helper utk cari rasio konversi (Stock -> Selected Unit)
+    function cariKonversi(idStock, idSelected) {
+        if (idStock == idSelected) return 1;
+        for (let k of dataKonversi) {
+            if (k.SatuanBesar_id == idStock && k.SatuanKecil_id == idSelected) {
+                return k.Konversi; // misal Kg -> Gram = 1000, jumlah_di_db / 1000 = jumlah_real
+            }
+        }
+        return 1; // Default
+    }
+
+    function getNamaSatuan(idSatuan) {
+        for (let s of <?= json_encode($satuanList) ?>) {
+            if (s.id == idSatuan) return s.nama;
+        }
+        return '-';
+    }
+
     document.getElementById('bahanSelect').addEventListener('change', function(){
-        let satuan = this.options[this.selectedIndex].dataset.satuan;
-        document.getElementById('satuanBahan').value = satuan || '';
+        let idSatuanStock = this.options[this.selectedIndex].dataset.satuanid;
+        let selectSatuan = document.getElementById('satuanBahan');
+        selectSatuan.innerHTML = '<option value="">Pilih</option>';
+        if (!idSatuanStock) return;
+
+        let baseUnitName = getNamaSatuan(idSatuanStock);
+        selectSatuan.insertAdjacentHTML('beforeend', `<option value="${idSatuanStock}">${baseUnitName}</option>`);
+
+        for (let k of dataKonversi) {
+            if (k.SatuanBesar_id == idSatuanStock) {
+                let unitName = getNamaSatuan(k.SatuanKecil_id);
+                selectSatuan.insertAdjacentHTML('beforeend', `<option value="${k.SatuanKecil_id}">${unitName}</option>`);
+            }
+        }
     });
     
     let totalHpp = 0;
     
-    function tambahBahan(){
-        let select = document.getElementById('bahanSelect');
-        if(select.value == '') return;
+        let selectSatuan = document.getElementById('satuanBahan');
+        let idSatuanDipilih = selectSatuan.value;
+        if (idSatuanDipilih === '') {
+            alert('Pilih satuan terlebih dahulu!');
+            return;
+        }
 
         let kode = select.value;
-
-        if(document.querySelector(`#resep_${kode}`)){
+        if(document.querySelector(`#row_${kode}`)){
             alert('Bahan baku tersebut sudah ada di resep!');
             return;
         }
 
         let nama = select.options[select.selectedIndex].dataset.nama;
-        let satuan = select.options[select.selectedIndex].dataset.satuan;
-        let satuanStok = select.options[select.selectedIndex].dataset.satuanstok;
-        let jumlahInput = parseFloat(document.getElementById('jumlahBahan').value) || 0;
+        let idSatuanStock = select.options[select.selectedIndex].dataset.satuanid; // Nama unit stock tapi gpp kita butuh ID nya wait, dataset.satuanid di atas diset nama
         let hargaPerSatuanStok = parseFloat(select.options[select.selectedIndex].dataset.harga) || 0;
+        let jumlahInput = parseFloat(document.getElementById('jumlahBahan').value) || 0;
+        let namaSatuan = selectSatuan.options[selectSatuan.selectedIndex].text;
 
         if(jumlahInput <= 0){
             alert('Jumlah harus lebih dari 0');
             return;
         }
 
-        // PERBAIKAN LOGIKA: Konversi Gram/Ml ke KG/Liter di balik layar sebelum disimpan
-        let jumlahUntukResepDB = jumlahInput;
-        if (satuan.toLowerCase() === 'gram' || satuan.toLowerCase() === 'ml') {
-            jumlahUntukResepDB = jumlahInput / 1000;
-        }
-
-        // Hitung HPP riil item resep
-        let hpp = jumlahUntukResepDB * hargaPerSatuanStok;
+        let rasio = cariKonversi(idSatuanStock, idSatuanDipilih);
+        let hpp = (jumlahInput / rasio) * hargaPerSatuanStok;
 
         let tbody = document.getElementById('tabelResepBody');
         let row = tbody.insertRow();
@@ -276,7 +323,7 @@ require_once '../includes/footer.php';
         row.innerHTML = `
             <td>${nama}</td>
             <td>${jumlahInput}</td>
-            <td>${satuan}</td>
+            <td>${namaSatuan}</td>
             <td>Rp ${hpp.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm" onclick="hapusBaris(this, ${hpp}, '${kode}')">Hapus</button>
@@ -286,12 +333,14 @@ require_once '../includes/footer.php';
         totalHpp += hpp; 
         updateHppDanLaba();
 
-        // Menyimpan nilai konversi desimal (KG/Liter) agar modul penjualan Kasir bisa langsung memotong stok
         document.getElementById('hiddenResep').insertAdjacentHTML('beforeend',
-            `<input type="hidden" id="resep_${kode}" name="resep[${kode}]" value="${jumlahUntukResepDB}">`
+            `<div id="resep_${kode}">
+                <input type="hidden" name="resep_bahan[]" value="${kode}">
+                <input type="hidden" name="resep_jumlah[]" value="${jumlahInput}">
+                <input type="hidden" name="resep_satuan[]" value="${idSatuanDipilih}">
+            </div>`
         );
 
-        // Reset Form input bahan
         document.getElementById('bahanSelect').value = '';
         document.getElementById('jumlahBahan').value = '1';
         document.getElementById('satuanBahan').value = '';

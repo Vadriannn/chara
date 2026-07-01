@@ -44,6 +44,18 @@
       </a>
     </li>
     <li class="nav-item">
+      <a class="nav-link" href="../admin/member.php">
+        <i class="typcn typcn-group-outline menu-icon"></i>
+        <span class="menu-title">Member (Pelanggan)</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="../admin/shift.php">
+        <i class="typcn typcn-time menu-icon"></i>
+        <span class="menu-title">Master Shift Kasir</span>
+      </a>
+    </li>
+    <li class="nav-item">
       <a class="nav-link" href="../admin/biayaoperasional.php">
         <i class="typcn typcn-document-text menu-icon"></i>
         <span class="menu-title">Biaya Operasional</span>
@@ -67,6 +79,8 @@
           <li class="nav-item"><a class="nav-link" href="../admin/bahanbaku.php">Bahan Baku</a></li>
           <li class="nav-item"><a class="nav-link" href="../admin/produk.php">Produk</a></li>
           <li class="nav-item"><a class="nav-link" href="../admin/kategori.php">Kategori</a></li>
+          <li class="nav-item"><a class="nav-link" href="../admin/satuan.php">Satuan</a></li>
+          <li class="nav-item"><a class="nav-link" href="../admin/konversisatuan.php">Konversi Satuan</a></li>
           <li class="nav-item"><a class="nav-link" href="../admin/resep.php">Resep</a></li>
         </ul>
       </div>
@@ -119,6 +133,12 @@
         <span class="menu-title"> Data Penjualan</span>
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link" href="../kasir/tutupshift.php">
+        <i class="typcn typcn-arrow-right-thick menu-icon"></i>
+        <span class="menu-title"> Tutup Shift</span>
+      </a>
+    </li>
     <?php endif ?>
 
     <?php if ($_SESSION['role'] == 'Gudang' or $_SESSION['role'] == 'Admin'): ?>
@@ -150,6 +170,14 @@
     <?php endif ?>
 
     <p class="sidebar-menu-title"> Settings</p>
+    <?php if ($_SESSION['role'] == 'Admin'): ?>
+    <li class="nav-item">
+      <a class="nav-link" href="../admin/settingchara.php">
+        <i class="typcn typcn-cog-outline menu-icon"></i>
+        <span class="menu-title"> Setting Chara</span>
+      </a>
+    </li>
+    <?php endif; ?>
     <li class="nav-item">
       <a class="nav-link" href="../settings/ubahpassword.php">
         <i class="typcn typcn-key menu-icon"></i>
