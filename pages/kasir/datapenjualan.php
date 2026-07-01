@@ -3,6 +3,7 @@ session_start();
 $page_title = "CHARA - Data Penjualan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
+require_once '../auth_kasir.php';
 
 // 1. Set zona waktu secara eksplisit agar PHP dan MySQL sinkron
 date_default_timezone_set('Asia/Jakarta');
