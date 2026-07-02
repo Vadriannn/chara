@@ -5,7 +5,10 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_gudang.php';
 
-$stmt = $koneksi->query("
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+
+$query = "
     SELECT
         pb.nomor,
         pb.tanggal,
@@ -19,8 +22,22 @@ $stmt = $koneksi->query("
     LEFT JOIN tPurchaseRequest pr
         ON pb.tPurchaseRequest_id = pr.id
     WHERE pb.status = 'Diterima'
-    ORDER BY pb.tanggal DESC
-");
+";
+
+$params = [];
+if ($start_date !== '') {
+    $query .= " AND DATE(pb.tanggal) >= :start_date";
+    $params['start_date'] = $start_date;
+}
+if ($end_date !== '') {
+    $query .= " AND DATE(pb.tanggal) <= :end_date";
+    $params['end_date'] = $end_date;
+}
+
+$query .= " ORDER BY pb.tanggal DESC";
+
+$stmt = $koneksi->prepare($query);
+$stmt->execute($params);
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
 ?>
@@ -30,7 +47,16 @@ require_once '../includes/sidebar.php';
                         <div class="card">
 
         <div class="card-body">
-            <h4>Histori Pembelian</h4>
+            <h4 class="card-title">Histori Pembelian</h4>
+            
+            <form method="GET" action="" class="mb-4 form-inline">
+                <input type="date" name="start_date" class="form-control mr-2" value="<?= htmlspecialchars($start_date) ?>" placeholder="Mulai Tanggal">
+                <span class="mr-2">s/d</span>
+                <input type="date" name="end_date" class="form-control mr-2" value="<?= htmlspecialchars($end_date) ?>" placeholder="Sampai Tanggal">
+                <button type="submit" class="btn btn-primary mr-2">Filter</button>
+                <a href="hispembelian.php" class="btn btn-light">Reset</a>
+            </form>
+
             <table class="table table-bordered table-hover">
                 <thead class="thead-dark">
                     <tr>

@@ -39,18 +39,12 @@ try {
         SELECT
             b.nama AS bahan,
             r.jumlah,
-            CASE
-                WHEN LOWER(s.nama) = 'kg'
-                    THEN 'Gram'
-                WHEN LOWER(s.nama) = 'liter'
-                    THEN 'Ml'
-                ELSE s.nama
-            END AS satuan
+            s.nama AS satuan
         FROM tresep r
         JOIN tbahan b
             ON r.tBahan_kode = b.kode
         JOIN tsatuan s
-            ON b.tSatuan_id = s.id
+            ON s.id = IF(r.tSatuan_id = 0 OR r.tSatuan_id IS NULL, b.tSatuan_id, r.tSatuan_id)
         WHERE r.tProduct_kode = ?
         ORDER BY b.nama
     ";

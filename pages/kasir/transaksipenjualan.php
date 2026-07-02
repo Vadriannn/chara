@@ -4,6 +4,7 @@ $page_title = "CHARA - Tambah Transaksi Penjualan";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_kasir.php';
+require_once '../../includes/konversi_helper.php';
 
 $error = "";
 
@@ -35,19 +36,20 @@ try {
     }
 
     // 4. AMBIL DATA RESEP UTK LIVE VALIDASI JAVASCRIPT
+    $konversiGraph = getKonversiGraph($koneksi);
     $stmtResepAll = $koneksi->query("
         SELECT r.tProduct_kode, r.tBahan_kode, r.jumlah, b.nama AS nama_bahan,
-               IFNULL(k.Konversi, 1) AS nilai_konversi
+               b.tSatuan_id AS stok_satuan, r.tSatuan_id AS resep_satuan
         FROM tResep r
         JOIN tBahan b ON r.tBahan_kode = b.kode
-        LEFT JOIN tkonversisatuan k ON k.SatuanBesar_id = b.tSatuan_id AND k.SatuanKecil_id = r.tSatuan_id
     ");
     $resepData = [];
     while($r = $stmtResepAll->fetch(PDO::FETCH_ASSOC)) {
+        $nilai_konversi = cariKonversiPHP($konversiGraph, $r['stok_satuan'], $r['resep_satuan']);
         $resepData[$r['tProduct_kode']][] = [
             'bahan'  => $r['tBahan_kode'],
             'nama_bahan' => $r['nama_bahan'],
-            'jumlah' => (float)$r['jumlah'] / (float)$r['nilai_konversi']
+            'jumlah' => (float)$r['jumlah'] / $nilai_konversi
         ];
     }
 
@@ -154,7 +156,7 @@ try {
         ");
 
         $stmtHpp = $koneksi->prepare("
-            SELECT SUM(r.jumlah * b.harga) AS hpp
+            SELECT r.jumlah, b.harga, b.tSatuan_id AS stok_satuan, r.tSatuan_id AS resep_satuan
             FROM tResep r
             JOIN tBahan b ON r.tBahan_kode = b.kode
             WHERE r.tProduct_kode = ?
@@ -162,10 +164,9 @@ try {
 
         $stmtResep = $koneksi->prepare("
             SELECT r.tBahan_kode, r.jumlah, b.stok,
-                   IFNULL(k.Konversi, 1) AS nilai_konversi
+                   b.tSatuan_id AS stok_satuan, r.tSatuan_id AS resep_satuan
             FROM tResep r
             JOIN tBahan b ON r.tBahan_kode = b.kode
-            LEFT JOIN tkonversisatuan k ON k.SatuanBesar_id = b.tSatuan_id AND k.SatuanKecil_id = r.tSatuan_id
             WHERE r.tProduct_kode = ?
         ");
 
@@ -189,8 +190,11 @@ try {
             $subtotal = $hargaJual * $qty;
 
             $stmtHpp->execute([$kodeProduk]);
-            $hpp = $stmtHpp->fetch(PDO::FETCH_ASSOC)['hpp'];
-            if(!$hpp) $hpp = 0;
+            $hpp = 0;
+            while ($hppRow = $stmtHpp->fetch(PDO::FETCH_ASSOC)) {
+                $nilai_konversi = cariKonversiPHP($konversiGraph, $hppRow['stok_satuan'], $hppRow['resep_satuan']);
+                $hpp += ($hppRow['jumlah'] / $nilai_konversi) * $hppRow['harga'];
+            }
 
             // 1. Simpan ke tDetailPenjualan
             $stmtDetail->execute([
@@ -211,7 +215,8 @@ try {
             $stmtResep->execute([$kodeProduk]);
             while($resep = $stmtResep->fetch(PDO::FETCH_ASSOC)) {
                 $bahanKode = $resep['tBahan_kode'];
-                $qtyKeluar = ($resep['jumlah'] / $resep['nilai_konversi']) * $qty;
+                $nilai_konversi = cariKonversiPHP($konversiGraph, $resep['stok_satuan'], $resep['resep_satuan']);
+                $qtyKeluar = ($resep['jumlah'] / $nilai_konversi) * $qty;
                 
                 if(!isset($totalBahanKeluar[$bahanKode])) {
                     $totalBahanKeluar[$bahanKode] = 0;
@@ -720,12 +725,10 @@ require_once '../includes/footer.php';
         let inputBayar = document.getElementById('inputBayar');
         if (inputBayar) inputBayar.value = inputBayar.value.replace(/\./g, '');
 
-        let redeemPoin = document.getElementById('inputRedeemPoin').value;
+        let redeemPoin = document.getElementById('redeemPoin').value;
         let selectMember = document.getElementById('memberSelect');
         if (selectMember.value !== '' && redeemPoin !== '' && parseInt(redeemPoin) > 0) {
             // Validasi redeem poin vs diskon nominal tak perlu di sini karena otomatis
-                return false;
-            }
         }
         
         return confirm("Apakah Anda yakin ingin memproses transaksi ini?");

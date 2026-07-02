@@ -240,7 +240,6 @@ require_once '../includes/sidebar.php';
                                                 <th>No Pembelian</th>
                                                 <th>Tgl Pesan</th>
                                                 <th>Supplier</th>
-                                                <th>Total Pembelian</th>
                                                 <th>Status</th>
                                                 <th class="text-center">Aksi</th>
                                             </tr>
@@ -252,7 +251,6 @@ require_once '../includes/sidebar.php';
                                                 <td class="font-weight-bold">PB-<?= str_pad($row['nomor'], 4, '0', STR_PAD_LEFT) ?></td>
                                                 <td><?= date('d/m/Y', strtotime($row['tanggal'])) ?></td>
                                                 <td><?= $row['supplier'] ?></td>
-                                                <td>Rp <?= number_format($row['total'], 0, ',', '.') ?></td>
                                                 <td><span class="badge badge-warning"><?= $row['status'] ?></span></td>
                                                 <td class="text-center">
                                                     <a href="detailbarangmasuk.php?nomor=<?= $row['nomor'] ?>" class="btn btn-info btn-sm">Detail</a>
@@ -261,7 +259,7 @@ require_once '../includes/sidebar.php';
                                             </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada barang yang menunggu diterima</td></tr>
+                                            <tr><td colspan="5" class="text-center text-muted py-4">Tidak ada barang yang menunggu diterima</td></tr>
                                         <?php endif; ?>
                                         </tbody>
                                     </table>

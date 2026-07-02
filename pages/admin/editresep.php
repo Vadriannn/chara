@@ -4,6 +4,7 @@ $page_title = "CHARA - Edit Resep Produk";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
+require_once '../../includes/konversi_helper.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -128,16 +129,8 @@ try {
         SELECT
             b.kode,
             b.nama,
-            CASE
-                WHEN LOWER(s.nama) = 'kg'
-                    THEN 'Gram'
-                WHEN LOWER(s.nama) = 'liter'
-                    THEN 'Ml'
-                ELSE s.nama
-            END AS satuan
+            b.tSatuan_id
         FROM tbahan b
-        INNER JOIN tsatuan s
-            ON b.tSatuan_id = s.id
         ORDER BY b.nama
     ";
 
@@ -216,12 +209,25 @@ require_once '../includes/sidebar.php';
                                                             <option value="" disabled>Pilih</option>
                                                             <?php 
                                                             $satuanSelected = $r['tSatuan_id'] == 0 ? $r['satuan_stok_id'] : $r['tSatuan_id'];
+                                                            
+                                                            $graphPHP = getKonversiGraph($koneksi);
+                                                            $queue = [$r['satuan_stok_id']];
+                                                            $visited = [$r['satuan_stok_id'] => true];
                                                             $allowedSatuan = [$r['satuan_stok_id']];
-                                                            foreach($konversiList as $k) {
-                                                                if ($k['SatuanBesar_id'] == $r['satuan_stok_id']) {
-                                                                    $allowedSatuan[] = $k['SatuanKecil_id'];
+                                                            
+                                                            while (count($queue) > 0) {
+                                                                $curr = array_shift($queue);
+                                                                if (isset($graphPHP[$curr])) {
+                                                                    foreach ($graphPHP[$curr] as $neighbor => $multiplier) {
+                                                                        if (!isset($visited[$neighbor])) {
+                                                                            $visited[$neighbor] = true;
+                                                                            $allowedSatuan[] = $neighbor;
+                                                                            $queue[] = $neighbor;
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
+
                                                             foreach($satuanList as $s): 
                                                                 if (in_array($s['id'], $allowedSatuan)):
                                                             ?>
@@ -356,13 +362,33 @@ require_once '../includes/footer.php';
             satuanDropdown.innerHTML = '<option value="" selected disabled>Pilih</option>';
             if (!idSatuanStock) return;
 
-            let baseUnitName = getNamaSatuan(idSatuanStock);
-            satuanDropdown.insertAdjacentHTML('beforeend', `<option value="${idSatuanStock}">${baseUnitName}</option>`);
-
+            // Build BFS graph first
+            let konversiGraph = {};
             for (let k of dataKonversi) {
-                if (k.SatuanBesar_id == idSatuanStock) {
-                    let unitName = getNamaSatuan(k.SatuanKecil_id);
-                    satuanDropdown.insertAdjacentHTML('beforeend', `<option value="${k.SatuanKecil_id}">${unitName}</option>`);
+                if (!konversiGraph[k.SatuanBesar_id]) konversiGraph[k.SatuanBesar_id] = {};
+                if (!konversiGraph[k.SatuanKecil_id]) konversiGraph[k.SatuanKecil_id] = {};
+                konversiGraph[k.SatuanBesar_id][k.SatuanKecil_id] = parseFloat(k.Konversi);
+                if (parseFloat(k.Konversi) !== 0) {
+                    konversiGraph[k.SatuanKecil_id][k.SatuanBesar_id] = 1.0 / parseFloat(k.Konversi);
+                }
+            }
+
+            let queue = [idSatuanStock];
+            let visited = new Set();
+            visited.add(idSatuanStock);
+            
+            while(queue.length > 0) {
+                let curr = queue.shift();
+                let unitName = getNamaSatuan(curr);
+                satuanDropdown.insertAdjacentHTML('beforeend', `<option value="${curr}">${unitName}</option>`);
+                
+                if (konversiGraph[curr]) {
+                    for (let neighbor in konversiGraph[curr]) {
+                        if (!visited.has(neighbor)) {
+                            visited.add(neighbor);
+                            queue.push(neighbor);
+                        }
+                    }
                 }
             }
         }

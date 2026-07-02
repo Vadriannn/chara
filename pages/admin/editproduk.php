@@ -264,10 +264,39 @@ require_once '../includes/sidebar.php';
     const dataKonversi = <?= json_encode($konversiList) ?>;
     const dataSatuan = <?= json_encode($satuanList) ?>;
     
+    // Build undirected graph for BFS
+    let konversiGraph = {};
+    for (let k of dataKonversi) {
+        if (!konversiGraph[k.SatuanBesar_id]) konversiGraph[k.SatuanBesar_id] = {};
+        if (!konversiGraph[k.SatuanKecil_id]) konversiGraph[k.SatuanKecil_id] = {};
+        konversiGraph[k.SatuanBesar_id][k.SatuanKecil_id] = parseFloat(k.Konversi);
+        if (parseFloat(k.Konversi) !== 0) {
+            konversiGraph[k.SatuanKecil_id][k.SatuanBesar_id] = 1.0 / parseFloat(k.Konversi);
+        }
+    }
+
     function cariKonversi(idStock, idSelected) {
         if (idStock == idSelected) return 1;
-        for (let k of dataKonversi) {
-            if (k.SatuanBesar_id == idStock && k.SatuanKecil_id == idSelected) return k.Konversi;
+        
+        let queue = [{id: idStock, multiplier: 1}];
+        let visited = new Set();
+        visited.add(idStock);
+        
+        while(queue.length > 0) {
+            let curr = queue.shift();
+            if (curr.id == idSelected) return curr.multiplier;
+            
+            if (konversiGraph[curr.id]) {
+                for (let neighbor in konversiGraph[curr.id]) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push({
+                            id: neighbor, 
+                            multiplier: curr.multiplier * konversiGraph[curr.id][neighbor]
+                        });
+                    }
+                }
+            }
         }
         return 1;
     }
@@ -401,13 +430,23 @@ require_once '../includes/sidebar.php';
         selectSatuan.innerHTML = '<option value="">Pilih</option>';
         if (!idSatuanStock) return;
 
-        let baseUnitName = getNamaSatuan(idSatuanStock);
-        selectSatuan.insertAdjacentHTML('beforeend', `<option value="${idSatuanStock}">${baseUnitName}</option>`);
-
-        for (let k of dataKonversi) {
-            if (k.SatuanBesar_id == idSatuanStock) {
-                let unitName = getNamaSatuan(k.SatuanKecil_id);
-                selectSatuan.insertAdjacentHTML('beforeend', `<option value="${k.SatuanKecil_id}">${unitName}</option>`);
+        // BFS untuk mencari semua satuan yang terhubung
+        let queue = [idSatuanStock];
+        let visited = new Set();
+        visited.add(idSatuanStock);
+        
+        while(queue.length > 0) {
+            let curr = queue.shift();
+            let unitName = getNamaSatuan(curr);
+            selectSatuan.insertAdjacentHTML('beforeend', `<option value="${curr}">${unitName}</option>`);
+            
+            if (konversiGraph[curr]) {
+                for (let neighbor in konversiGraph[curr]) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push(neighbor);
+                    }
+                }
             }
         }
     });
