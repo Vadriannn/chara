@@ -38,6 +38,12 @@
       </a>
     </li>
     <li class="nav-item">
+      <a class="nav-link" href="../admin/analytics.php">
+        <i class="typcn typcn-chart-pie menu-icon"></i>
+        <span class="menu-title">Analytics Dashboard</span>
+      </a>
+    </li>
+    <li class="nav-item">
       <a class="nav-link" href="../admin/employee.php">
         <i class="typcn typcn-user menu-icon"></i>
         <span class="menu-title">Employee</span>
