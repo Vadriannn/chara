@@ -81,23 +81,10 @@ require_once '../includes/sidebar.php';
                                                   <td><?= $row['nama'] ?></td>
                                                   <td><?= $row['satuan'] ?></td>
                                                   <td>
-                                                      <?= rtrim(rtrim($row['stok'], '0'), '.') ?>
-                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
-                                                          <br>
-                                                          <small class="text-info">
-                                                              (<?= rtrim(rtrim($row['stok'] * 1000, '0'), '.') ?> <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
-                                                          </small>
-                                                      <?php endif; ?>
+                                                      <?= str_replace('.', ',', (string)round((float)$row['stok'], 3)) ?>
                                                   </td>
                                                   <td>
                                                       Rp <?= number_format($row['harga'], 0, ',', '.') ?> <small class="text-muted">/ <?= $row['satuan'] ?></small>
-                                                      
-                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
-                                                          <br>
-                                                          <small class="text-info">
-                                                              (Rp <?= number_format($row['harga'] / 1000, 2, ',', '.') ?> / <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
-                                                          </small>
-                                                      <?php endif; ?>
                                                   </td>
                                                   <td>
                                                       <a href="editbahan.php?kode=<?= $row['kode'] ?>"

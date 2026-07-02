@@ -20,6 +20,7 @@ try {
           b.kode,
           b.nama,
           b.harga,
+          b.tSatuan_id,
           s.nama AS satuan_stok,
             CASE
                 WHEN LOWER(s.nama) = 'kg'
@@ -188,7 +189,7 @@ require_once '../includes/sidebar.php';
                           $bahanBaku->execute();
                           while($bahan = $bahanBaku->fetch(PDO::FETCH_ASSOC)):
                           ?>
-                            <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuanid="<?= $bahan['satuan_stok'] ?>" data-harga="<?= $bahan['harga']; ?>">
+                            <option value="<?= $bahan['kode']; ?>" data-nama="<?= $bahan['nama']; ?>" data-satuanid="<?= $bahan['tSatuan_id'] ?>" data-harga="<?= $bahan['harga']; ?>">
                               <?= $bahan['nama']; ?>
                             </option>
                           <?php endwhile; ?>
@@ -252,12 +253,39 @@ require_once '../includes/footer.php';
 <script>
     const dataKonversi = <?= json_encode($konversiList) ?>;
     
-    // Helper utk cari rasio konversi (Stock -> Selected Unit)
+    // Build undirected graph for BFS
+    let konversiGraph = {};
+    for (let k of dataKonversi) {
+        if (!konversiGraph[k.SatuanBesar_id]) konversiGraph[k.SatuanBesar_id] = {};
+        if (!konversiGraph[k.SatuanKecil_id]) konversiGraph[k.SatuanKecil_id] = {};
+        konversiGraph[k.SatuanBesar_id][k.SatuanKecil_id] = parseFloat(k.Konversi);
+        if (parseFloat(k.Konversi) !== 0) {
+            konversiGraph[k.SatuanKecil_id][k.SatuanBesar_id] = 1.0 / parseFloat(k.Konversi);
+        }
+    }
+
+    // Helper utk cari rasio konversi (Stock -> Selected Unit) menggunakan BFS
     function cariKonversi(idStock, idSelected) {
         if (idStock == idSelected) return 1;
-        for (let k of dataKonversi) {
-            if (k.SatuanBesar_id == idStock && k.SatuanKecil_id == idSelected) {
-                return k.Konversi; // misal Kg -> Gram = 1000, jumlah_di_db / 1000 = jumlah_real
+        
+        let queue = [{id: idStock, multiplier: 1}];
+        let visited = new Set();
+        visited.add(idStock);
+        
+        while(queue.length > 0) {
+            let curr = queue.shift();
+            if (curr.id == idSelected) return curr.multiplier;
+            
+            if (konversiGraph[curr.id]) {
+                for (let neighbor in konversiGraph[curr.id]) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push({
+                            id: neighbor, 
+                            multiplier: curr.multiplier * konversiGraph[curr.id][neighbor]
+                        });
+                    }
+                }
             }
         }
         return 1; // Default
@@ -276,19 +304,36 @@ require_once '../includes/footer.php';
         selectSatuan.innerHTML = '<option value="">Pilih</option>';
         if (!idSatuanStock) return;
 
-        let baseUnitName = getNamaSatuan(idSatuanStock);
-        selectSatuan.insertAdjacentHTML('beforeend', `<option value="${idSatuanStock}">${baseUnitName}</option>`);
-
-        for (let k of dataKonversi) {
-            if (k.SatuanBesar_id == idSatuanStock) {
-                let unitName = getNamaSatuan(k.SatuanKecil_id);
-                selectSatuan.insertAdjacentHTML('beforeend', `<option value="${k.SatuanKecil_id}">${unitName}</option>`);
+        // BFS untuk mencari semua satuan yang terhubung
+        let queue = [idSatuanStock];
+        let visited = new Set();
+        visited.add(idSatuanStock);
+        
+        while(queue.length > 0) {
+            let curr = queue.shift();
+            let unitName = getNamaSatuan(curr);
+            selectSatuan.insertAdjacentHTML('beforeend', `<option value="${curr}">${unitName}</option>`);
+            
+            if (konversiGraph[curr]) {
+                for (let neighbor in konversiGraph[curr]) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push(neighbor);
+                    }
+                }
             }
         }
     });
     
     let totalHpp = 0;
     
+    function tambahBahan() {
+        let select = document.getElementById('bahanSelect');
+        if (select.value === '') {
+            alert('Pilih bahan baku terlebih dahulu!');
+            return;
+        }
+
         let selectSatuan = document.getElementById('satuanBahan');
         let idSatuanDipilih = selectSatuan.value;
         if (idSatuanDipilih === '') {
