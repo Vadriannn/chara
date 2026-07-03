@@ -136,6 +136,7 @@ require_once '../includes/sidebar.php';
                                             <option value="Tunai" <?= ($filterMetbayar == 'Tunai') ? 'selected' : '' ?>>Tunai</option>
                                             <option value="QRIS" <?= ($filterMetbayar == 'QRIS') ? 'selected' : '' ?>>QRIS</option>
                                             <option value="Debit" <?= ($filterMetbayar == 'Debit') ? 'selected' : '' ?>>Debit</option>
+                                            <option value="Midtrans" <?= ($filterMetbayar == 'Midtrans') ? 'selected' : '' ?>>Midtrans</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2 mb-3">
