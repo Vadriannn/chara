@@ -81,7 +81,6 @@ require_once '../includes/sidebar.php';
                         </td>
                         <td><?= $row['supplier'] ?></td>
                         <td><?= $row['nomor_pr'] ?></td>
-                        
                         <td>
                             Rp <?= number_format(
                                 $row['total'],
@@ -91,15 +90,15 @@ require_once '../includes/sidebar.php';
                             ) ?>
                         </td>
                         <td>
+                            <span class="badge badge-success">
+                                <?= $row['status'] ?>
+                            </span>
+                        </td>
+                        <td>
                             <a href="detailhispembelian.php?nomor=<?= $row['nomor'] ?>"
                                class="btn btn-info btn-sm">
                                 Detail
                             </a>
-                        </td>
-                        <td>
-                            <span class="badge badge-success">
-                                <?= $row['status'] ?>
-                            </span>
                         </td>
                     </tr>
                 <?php endwhile; ?>

@@ -65,7 +65,6 @@ require_once '../includes/sidebar.php';
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th width="5%">No</th>
                                         <th width="15%">No. Nota</th>
                                         <th>Tanggal</th>
                                         <th>Supplier</th>
@@ -79,7 +78,6 @@ require_once '../includes/sidebar.php';
                                     <?php $no = 1; ?>
                                     <?php foreach($dataPembelian as $row): ?>
                                     <tr>
-                                        <td><?= $no++ ?></td>
                                         <td><strong>#<?= $row['nomor'] ?></strong></td>
                                         <td><?= date('d-m-Y', strtotime($row['tanggal'])) ?></td>
                                         <td><?= $row['nama_supplier'] ?></td>
