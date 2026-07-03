@@ -147,15 +147,16 @@ require_once '../includes/sidebar.php';
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="font-weight-bold text-dark">Metode Pembayaran</label>
-                                <select name="filter_metbayar" class="form-control form-control-sm">
-                                    <option value="">Semua Metode</option>
-                                    <option value="Tunai" <?= ($filterMetbayar == 'Tunai') ? 'selected' : '' ?>>Tunai</option>
-                                    <option value="QRIS" <?= ($filterMetbayar == 'QRIS') ? 'selected' : '' ?>>QRIS</option>
-                                    <option value="Debit" <?= ($filterMetbayar == 'Debit') ? 'selected' : '' ?>>Debit</option>
-                                </select>
-                            </div>
+                             <div class="col-md-3 mb-3">
+                                 <label class="font-weight-bold text-dark">Metode Pembayaran</label>
+                                 <select name="filter_metbayar" class="form-control form-control-sm">
+                                     <option value="">Semua Metode</option>
+                                     <option value="Tunai" <?= ($filterMetbayar == 'Tunai') ? 'selected' : '' ?>>Tunai</option>
+                                     <option value="QRIS" <?= ($filterMetbayar == 'QRIS') ? 'selected' : '' ?>>QRIS</option>
+                                     <option value="Debit" <?= ($filterMetbayar == 'Debit') ? 'selected' : '' ?>>Debit</option>
+                                     <option value="Midtrans" <?= ($filterMetbayar == 'Midtrans') ? 'selected' : '' ?>>Midtrans</option>
+                                 </select>
+                             </div>
                             <div class="col-md-2 mb-3">
                                 <button type="submit" class="btn btn-info btn-sm btn-block mb-2">
                                     <i class="typcn typcn-zoom"></i> Filter

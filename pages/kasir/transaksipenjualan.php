@@ -5,6 +5,7 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_kasir.php';
 require_once '../../includes/konversi_helper.php';
+require_once 'midtrans_config.php';
 
 $error = "";
 
@@ -273,7 +274,7 @@ require_once '../includes/sidebar.php';
                       <div class="alert alert-danger p-2"><?= htmlspecialchars($error) ?></div>
                     <?php endif; ?>
 
-                    <form method="POST">
+                    <form method="POST" id="penjualanForm">
                       <div class="mb-4">
                           <div class="row">
                               <div class="col-md-8">
@@ -406,6 +407,8 @@ require_once '../includes/sidebar.php';
                       </div>
 
                       <div id="hiddenCartData"></div>
+                      <input type="hidden" name="midtrans_token" id="midtransTokenInput">
+                      <input type="hidden" name="midtrans_status" id="midtransStatusInput">
 
                       <div class="row">
                           <div class="col-md-3">
@@ -422,10 +425,9 @@ require_once '../includes/sidebar.php';
                           <div class="col-md-3">
                               <div class="form-group mb-0">
                                   <label class="font-weight-bold">Metode Pembayaran</label>
-                                  <select name="metbayar" class="form-control" required>
+                                  <select name="metbayar" id="metbayarSelect" class="form-control" required>
                                       <option value="Tunai">Tunai</option>
-                                      <option value="QRIS">QRIS</option>
-                                      <option value="Debit">Debit</option>
+                                      <option value="Midtrans">Midtrans (Online)</option>
                                   </select>
                               </div>
                           </div>
@@ -446,6 +448,7 @@ require_once '../includes/sidebar.php';
 // ==========================================
 require_once '../includes/footer.php'; 
 ?>
+            <script type="text/javascript" src="<?= getMidtransJsUrl() ?>" data-client-key="<?= MIDTRANS_CLIENT_KEY ?>"></script>
             <script>
                 // Fetch dynamic discount point value
                 const poinDiskonNominal = <?php 
@@ -731,7 +734,93 @@ require_once '../includes/footer.php';
             // Validasi redeem poin vs diskon nominal tak perlu di sini karena otomatis
         }
         
+        // Cek jika menggunakan metode bayar Midtrans
+        let metbayar = document.getElementById('metbayarSelect').value;
+        if (metbayar === 'Midtrans') {
+            // Jika token transaksi sudah didapat, lanjutkan submit form
+            if (document.getElementById('midtransTokenInput').value !== '') {
+                return true;
+            }
+            
+            // Proses dapatkan token pembayaran Snap
+            prosesPembayaranMidtrans();
+            return false; // Tahan submit form terlebih dahulu
+        }
+        
         return confirm("Apakah Anda yakin ingin memproses transaksi ini?");
+    }
+    
+    function prosesPembayaranMidtrans() {
+        let btnSubmit = document.querySelector('button[type="submit"]');
+        let originalText = btnSubmit.innerHTML;
+        
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menghubungi Midtrans...';
+
+        // Susun data keranjang untuk dikirim via AJAX
+        let payload = {
+            produk_kode: [],
+            qty_beli: [],
+            redeem_poin: document.getElementById('redeemPoin').value || 0,
+            member_id: document.getElementById('memberSelect').value || ''
+        };
+        
+        // Cari seluruh hidden inputs di hiddenCartData
+        let hiddenCartDivs = document.querySelectorAll('#hiddenCartData > div');
+        hiddenCartDivs.forEach(div => {
+            let kodeInput = div.querySelector('input[name^="produk_kode"]');
+            let qtyInput = div.querySelector('input[name^="qty_beli"]');
+            if (kodeInput && qtyInput) {
+                payload.produk_kode.push(kodeInput.value);
+                payload.qty_beli.push(qtyInput.value);
+            }
+        });
+
+        fetch('get_snap_token.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Terjadi kesalahan sistem'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalText;
+            
+            if (data.token) {
+                // Tampilkan Snap popup
+                snap.pay(data.token, {
+                    onSuccess: function(result) {
+                        alert("Pembayaran berhasil!");
+                        document.getElementById('midtransTokenInput').value = data.token;
+                        document.getElementById('midtransStatusInput').value = 'success';
+                        document.getElementById('penjualanForm').submit();
+                    },
+                    onPending: function(result) {
+                        alert("Pembayaran pending / menunggu pembayaran. Silakan selesaikan pembayaran Anda di panel Midtrans.");
+                    },
+                    onError: function(result) {
+                        alert("Pembayaran gagal: " + (result.status_message || "Terjadi kesalahan."));
+                    },
+                    onClose: function() {
+                        alert("Anda menutup halaman pembayaran Midtrans.");
+                    }
+                });
+            } else {
+                alert("Gagal mendapatkan token pembayaran.");
+            }
+        })
+        .catch(error => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalText;
+            alert("Gagal memproses pembayaran: " + error.message);
+        });
     }
     
     function cekPoinMember() {
