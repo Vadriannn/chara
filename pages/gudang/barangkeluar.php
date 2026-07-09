@@ -45,6 +45,34 @@ try {
     $stmt->execute($params);
     $mutasi = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Query untuk rekap total penggunaan bahan baku
+    $queryRekap = "
+        SELECT
+            b.nama AS nama_bahan,
+            s.nama AS satuan,
+            SUM(m.qty) AS total_qty
+        FROM tMutasiStok m
+        JOIN tbahan b ON m.tBahan_kode = b.kode
+        JOIN tsatuan s ON b.tSatuan_id = s.id
+        WHERE m.jenis = 'Penjualan'
+          AND DATE(m.tanggal) >= :tgl_mulai AND DATE(m.tanggal) <= :tgl_selesai
+    ";
+    
+    $paramsRekap = [
+        ':tgl_mulai' => $tglMulai,
+        ':tgl_selesai' => $tglSelesai
+    ];
+    if ($search != '') {
+        $queryRekap .= " AND (m.referensi LIKE :search OR b.nama LIKE :search) ";
+        $paramsRekap['search'] = "%$search%";
+    }
+    
+    $queryRekap .= " GROUP BY b.kode ORDER BY total_qty DESC";
+    
+    $stmtRekap = $koneksi->prepare($queryRekap);
+    $stmtRekap->execute($paramsRekap);
+    $rekapPenggunaan = $stmtRekap->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
     die("Error: " . $e->getMessage());
 }
@@ -84,6 +112,28 @@ require_once '../includes/sidebar.php';
                                         </div>
                                     </div>
                                 </form>
+
+                                <h5 class="mb-3 font-weight-bold text-dark">Rekap Total Penggunaan Bahan Baku</h5>
+                                <?php if(count($rekapPenggunaan) > 0): ?>
+                                    <div class="row mb-4">
+                                        <?php foreach($rekapPenggunaan as $rekap): ?>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="card bg-light border-0 h-100">
+                                                    <div class="card-body py-3 px-4">
+                                                        <p class="mb-1 text-muted font-weight-bold" style="font-size: 0.85rem;"><?= htmlspecialchars($rekap['nama_bahan']) ?></p>
+                                                        <h4 class="mb-0 text-dark">
+                                                            <?= (float)$rekap['total_qty'] ?> <small style="font-size: 0.8rem; font-weight: normal;"><?= htmlspecialchars($rekap['satuan']) ?></small>
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="text-muted mb-4 pb-2 border-bottom">Belum ada penggunaan pada periode ini.</p>
+                                <?php endif; ?>
+
+                                <h5 class="mb-3 font-weight-bold text-dark mt-2">Rincian History Pengeluaran</h5>
                                 <div class="table-responsive">
                                     <table class="table table-bordered">
                                       <thead>
@@ -106,15 +156,15 @@ require_once '../includes/sidebar.php';
                                                   <td class="font-weight-bold">#<?= htmlspecialchars($row['referensi']) ?></td>
                                                   <td class="font-weight-bold"><?= htmlspecialchars($row['nama_bahan']) ?></td>
                                                   <td class="text-center text-muted">
-                                                      <?= rtrim(rtrim($row['stokSebelum'], '0'), '.') ?> 
+                                                      <?= (float)$row['stokSebelum'] ?> 
                                                       <small><?= htmlspecialchars($row['satuan']) ?></small>
                                                   </td>
                                                   <td class="text-center font-weight-bold text-danger">
-                                                      - <?= rtrim(rtrim($row['qty'], '0'), '.') ?> 
+                                                      - <?= (float)$row['qty'] ?> 
                                                       <small><?= htmlspecialchars($row['satuan']) ?></small>
                                                   </td>
                                                   <td class="text-center font-weight-bold">
-                                                      <?= rtrim(rtrim($row['stokSesudah'], '0'), '.') ?> 
+                                                      <?= (float)$row['stokSesudah'] ?> 
                                                       <small><?= htmlspecialchars($row['satuan']) ?></small>
                                                   </td>
                                               </tr>

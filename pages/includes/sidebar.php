@@ -3,7 +3,13 @@
     <li class="nav-item">
       <div class="d-flex sidebar-profile">
         <div class="sidebar-profile-image">
-          <img src="../../images/faces/face29.png" alt="image">
+          <?php if($_SESSION['role'] == 'Admin'): ?>
+            <img src="../../images/faces/face29.png" alt="image">
+          <?php elseif($_SESSION['role'] == 'Kasir'): ?>
+            <img src="../../images/faces/face32.png" alt="image">
+          <?php elseif($_SESSION['role'] == 'Gudang'): ?>
+            <img src="../../images/faces/face33.png" alt="image">
+          <?php endif; ?>
           <span class="sidebar-status-indicator"></span>
         </div>
         <div class="sidebar-profile-name">
@@ -142,7 +148,7 @@
     <li class="nav-item">
       <a class="nav-link" href="../kasir/tutupshift.php">
         <i class="typcn typcn-arrow-right-thick menu-icon"></i>
-        <span class="menu-title"> Tutup Shift</span>
+        <span class="menu-title"> Buka / Tutup Shift</span>
       </a>
     </li>
     <?php endif ?>
