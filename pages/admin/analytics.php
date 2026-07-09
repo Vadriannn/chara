@@ -148,6 +148,49 @@ require_once '../includes/sidebar.php';
         margin-bottom: 20px;
     }
 }
+/* Dashboard Premium Cards Sync */
+.premium-card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.premium-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+.bg-gradient-primary-custom {
+    background: linear-gradient(135deg, #4b49ac 0%, #29285f 100%);
+    color: white;
+}
+.bg-gradient-success-custom {
+    background: linear-gradient(135deg, #248AFA 0%, #17549C 100%);
+    color: white;
+}
+.bg-gradient-warning-custom {
+    background: linear-gradient(135deg, #FFC100 0%, #E68A00 100%);
+    color: white;
+}
+.bg-gradient-danger-custom {
+    background: linear-gradient(135deg, #f35a5a 0%, #c43c3c 100%);
+    color: white;
+}
+.bg-gradient-info-custom {
+    background: linear-gradient(135deg, #0dcaf0 0%, #057a8f 100%);
+    color: white;
+}
+.table-premium th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background-color: #f8f9fa;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+}
+.table-premium td {
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f3f5;
+}
 </style>
 
 <div class="content-wrapper">
@@ -194,26 +237,26 @@ require_once '../includes/sidebar.php';
                         <div class="tab-pane fade show active" id="company" role="tabpanel">
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <div class="card bg-info text-white shadow-sm">
-                                        <div class="card-body">
-                                            <h5>Total Gross Sales</h5>
-                                            <h3>Rp <?= number_format($gross_sales, 0, ',', '.') ?></h3>
+                                    <div class="card premium-card shadow-sm bg-gradient-success-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">Total Gross Sales</p>
+                                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($gross_sales, 0, ',', '.') ?></h3>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card bg-success text-white shadow-sm">
-                                        <div class="card-body">
-                                            <h5>Total Net Sales</h5>
-                                            <h3>Rp <?= number_format($net_sales, 0, ',', '.') ?></h3>
+                                    <div class="card premium-card shadow-sm bg-gradient-primary-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">Total Net Sales</p>
+                                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($net_sales, 0, ',', '.') ?></h3>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card bg-primary text-white shadow-sm">
-                                        <div class="card-body">
-                                            <h5>Active Members</h5>
-                                            <h3><?= number_format($active_members, 0, ',', '.') ?></h3>
+                                    <div class="card premium-card shadow-sm bg-gradient-warning-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">Active Members</p>
+                                            <h3 class="font-weight-bold mb-0"><?= number_format($active_members, 0, ',', '.') ?></h3>
                                         </div>
                                     </div>
                                 </div>
@@ -221,26 +264,26 @@ require_once '../includes/sidebar.php';
 
                             <div class="row">
                                 <div class="col-md-6 border-right-divider">
-                                    <h5>Top 3 Best Selling Products (Qty)</h5>
-                                    <table class="table table-bordered table-striped mt-3">
+                                    <h5 class="mb-3 font-weight-bold text-dark">Top 3 Best Selling Products (Qty)</h5>
+                                    <table class="table table-premium table-borderless w-100 mt-3">
                                         <thead class="bg-light"><tr><th>Product</th><th>Qty Sold</th></tr></thead>
                                         <tbody>
                                             <?php foreach($top_products as $tp): ?>
-                                            <tr><td><?= htmlspecialchars($tp['nama']) ?></td><td><?= $tp['total_qty'] ?></td></tr>
+                                            <tr><td><p class="mb-0 font-weight-bold text-dark"><?= htmlspecialchars($tp['nama']) ?></p></td><td><span class="badge badge-info rounded-pill px-3 py-1"><?= $tp['total_qty'] ?></span></td></tr>
                                             <?php endforeach; ?>
-                                            <?php if(empty($top_products)) echo '<tr><td colspan="2">No sales data.</td></tr>'; ?>
+                                            <?php if(empty($top_products)) echo '<tr><td colspan="2" class="text-muted">No sales data.</td></tr>'; ?>
                                         </tbody>
                                     </table>
                                 </div>
                                 <div class="col-md-6 pl-md-4">
-                                    <h5 class="text-danger"><i class="typcn typcn-warning"></i> Stock Alerts (< 50 items)</h5>
-                                    <table class="table table-bordered table-striped mt-3">
-                                        <thead class="bg-danger text-white"><tr><th>Raw Material</th><th>Stock Remaining</th></tr></thead>
+                                    <h5 class="text-danger mb-3 font-weight-bold"><i class="typcn typcn-warning"></i> Stock Alerts (< 50 items)</h5>
+                                    <table class="table table-premium table-borderless w-100 mt-3">
+                                        <thead class="bg-light"><tr><th>Raw Material</th><th>Stock Remaining</th></tr></thead>
                                         <tbody>
                                             <?php foreach($alerts as $al): ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($al['nama']) ?></td>
-                                                <td><h5><span class="badge badge-danger"><?= floatval($al['stok']) ?> <?= htmlspecialchars($al['satuan'] ?? 'pcs') ?></span></h5></td>
+                                                <td><p class="mb-0 font-weight-bold text-dark"><?= htmlspecialchars($al['nama']) ?></p></td>
+                                                <td><h5 class="mb-0"><span class="badge badge-danger rounded-pill px-3 py-1"><?= floatval($al['stok']) ?> <?= htmlspecialchars($al['satuan'] ?? 'pcs') ?></span></h5></td>
                                             </tr>
                                             <?php endforeach; ?>
                                             <?php if(empty($alerts)) echo '<tr><td colspan="2" class="text-success font-weight-bold">All stocks are safe.</td></tr>'; ?>
@@ -284,12 +327,12 @@ require_once '../includes/sidebar.php';
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <div class="card bg-info text-white shadow-sm mb-3">
+                                    <div class="card premium-card bg-gradient-info-custom shadow-sm mb-3">
                                         <div class="card-body">
-                                            <h5>New Members (<?= $current_month_name ?>)</h5>
+                                            <p class="mb-1 text-white font-weight-medium">New Members (<?= $current_month_name ?>)</p>
                                             <div class="d-flex align-items-center">
-                                                <h2 class="mb-0 mr-3"><?= number_format($new_members, 0, ',', '.') ?></h2>
-                                                <h5 class="mb-0 bg-white text-info px-2 py-1 rounded"><?= $member_growth_text ?> vs last month</h5>
+                                                <h3 class="mb-0 mr-3 font-weight-bold text-white"><?= number_format($new_members, 0, ',', '.') ?></h3>
+                                                <h6 class="mb-0 bg-white text-dark px-2 py-1 rounded shadow-sm"><?= $member_growth_text ?> vs last month</h6>
                                             </div>
                                         </div>
                                     </div>
@@ -329,28 +372,28 @@ require_once '../includes/sidebar.php';
                         <div class="tab-pane fade" id="finance" role="tabpanel">
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <div class="card bg-info text-white shadow-sm">
-                                        <div class="card-body">
-                                            <h5>Average Transaction Value</h5>
-                                            <h3>Rp <?= number_format($atv, 0, ',', '.') ?></h3>
+                                    <div class="card premium-card shadow-sm bg-gradient-primary-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">Average Transaction Value</p>
+                                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($atv, 0, ',', '.') ?></h3>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card bg-danger text-white shadow-sm">
-                                        <div class="card-body">
-                                            <h5>COGS (HPP)</h5>
-                                            <h3>Rp <?= number_format($cogs, 0, ',', '.') ?></h3>
-                                            <span class="badge badge-light text-danger"><?= $cogs_pct ?>% of Net Sales</span>
+                                    <div class="card premium-card shadow-sm bg-gradient-danger-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">COGS (HPP)</p>
+                                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($cogs, 0, ',', '.') ?></h3>
+                                            <span class="badge badge-light text-danger mt-2 align-self-start py-1 px-2"><?= $cogs_pct ?>% of Net Sales</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card bg-success text-white shadow-sm">
-                                        <div class="card-body">
-                                            <h5>Gross Profit Margin</h5>
-                                            <h3>Rp <?= number_format($gross_margin, 0, ',', '.') ?></h3>
-                                            <span class="badge badge-light text-success"><?= $gpm_pct ?>% of Net Sales</span>
+                                    <div class="card premium-card shadow-sm bg-gradient-success-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">Gross Profit Margin</p>
+                                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($gross_margin, 0, ',', '.') ?></h3>
+                                            <span class="badge badge-light text-success mt-2 align-self-start py-1 px-2"><?= $gpm_pct ?>% of Net Sales</span>
                                         </div>
                                     </div>
                                 </div>
@@ -400,10 +443,10 @@ require_once '../includes/sidebar.php';
                         <div class="tab-pane fade" id="product" role="tabpanel">
                              <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <div class="card bg-danger text-white shadow-sm h-100">
-                                        <div class="card-body">
-                                            <h5>Margin Erosion (Total Diskon / Uang Hilang)</h5>
-                                            <h3>Rp <?= number_format($discount_cost, 0, ',', '.') ?></h3>
+                                    <div class="card premium-card shadow-sm bg-gradient-danger-custom h-100">
+                                        <div class="card-body d-flex flex-column justify-content-center">
+                                            <p class="mb-1 text-white font-weight-medium">Margin Erosion (Total Diskon)</p>
+                                            <h3 class="font-weight-bold mb-0">Rp <?= number_format($discount_cost, 0, ',', '.') ?></h3>
                                         </div>
                                     </div>
                                 </div>
