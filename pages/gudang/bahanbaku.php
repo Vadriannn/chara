@@ -82,12 +82,6 @@ require_once '../includes/sidebar.php';
                                                       <span class="font-weight-bold <?= $isLowStock ? 'text-danger' : '' ?>">
                                                           <?= rtrim(rtrim($row['stok'], '0'), '.') ?>
                                                       </span>
-                                                      <?php if(strtolower($row['satuan']) == 'kg' || strtolower($row['satuan']) == 'liter'): ?>
-                                                          <br>
-                                                          <small class="text-info font-weight-bold">
-                                                              (<?= rtrim(rtrim($row['stok'] * 1000, '0'), '.') ?> <?= strtolower($row['satuan']) == 'kg' ? 'Gram' : 'Ml' ?>)
-                                                          </small>
-                                                      <?php endif; ?>
                                                       <?php if($isLowStock): ?>
                                                           <span class="badge badge-danger ml-2">Menipis</span>
                                                       <?php endif; ?>
