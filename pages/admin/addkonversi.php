@@ -70,19 +70,19 @@ require_once '../includes/sidebar.php';
                                     <form method="POST">
                                         <div class="form-group">
                                             <label>Satuan Besar</label>
-                                            <select name="satuan_besar" class="form-control" required>
+                                            <select name="satuan_besar" id="satuanBesarSelect" class="form-control" required>
                                                 <option value="">-- Pilih Satuan Besar --</option>
                                                 <?php foreach ($satuans as $s): ?>
-                                                    <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
+                                                    <option value="<?= $s['id'] ?>" <?= (isset($_POST['satuan_besar']) && $_POST['satuan_besar'] == $s['id']) ? 'selected' : '' ?>><?= htmlspecialchars($s['nama']) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                         <div class="form-group">
                                             <label>Satuan Kecil</label>
-                                            <select name="satuan_kecil" class="form-control" required>
+                                            <select name="satuan_kecil" id="satuanKecilSelect" class="form-control" required>
                                                 <option value="">-- Pilih Satuan Kecil --</option>
                                                 <?php foreach ($satuans as $s): ?>
-                                                    <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
+                                                    <option value="<?= $s['id'] ?>" <?= (isset($_POST['satuan_kecil']) && $_POST['satuan_kecil'] == $s['id']) ? 'selected' : '' ?>><?= htmlspecialchars($s['nama']) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -92,9 +92,12 @@ require_once '../includes/sidebar.php';
                                                 type="number"
                                                 step="0.01"
                                                 name="konversi"
+                                                id="inputKonversi"
                                                 class="form-control"
                                                 placeholder="Contoh: 1000"
+                                                value="<?= isset($_POST['konversi']) ? htmlspecialchars($_POST['konversi']) : '' ?>"
                                                 required>
+                                            <small id="previewKonversi" class="text-success font-weight-bold d-block mt-2"></small>
                                         </div>
                                         <button type="submit" class="btn btn-primary">
                                             Simpan
@@ -116,3 +119,31 @@ require_once '../includes/sidebar.php';
 // ==========================================
 require_once '../includes/footer.php'; 
 ?>
+<script>
+$(document).ready(function() {
+    $('#satuanBesarSelect').select2({ placeholder: '-- Pilih Satuan Besar --' });
+    $('#satuanKecilSelect').select2({ placeholder: '-- Pilih Satuan Kecil --' });
+
+    function updatePreview() {
+        let sb = $('#satuanBesarSelect option:selected');
+        let sk = $('#satuanKecilSelect option:selected');
+        let val = $('#inputKonversi').val();
+        
+        if(sb.val() && sk.val() && val) {
+            let num = parseFloat(val);
+            if(!isNaN(num)) {
+                let text = `(Berarti: 1 ${sb.text()} sama dengan ${num.toLocaleString('id-ID')} ${sk.text()})`;
+                $('#previewKonversi').text(text);
+                return;
+            }
+        }
+        $('#previewKonversi').text('');
+    }
+
+    $('#satuanBesarSelect, #satuanKecilSelect').on('change', updatePreview);
+    $('#inputKonversi').on('input', updatePreview);
+    
+    // Initial call for retention
+    updatePreview();
+});
+</script>
