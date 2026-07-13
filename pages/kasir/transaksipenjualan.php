@@ -314,22 +314,30 @@ require_once '../includes/sidebar.php';
 
                           <div class="row align-items-end">
                               <div class="col-md-4">
-                                  <label class="mod-label">Kustom: Gula</label>
-                                  <select id="sugarSelect" class="form-control">
-                                      <option value="">Normal</option>
+                                  <label class="mod-label mb-2 d-block">Kustom: Gula</label>
+                                  <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons" id="sugarGroup">
+                                      <label class="btn btn-outline-primary active flex-fill">
+                                          <input type="radio" name="sugarMod" value="" checked> Normal
+                                      </label>
                                       <?php foreach($sugarMods as $mod): ?>
-                                          <option value="<?= $mod['id'] ?>"><?= $mod['nama'] ?> Sugar</option>
+                                      <label class="btn btn-outline-primary flex-fill">
+                                          <input type="radio" name="sugarMod" value="<?= $mod['id'] ?>" data-nama="<?= htmlspecialchars($mod['nama']) ?> Sugar"> <?= htmlspecialchars($mod['nama']) ?>
+                                      </label>
                                       <?php endforeach; ?>
-                                  </select>
+                                  </div>
                               </div>
                               <div class="col-md-4 mt-3 mt-md-0">
-                                  <label class="mod-label">Kustom: Es</label>
-                                  <select id="iceSelect" class="form-control">
-                                      <option value="">Normal</option>
+                                  <label class="mod-label mb-2 d-block">Kustom: Es</label>
+                                  <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons" id="iceGroup">
+                                      <label class="btn btn-outline-primary active flex-fill">
+                                          <input type="radio" name="iceMod" value="" checked> Normal
+                                      </label>
                                       <?php foreach($iceMods as $mod): ?>
-                                          <option value="<?= $mod['id'] ?>"><?= $mod['nama'] ?> Ice</option>
+                                      <label class="btn btn-outline-primary flex-fill">
+                                          <input type="radio" name="iceMod" value="<?= $mod['id'] ?>" data-nama="<?= htmlspecialchars($mod['nama']) ?> Ice"> <?= htmlspecialchars($mod['nama']) ?>
+                                      </label>
                                       <?php endforeach; ?>
-                                  </select>
+                                  </div>
                               </div>
                               <div class="col-md-4 mt-4 mt-md-0">
                                   <button type="button" id="btnTambah" class="btn btn-primary w-100" onclick="tambahKeranjang()">
@@ -507,6 +515,11 @@ require_once '../includes/footer.php';
                 ?>;
     // Initialize select2
     $(document).ready(function() {
+        $('#produkSelect').select2({
+            placeholder: "-- Pilih Produk --",
+            allowClear: true
+        });
+        
         $('#memberSelect').select2({
             placeholder: "-- Bukan Member --",
             allowClear: true
@@ -616,7 +629,7 @@ require_once '../includes/footer.php';
     function tambahKeranjang(){
         let select = document.getElementById('produkSelect');
         if(select.value == '') {
-            alert('Pilih produk terlebih dahulu!');
+            Swal.fire({icon: 'warning', title: 'Oops...', text: 'Pilih produk terlebih dahulu!'});
             return;
         }
 
@@ -625,28 +638,28 @@ require_once '../includes/footer.php';
         let max = hitungMaxPorsi(kode);
 
         if(qty <= 0){
-            alert('Stok tidak mencukupi atau Qty tidak valid!');
+            Swal.fire({icon: 'error', title: 'Gagal', text: 'Stok tidak mencukupi atau Qty tidak valid!'});
             return;
         }
 
         if(qty > max){
-            alert('Jumlah pesanan melebihi batas ketersediaan bahan baku di gudang!');
+            Swal.fire({icon: 'error', title: 'Stok Terbatas', text: 'Jumlah pesanan melebihi batas ketersediaan bahan baku di gudang!'});
             return;
         }
 
         // TANGKAP NILAI MODIFIER
-        let sugarEl = document.getElementById('sugarSelect');
-        let iceEl = document.getElementById('iceSelect');
+        let sugarEl = document.querySelector('input[name="sugarMod"]:checked');
+        let iceEl = document.querySelector('input[name="iceMod"]:checked');
         
         let arrNamaMod = [];
         let htmlHiddenMod = '';
 
-        if(sugarEl.value !== '') {
-            arrNamaMod.push(sugarEl.options[sugarEl.selectedIndex].text);
+        if(sugarEl && sugarEl.value !== '') {
+            arrNamaMod.push(sugarEl.dataset.nama);
             htmlHiddenMod += `<input type="hidden" name="modifier[${itemIndexCounter}][]" value="${sugarEl.value}">`;
         }
-        if(iceEl.value !== '') {
-            arrNamaMod.push(iceEl.options[iceEl.selectedIndex].text);
+        if(iceEl && iceEl.value !== '') {
+            arrNamaMod.push(iceEl.dataset.nama);
             htmlHiddenMod += `<input type="hidden" name="modifier[${itemIndexCounter}][]" value="${iceEl.value}">`;
         }
 
@@ -695,9 +708,9 @@ require_once '../includes/footer.php';
         `);
 
         // Reset form atas
-        select.value = '';
-        sugarEl.value = '';
-        iceEl.value = '';
+        $('#produkSelect').val('').trigger('change');
+        $('input[name="sugarMod"][value=""]').parent().button('toggle');
+        $('input[name="iceMod"][value=""]').parent().button('toggle');
         document.getElementById('qtyProduk').value = '1';
         
         itemIndexCounter++; // Naikkan counter agar baris berikutnya unik
@@ -763,7 +776,7 @@ require_once '../includes/footer.php';
 
     function validasiSubmit() {
         if(subtotalKeranjang === 0) {
-            alert("Keranjang masih kosong! Silakan tambahkan produk terlebih dahulu.");
+            Swal.fire({icon: 'warning', title: 'Oops...', text: 'Keranjang masih kosong! Silakan tambahkan produk terlebih dahulu.'});
             return false;
         }
         
@@ -793,7 +806,22 @@ require_once '../includes/footer.php';
             return false; // Tahan submit form terlebih dahulu
         }
         
-        return confirm("Apakah Anda yakin ingin memproses transaksi ini?");
+        Swal.fire({
+            title: 'Konfirmasi Pembayaran',
+            text: "Apakah Anda yakin ingin memproses transaksi ini?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Proses!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // If confirmed, temporarily override validasiSubmit so it submits directly
+                document.getElementById('penjualanForm').onsubmit = null; 
+                document.getElementById('penjualanForm').submit();
+            }
+        });
+        return false;
     }
     
     function prosesPembayaranMidtrans() {
@@ -843,29 +871,30 @@ require_once '../includes/footer.php';
                 // Tampilkan Snap popup
                 snap.pay(data.token, {
                     onSuccess: function(result) {
-                        alert("Pembayaran berhasil!");
-                        document.getElementById('midtransTokenInput').value = data.token;
-                        document.getElementById('midtransStatusInput').value = 'success';
-                        document.getElementById('penjualanForm').submit();
+                        Swal.fire({icon: 'success', title: 'Berhasil', text: 'Pembayaran berhasil!'}).then(() => {
+                            document.getElementById('midtransTokenInput').value = data.token;
+                            document.getElementById('midtransStatusInput').value = 'success';
+                            document.getElementById('penjualanForm').submit();
+                        });
                     },
                     onPending: function(result) {
-                        alert("Pembayaran pending / menunggu pembayaran. Silakan selesaikan pembayaran Anda di panel Midtrans.");
+                        Swal.fire({icon: 'info', title: 'Pending', text: 'Pembayaran pending / menunggu pembayaran. Silakan selesaikan pembayaran Anda di panel Midtrans.'});
                     },
                     onError: function(result) {
-                        alert("Pembayaran gagal: " + (result.status_message || "Terjadi kesalahan."));
+                        Swal.fire({icon: 'error', title: 'Gagal', text: "Pembayaran gagal: " + (result.status_message || "Terjadi kesalahan.")});
                     },
                     onClose: function() {
-                        alert("Anda menutup halaman pembayaran Midtrans.");
+                        Swal.fire({icon: 'warning', title: 'Dibatalkan', text: 'Anda menutup halaman pembayaran Midtrans.'});
                     }
                 });
             } else {
-                alert("Gagal mendapatkan token pembayaran.");
+                Swal.fire({icon: 'error', title: 'Gagal', text: 'Gagal mendapatkan token pembayaran.'});
             }
         })
         .catch(error => {
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = originalText;
-            alert("Gagal memproses pembayaran: " + error.message);
+            Swal.fire({icon: 'error', title: 'Gagal', text: "Gagal memproses pembayaran: " + error.message});
         });
     }
     
@@ -923,7 +952,7 @@ require_once '../includes/footer.php';
                 // Reset form
                 document.getElementById('formAddMember').reset();
                 
-                alert("Member berhasil ditambahkan!");
+                Swal.fire({icon: 'success', title: 'Berhasil', text: 'Member berhasil ditambahkan!'});
             } else {
                 alertBox.innerHTML = data.message;
                 alertBox.classList.remove('d-none');
@@ -932,7 +961,7 @@ require_once '../includes/footer.php';
         .catch(error => {
             btn.disabled = false;
             btn.innerHTML = 'Simpan Member';
-            alert("Terjadi kesalahan sistem!");
+            Swal.fire({icon: 'error', title: 'Error', text: 'Terjadi kesalahan sistem!'});
         });
     });
     </script>
