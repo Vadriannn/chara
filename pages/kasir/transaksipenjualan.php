@@ -413,7 +413,10 @@ require_once '../includes/sidebar.php';
                       <div class="row">
                           <div class="col-md-3">
                               <div class="form-group mb-3">
-                                  <label class="font-weight-bold">Member (Opsional)</label>
+                                  <label class="font-weight-bold d-flex justify-content-between align-items-center mb-1">
+                                      <span>Member (Opsional)</span>
+                                      <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" data-toggle="modal" data-target="#modalAddMember">+ Baru</button>
+                                  </label>
                                   <select name="member_id" id="memberSelect" class="w-100" onchange="cekPoinMember()">
                                       <option value=""></option>
                                       <?php foreach($members as $m): ?>
@@ -442,6 +445,49 @@ require_once '../includes/sidebar.php';
                 </div>
               </div>
           </div>
+
+<!-- Modal Add Member -->
+<div class="modal fade" id="modalAddMember" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="formAddMember">
+      <div class="modal-header">
+        <h5 class="modal-title">Tambah Member Baru</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="alertMemberError" class="alert alert-danger d-none"></div>
+        <div class="form-group">
+            <label>No. HP (ID Member)</label>
+            <input type="text" name="noHp" id="addMemberNoHp" class="form-control" placeholder="Contoh: 08123456789" required>
+        </div>
+        <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input type="text" name="nama" id="addMemberNama" class="form-control" placeholder="Masukkan nama pelanggan" required>
+        </div>
+        <div class="form-group">
+            <label>Gender</label>
+            <select name="gender" id="addMemberGender" class="form-control" required>
+                <option value="">-- Pilih Gender --</option>
+                <option value="M">Pria (Male)</option>
+                <option value="F">Wanita (Female)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Tanggal Lahir</label>
+            <input type="date" name="birthdate" id="addMemberBirthdate" class="form-control" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+        <button type="submit" class="btn btn-primary" id="btnSaveMember">Simpan Member</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
 <?php 
 // ==========================================
 // PANGGIL TEMPLATE FOOTER DI SINI
@@ -841,4 +887,52 @@ require_once '../includes/footer.php';
         }
         hitungTotalAkhir();
     }
+
+    document.getElementById('formAddMember').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        let btn = document.getElementById('btnSaveMember');
+        btn.disabled = true;
+        btn.innerHTML = 'Menyimpan...';
+        
+        let formData = new FormData(this);
+        
+        fetch('ajax_add_member.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = 'Simpan Member';
+            
+            let alertBox = document.getElementById('alertMemberError');
+            if (data.success) {
+                alertBox.classList.add('d-none');
+                
+                // Tambahkan ke dropdown select2
+                let newOption = new Option(data.member.nama + ' (' + data.member.noHp + ')', data.member.noHp, false, false);
+                newOption.setAttribute('data-poin', data.member.poin);
+                
+                let memberSelect = $('#memberSelect');
+                memberSelect.append(newOption).val(data.member.noHp).trigger('change');
+                
+                // Tutup modal
+                $('#modalAddMember').modal('hide');
+                
+                // Reset form
+                document.getElementById('formAddMember').reset();
+                
+                alert("Member berhasil ditambahkan!");
+            } else {
+                alertBox.innerHTML = data.message;
+                alertBox.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            btn.disabled = false;
+            btn.innerHTML = 'Simpan Member';
+            alert("Terjadi kesalahan sistem!");
+        });
+    });
     </script>
