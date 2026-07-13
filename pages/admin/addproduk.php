@@ -104,7 +104,7 @@ try {
                 $satuanId = $_POST['resep_satuan'][$i];
 
                 $stmtResep = $koneksi->prepare("
-                    INSERT INTO tResep
+                    INSERT INTO tresep
                     (
                         tProduct_kode,
                         tBahan_kode,

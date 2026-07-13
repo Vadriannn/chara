@@ -9,7 +9,7 @@ $error = "";
 
 // Ambil shift aktif
 $stmtCekShift = $koneksi->prepare("
-    SELECT * FROM tDetailShift 
+    SELECT * FROM tdetailshift 
     WHERE tUser_id = ? AND tanggal = CURDATE() AND jamKeluar IS NULL 
     ORDER BY id DESC LIMIT 1
 ");
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         // Hitung jumlah penjualan di jam tersebut (dari jamMasuk hingga jamKeluar yang diset CURTIME)
         $stmtCount = $koneksi->prepare("
-            SELECT COUNT(*) FROM tPenjualan 
+            SELECT COUNT(*) FROM tpenjualan 
             WHERE tUser_id = ? 
             AND DATE(tanggal) = CURDATE() 
             AND TIME(tanggal) >= ? 
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmtCount->execute([$_SESSION['id_user'], $shiftAktif['jamMasuk']]);
         $jumlahPenjualan = $stmtCount->fetchColumn();
 
-        $sql = "UPDATE tDetailShift SET cashSetelah = ?, jamKeluar = CURTIME(), jumlahPenjualan = ? WHERE id = ?";
+        $sql = "UPDATE tdetailshift SET cashSetelah = ?, jamKeluar = CURTIME(), jumlahPenjualan = ? WHERE id = ?";
         $stmt = $koneksi->prepare($sql);
         $stmt->execute([$cashSetelah, $jumlahPenjualan, $shiftAktif['id']]);
         

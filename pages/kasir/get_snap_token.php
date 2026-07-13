@@ -40,7 +40,7 @@ try {
         $qty = (int)$qtyArray[$index];
         if ($qty <= 0) continue;
         
-        $stmtCekHarga = $koneksi->prepare("SELECT nama, hargaJual FROM tProduct WHERE kode = ?");
+        $stmtCekHarga = $koneksi->prepare("SELECT nama, hargaJual FROM tproduct WHERE kode = ?");
         $stmtCekHarga->execute([$kodeProduk]);
         $prod = $stmtCekHarga->fetch(PDO::FETCH_ASSOC);
         
@@ -62,7 +62,7 @@ try {
     }
 
     // Get diskon nominal setting
-    $stmtSet = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_diskon_nominal'");
+    $stmtSet = $koneksi->query("SELECT setting_value FROM tsetting WHERE setting_key = 'poin_diskon_nominal'");
     $poin_diskon_nominal = 0;
     if ($rowSet = $stmtSet->fetch(PDO::FETCH_ASSOC)) {
         $poin_diskon_nominal = (float)$rowSet['setting_value'];
@@ -87,7 +87,7 @@ try {
     // Customer details
     $customerDetails = [];
     if ($memberId) {
-        $stmtMember = $koneksi->prepare("SELECT Nama, noHp FROM tMember WHERE noHp = ?");
+        $stmtMember = $koneksi->prepare("SELECT Nama, noHp FROM tmember WHERE noHp = ?");
         $stmtMember->execute([$memberId]);
         $member = $stmtMember->fetch(PDO::FETCH_ASSOC);
         if ($member) {
@@ -104,7 +104,7 @@ try {
     }
 
     // Generate unique order ID
-    $stmtNomor = $koneksi->query("SELECT nomor FROM tPenjualan ORDER BY nomor DESC LIMIT 1");
+    $stmtNomor = $koneksi->query("SELECT nomor FROM tpenjualan ORDER BY nomor DESC LIMIT 1");
     $last = $stmtNomor->fetch(PDO::FETCH_ASSOC);
     $nomorPenjualan = $last ? $last['nomor'] + 1 : 1;
     $orderId = "PJ-" . $nomorPenjualan . "-" . time();

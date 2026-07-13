@@ -6,7 +6,7 @@ require_once '../../auth.php';
 
 // Cek apakah sudah buka shift
 $stmtCekShift = $koneksi->prepare("
-    SELECT id FROM tDetailShift 
+    SELECT id FROM tdetailshift 
     WHERE tUser_id = ? AND tanggal = CURDATE() AND jamKeluar IS NULL 
     ORDER BY id DESC LIMIT 1
 ");
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $cashSebelum = (float)str_replace('.', '', $_POST['cash_sebelum']);
     
     try {
-        $sql = "INSERT INTO tDetailShift (tUser_id, Shift_idShift, tanggal, cashSebelum, jamMasuk)
+        $sql = "INSERT INTO tdetailshift (tUser_id, Shift_idShift, tanggal, cashSebelum, jamMasuk)
                 VALUES (?, ?, CURDATE(), ?, CURTIME())";
         $stmt = $koneksi->prepare($sql);
         $stmt->execute([$_SESSION['id_user'], $shift_id, $cashSebelum]);

@@ -15,7 +15,7 @@ $filterProduk = !empty($_GET['filter_produk']) ? $_GET['filter_produk'] : '';
 $filterMetbayar = !empty($_GET['filter_metbayar']) ? $_GET['filter_metbayar'] : '';
 
 // 1. Ambil daftar Produk untuk Dropdown
-$stmtProd = $koneksi->query("SELECT kode, nama FROM tProduct ORDER BY nama ASC");
+$stmtProd = $koneksi->query("SELECT kode, nama FROM tproduct ORDER BY nama ASC");
 $products = $stmtProd->fetchAll(PDO::FETCH_ASSOC);
 
 // 2. Query Data Penjualan (Join dengan Detail)
@@ -32,10 +32,10 @@ $query = "
         dp.jumlah,
         dp.subtotal,
         u.username AS kasir
-    FROM tPenjualan p
+    FROM tpenjualan p
     JOIN tDetailPenjualan dp ON p.nomor = dp.tPenjualan_nomor
-    JOIN tProduct prod ON dp.tProduct_kode = prod.kode
-    LEFT JOIN tUser u ON p.tUser_id = u.id
+    JOIN tproduct prod ON dp.tProduct_kode = prod.kode
+    LEFT JOIN tuser u ON p.tUser_id = u.id
     WHERE DATE(p.tanggal) >= ? AND DATE(p.tanggal) <= ?
 ";
 $params = [$tglMulai, $tglSelesai];

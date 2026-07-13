@@ -22,7 +22,7 @@ try {
         // cek username dipakai user lain
         $cek = $koneksi->prepare("
             SELECT COUNT(*)
-            FROM tUser
+            FROM tuser
             WHERE username = ?
             AND id <> ?
         ");
@@ -36,7 +36,7 @@ try {
             // password diisi
             if (!empty($password)) {
                 $sql = "
-                    UPDATE tUser
+                    UPDATE tuser
                     SET
                         username = ?,
                         password = SHA1(?),
@@ -56,7 +56,7 @@ try {
             }
             else {
                 $sql = "
-                    UPDATE tUser
+                    UPDATE tuser
                     SET
                         username = ?,
                         tRole_id = ?
@@ -80,7 +80,7 @@ try {
     }
     $sql = "
         SELECT *
-        FROM tUser
+        FROM tuser
         WHERE id = ?
     ";
     $stmt = $koneksi->prepare($sql);
@@ -92,7 +92,7 @@ try {
     }
     $roles = $koneksi->query("
         SELECT *
-        FROM tRole
+        FROM trole
         ORDER BY nama
     ");
 }

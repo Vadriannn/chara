@@ -59,7 +59,7 @@ try {
         $koneksi->beginTransaction();
 
         $sql = "
-            UPDATE tProduct
+            UPDATE tproduct
             SET
                 nama = ?,
                 hargaJual = ?,
@@ -77,7 +77,7 @@ try {
         ]);
         
         // Hapus resep lama
-        $stmtHapusResep = $koneksi->prepare("DELETE FROM tResep WHERE tProduct_kode = ?");
+        $stmtHapusResep = $koneksi->prepare("DELETE FROM tresep WHERE tProduct_kode = ?");
         $stmtHapusResep->execute([$kode]);
         
         // Simpan resep baru
@@ -88,7 +88,7 @@ try {
                 $satuanId = $_POST['resep_satuan'][$i];
 
                 $stmtResep = $koneksi->prepare("
-                    INSERT INTO tResep (tProduct_kode, tBahan_kode, tSatuan_id, jumlah)
+                    INSERT INTO tresep (tProduct_kode, tBahan_kode, tSatuan_id, jumlah)
                     VALUES (?, ?, ?, ?)
                 ");
                 $stmtResep->execute([$kode, $kodeBahan, $satuanId, $jumlahInput]);
@@ -103,7 +103,7 @@ try {
     }
 
     // AMBIL DATA PRODUCT
-    $sql = "SELECT * FROM tProduct WHERE kode = ?";
+    $sql = "SELECT * FROM tproduct WHERE kode = ?";
     $stmt = $koneksi->prepare($sql);
     $stmt->execute([$kode]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -117,8 +117,8 @@ try {
     $stmtResepLama = $koneksi->prepare("
         SELECT r.tBahan_kode, r.jumlah, r.tSatuan_id, b.nama, b.harga, b.tSatuan_id as satuan_stok_id,
                IFNULL(k.Konversi, 1) as nilai_konversi
-        FROM tResep r
-        JOIN tBahan b ON r.tBahan_kode = b.kode
+        FROM tresep r
+        JOIN tbahan b ON r.tBahan_kode = b.kode
         LEFT JOIN tkonversisatuan k ON k.SatuanBesar_id = b.tSatuan_id AND k.SatuanKecil_id = r.tSatuan_id
         WHERE r.tProduct_kode = ?
     ");

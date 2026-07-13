@@ -7,8 +7,8 @@
         $password = $_POST['password'];
         try {
             $sql = "SELECT u.*, r.nama AS role
-                    FROM tUser u
-                    JOIN tRole r ON u.tRole_id = r.id
+                    FROM tuser u
+                    JOIN trole r ON u.tRole_id = r.id
                     WHERE u.username = '".$username."'
                     AND u.password = SHA1('".$password."')";
             $hasil = $koneksi->query($sql);

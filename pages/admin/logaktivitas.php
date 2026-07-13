@@ -13,18 +13,18 @@ $filterUser = !empty($_GET['filter_user']) ? $_GET['filter_user'] : '';
 $filterModul = !empty($_GET['filter_modul']) ? $_GET['filter_modul'] : '';
 
 // Data dropdown
-$stmtUsers = $koneksi->query("SELECT u.id, u.username, r.nama as role FROM tUser u JOIN tRole r ON u.tRole_id = r.id ORDER BY u.username ASC");
+$stmtUsers = $koneksi->query("SELECT u.id, u.username, r.nama as role FROM tuser u JOIN trole r ON u.tRole_id = r.id ORDER BY u.username ASC");
 $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
 
-$stmtModuls = $koneksi->query("SELECT DISTINCT modul FROM tLog ORDER BY modul ASC");
+$stmtModuls = $koneksi->query("SELECT DISTINCT modul FROM tlog ORDER BY modul ASC");
 $moduls = $stmtModuls->fetchAll(PDO::FETCH_ASSOC);
 
 // Query utama
 $query = "
     SELECT l.*, u.username, r.nama as role
-    FROM tLog l
-    LEFT JOIN tUser u ON l.tUser_id = u.id
-    LEFT JOIN tRole r ON u.tRole_id = r.id
+    FROM tlog l
+    LEFT JOIN tuser u ON l.tUser_id = u.id
+    LEFT JOIN trole r ON u.tRole_id = r.id
     WHERE DATE(l.waktu) >= ? AND DATE(l.waktu) <= ?
 ";
 $params = [$tglMulai, $tglSelesai];

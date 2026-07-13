@@ -13,14 +13,14 @@ if(isset($_POST['simpan'])){
         
         $stmtNomor = $koneksi->query("
             SELECT IFNULL(MAX(nomor),0)+1 AS next_no
-            FROM tPembelian
+            FROM tpembelian
         ");
         $nextNo = $stmtNomor->fetch(PDO::FETCH_ASSOC)['next_no'];
         
         $kodePembelian = 'PBL-' . date('Ymd') . '-' . str_pad($nextNo, 4, '0', STR_PAD_LEFT);
         
         $stmt = $koneksi->prepare("
-            INSERT INTO tPembelian
+            INSERT INTO tpembelian
             (
                 nomor,
                 tanggal,
@@ -86,7 +86,7 @@ if(isset($_POST['simpan'])){
         }
         
         $stmt = $koneksi->prepare("
-            UPDATE tPembelian
+            UPDATE tpembelian
             SET total = ?
             WHERE nomor = ?
         ");
@@ -104,7 +104,7 @@ if(isset($_POST['simpan'])){
         ]);
 
         $stmtPRUpdate = $koneksi->prepare("
-            UPDATE tPurchaseRequest
+            UPDATE tpurchaserequest
             SET status = 'Approved'
             WHERE id = ?
         ");
@@ -156,10 +156,10 @@ require_once '../includes/sidebar.php';
                                       d.jumlah,
                                       d.satuanBeli,
                                       d.konversi
-                                  FROM tPurchaseRequest pr
+                                  FROM tpurchaserequest pr
                                   JOIN tDetailPurchaseRequest d
                                       ON pr.id = d.tPurchaseRequest_id
-                                  JOIN tBahan b
+                                  JOIN tbahan b
                                       ON d.tBahan_kode = b.kode
                                   WHERE pr.id = ?
                                   ORDER BY d.tBahan_kode
@@ -169,7 +169,7 @@ require_once '../includes/sidebar.php';
 
                                 $supplier = $koneksi->query("
                                     SELECT *
-                                    FROM tSupplier
+                                    FROM tsupplier
                                     ORDER BY nama
                                 ");
                                 ?>

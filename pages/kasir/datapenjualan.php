@@ -21,7 +21,7 @@ $filterKasir = isset($_GET['filter_kasir']) ? $_GET['filter_kasir'] : '';
 $filterMetbayar = isset($_GET['filter_metbayar']) ? $_GET['filter_metbayar'] : '';
 
 // Ambil daftar kasir untuk dropdown filter
-$stmtKasir = $koneksi->query("SELECT id, username FROM tUser ORDER BY username ASC");
+$stmtKasir = $koneksi->query("SELECT id, username FROM tuser ORDER BY username ASC");
 $kasirList = $stmtKasir->fetchAll(PDO::FETCH_ASSOC);
 
 $query = "
@@ -31,8 +31,8 @@ $query = "
         p.total,
         p.metbayar,
         u.username AS kasir
-    FROM tPenjualan p
-    LEFT JOIN tUser u ON p.tUser_id = u.id
+    FROM tpenjualan p
+    LEFT JOIN tuser u ON p.tUser_id = u.id
 ";
 
 $where = [];

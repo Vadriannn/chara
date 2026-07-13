@@ -12,7 +12,7 @@ if ($_SESSION['role'] == 'Kasir' && $currentPage !== 'bukashift.php') {
     global $koneksi;
     if ($koneksi) {
         $stmtCekShift = $koneksi->prepare("
-            SELECT id FROM tDetailShift 
+            SELECT id FROM tdetailshift 
             WHERE tUser_id = ? AND tanggal = CURDATE() AND jamKeluar IS NULL 
             ORDER BY id DESC LIMIT 1
         ");

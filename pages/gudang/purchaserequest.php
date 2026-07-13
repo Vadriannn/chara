@@ -14,8 +14,8 @@ try {
         pr.tanggalApprove,
         pr.tanggalReject,
         u.username
-    FROM tPurchaseRequest pr
-    INNER JOIN tUser u
+    FROM tpurchaserequest pr
+    INNER JOIN tuser u
         ON pr.reqBy = u.id
     ORDER BY pr.tanggal DESC
 ";

@@ -8,7 +8,7 @@ require_once '../auth_admin.php';
 // 1. Total Pendapatan Bulan Ini
 $stmtPendapatan = $koneksi->query("
     SELECT SUM(total) as total 
-    FROM tPenjualan 
+    FROM tpenjualan 
     WHERE MONTH(tanggal) = MONTH(CURRENT_DATE()) AND YEAR(tanggal) = YEAR(CURRENT_DATE())
 ");
 $pendapatan = $stmtPendapatan->fetchColumn() ?: 0;
@@ -16,7 +16,7 @@ $pendapatan = $stmtPendapatan->fetchColumn() ?: 0;
 // 2. Total Transaksi Bulan Ini
 $stmtTransaksi = $koneksi->query("
     SELECT COUNT(*) as jumlah 
-    FROM tPenjualan 
+    FROM tpenjualan 
     WHERE MONTH(tanggal) = MONTH(CURRENT_DATE()) AND YEAR(tanggal) = YEAR(CURRENT_DATE())
 ");
 $jumlahTransaksi = $stmtTransaksi->fetchColumn() ?: 0;
@@ -35,8 +35,8 @@ $labaBersih = $pendapatan - $pengeluaran;
 // 5. Stok Kritis
 $stmtStok = $koneksi->query("
     SELECT b.kode, b.nama, b.stok, s.nama as satuan
-    FROM tBahan b
-    JOIN tSatuan s ON b.tSatuan_id = s.id
+    FROM tbahan b
+    JOIN tsatuan s ON b.tSatuan_id = s.id
     WHERE b.stok <= 50
     ORDER BY b.stok ASC
     LIMIT 6
@@ -46,8 +46,8 @@ $stokKritis = $stmtStok->fetchAll(PDO::FETCH_ASSOC);
 // 6. Log Aktivitas Terbaru
 $stmtLog = $koneksi->query("
     SELECT l.*, u.username
-    FROM tLog l
-    LEFT JOIN tUser u ON l.tUser_id = u.id
+    FROM tlog l
+    LEFT JOIN tuser u ON l.tUser_id = u.id
     ORDER BY l.waktu DESC
     LIMIT 6
 ");
@@ -56,7 +56,7 @@ $logAktivitas = $stmtLog->fetchAll(PDO::FETCH_ASSOC);
 // 7. Transaksi Terakhir
 $stmtRecentSales = $koneksi->query("
     SELECT nomor, tanggal as waktu, total, metbayar as metode, 'Selesai' as status
-    FROM tPenjualan
+    FROM tpenjualan
     ORDER BY tanggal DESC
     LIMIT 6
 ");
@@ -66,7 +66,7 @@ $recentSales = $stmtRecentSales->fetchAll(PDO::FETCH_ASSOC);
 $stmtHppDashboard = $koneksi->query("
     SELECT SUM(dp.hpp * dp.jumlah)
     FROM tDetailPenjualan dp
-    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
+    JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
     WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
 ");
 $hppDashboard = $stmtHppDashboard->fetchColumn() ?: 0;
@@ -80,8 +80,8 @@ if ($pendapatan > 0) {
 $stmtTerlaris = $koneksi->query("
     SELECT pr.nama, SUM(dp.jumlah) as total_qty
     FROM tDetailPenjualan dp
-    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
-    JOIN tProduct pr ON dp.tProduct_kode = pr.kode
+    JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
+    JOIN tproduct pr ON dp.tProduct_kode = pr.kode
     WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
     GROUP BY pr.kode, pr.nama
     ORDER BY total_qty DESC
@@ -92,8 +92,8 @@ $produkTerlaris = $stmtTerlaris->fetch(PDO::FETCH_ASSOC);
 $stmtLabaTerbesar = $koneksi->query("
     SELECT pr.nama, SUM((dp.harga_jual - dp.hpp) * dp.jumlah) as total_laba
     FROM tDetailPenjualan dp
-    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
-    JOIN tProduct pr ON dp.tProduct_kode = pr.kode
+    JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
+    JOIN tproduct pr ON dp.tProduct_kode = pr.kode
     WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
     GROUP BY pr.kode, pr.nama
     ORDER BY total_laba DESC

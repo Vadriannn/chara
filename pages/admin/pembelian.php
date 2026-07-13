@@ -19,8 +19,8 @@ try {
     // Query untuk mengambil semua data master pembelian beserta nama supplier-nya
     $queryPembelian = $koneksi->query("
         SELECT p.*, s.nama AS nama_supplier
-        FROM tPembelian p
-        JOIN tSupplier s ON p.tSupplier_id = s.id
+        FROM tpembelian p
+        JOIN tsupplier s ON p.tSupplier_id = s.id
         WHERE p.status IN ('Dipesan', 'Dibatalkan')
         ORDER BY p.tanggal DESC, p.nomor DESC
     ");

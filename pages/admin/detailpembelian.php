@@ -19,8 +19,8 @@ try {
     // 2. Query untuk mengambil data Master / Header Pembelian
     $stmtMaster = $koneksi->prepare("
         SELECT p.*, s.nama AS nama_supplier
-        FROM tPembelian p
-        JOIN tSupplier s ON p.tSupplier_id = s.id
+        FROM tpembelian p
+        JOIN tsupplier s ON p.tSupplier_id = s.id
         WHERE p.nomor = ?
     ");
     $stmtMaster->execute([$nomorNota]);
@@ -36,7 +36,7 @@ try {
     $stmtDetail = $koneksi->prepare("
         SELECT d.jumlah, d.satuanBeli, d.harga, d.subtotal, b.nama AS nama_bahan
         FROM tDetailPembelian d
-        JOIN tBahan b ON d.tBahan_kode = b.kode
+        JOIN tbahan b ON d.tBahan_kode = b.kode
         WHERE d.tPembelian_nomor = ?
     ");
     $stmtDetail->execute([$nomorNota]);

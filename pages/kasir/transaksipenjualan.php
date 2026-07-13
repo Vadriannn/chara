@@ -13,24 +13,24 @@ try {
     // 1. Ambil produk aktif untuk dropdown
     $produk = $koneksi->query("
         SELECT *
-        FROM tProduct
+        FROM tproduct
         WHERE status = 'Aktif'
         ORDER BY nama
     ");
 
     // 2. Ambil data master modifier (kategori Sugar & Ice)
-    $stmtMod = $koneksi->query("SELECT * FROM tModifier ORDER BY kategori DESC, nama ASC");
+    $stmtMod = $koneksi->query("SELECT * FROM tmodifier ORDER BY kategori DESC, nama ASC");
     $allModifiers = $stmtMod->fetchAll(PDO::FETCH_ASSOC);
     
     $sugarMods = array_filter($allModifiers, function($m) { return $m['kategori'] == 'Sugar'; });
     $iceMods = array_filter($allModifiers, function($m) { return $m['kategori'] == 'Ice'; });
 
     // 2.1 Ambil data member
-    $stmtMember = $koneksi->query("SELECT * FROM tMember ORDER BY Nama");
+    $stmtMember = $koneksi->query("SELECT * FROM tmember ORDER BY Nama");
     $members = $stmtMember->fetchAll(PDO::FETCH_ASSOC);
 
     // 3. AMBIL DATA STOK BAHAN UTK LIVE VALIDASI JAVASCRIPT
-    $stmtBahan = $koneksi->query("SELECT kode, stok FROM tBahan");
+    $stmtBahan = $koneksi->query("SELECT kode, stok FROM tbahan");
     $stokBahan = [];
     while($b = $stmtBahan->fetch(PDO::FETCH_ASSOC)) {
         $stokBahan[$b['kode']] = (float)$b['stok'];
@@ -41,8 +41,8 @@ try {
     $stmtResepAll = $koneksi->query("
         SELECT r.tProduct_kode, r.tBahan_kode, r.jumlah, b.nama AS nama_bahan,
                b.tSatuan_id AS stok_satuan, r.tSatuan_id AS resep_satuan
-        FROM tResep r
-        JOIN tBahan b ON r.tBahan_kode = b.kode
+        FROM tresep r
+        JOIN tbahan b ON r.tBahan_kode = b.kode
     ");
     $resepData = [];
     while($r = $stmtResepAll->fetch(PDO::FETCH_ASSOC)) {
@@ -62,7 +62,7 @@ try {
         $produkArray = $_POST['produk_kode'] ?? [];
         $qtyArray = $_POST['qty_beli'] ?? [];
         $metbayar = $_POST['metbayar'];
-        $stmtSet = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_diskon_nominal'");
+        $stmtSet = $koneksi->query("SELECT setting_value FROM tsetting WHERE setting_key = 'poin_diskon_nominal'");
         $poin_diskon_nominal = 0;
         if ($rowSet = $stmtSet->fetch(PDO::FETCH_ASSOC)) {
             $poin_diskon_nominal = (float)$rowSet['setting_value'];
@@ -78,7 +78,7 @@ try {
         $koneksi->beginTransaction();
 
         // Generate nomor penjualan manual (jika tPenjualan nomor belum Auto Increment)
-        $stmtNomor = $koneksi->query("SELECT nomor FROM tPenjualan ORDER BY nomor DESC LIMIT 1");
+        $stmtNomor = $koneksi->query("SELECT nomor FROM tpenjualan ORDER BY nomor DESC LIMIT 1");
         $last = $stmtNomor->fetch(PDO::FETCH_ASSOC);
         $nomorPenjualan = $last ? $last['nomor'] + 1 : 1;
 
@@ -86,7 +86,7 @@ try {
         $subtotalKeranjang = 0;
         foreach($produkArray as $index => $kodeProduk) {
             $qty = (int)$qtyArray[$index];
-            $stmtCekHarga = $koneksi->prepare("SELECT hargaJual FROM tProduct WHERE kode = ?");
+            $stmtCekHarga = $koneksi->prepare("SELECT hargaJual FROM tproduct WHERE kode = ?");
             $stmtCekHarga->execute([$kodeProduk]);
             $hargaJual = $stmtCekHarga->fetchColumn();
             $subtotalKeranjang += ($hargaJual * $qty);
@@ -99,7 +99,7 @@ try {
 
         // Simpan Master Penjualan
         $stmtPenjualan = $koneksi->prepare("
-            INSERT INTO tPenjualan (nomor, tanggal, total, diskon, metbayar, tUser_id, tMember_noHp)
+            INSERT INTO tpenjualan (nomor, tanggal, total, diskon, metbayar, tUser_id, tMember_noHp)
             VALUES (?, NOW(), ?, ?, ?, ?, ?)
         ");
         $stmtPenjualan->execute([
@@ -111,7 +111,7 @@ try {
             // Ambil poin kelipatan dari setting
             $poinKelipatan = 50000;
             try {
-                $stmtSet = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_kelipatan'");
+                $stmtSet = $koneksi->query("SELECT setting_value FROM tsetting WHERE setting_key = 'poin_kelipatan'");
                 if ($rowSet = $stmtSet->fetch(PDO::FETCH_ASSOC)) {
                     $poinKelipatan = (int)$rowSet['setting_value'];
                 }
@@ -120,7 +120,7 @@ try {
             if ($poinKelipatan <= 0) $poinKelipatan = 1; // Cegah division by zero
             $poinDidapat = floor($grandTotal / $poinKelipatan);
             
-            $stmtCekPoin = $koneksi->prepare("SELECT Poin FROM tMember WHERE noHp = ?");
+            $stmtCekPoin = $koneksi->prepare("SELECT Poin FROM tmember WHERE noHp = ?");
             $stmtCekPoin->execute([$tMember_id]);
             $currentPoin = $stmtCekPoin->fetchColumn();
             
@@ -130,7 +130,7 @@ try {
             
             $poinAkhir = $currentPoin + $poinDidapat - $redeemPoin;
             
-            $stmtUpdateMember = $koneksi->prepare("UPDATE tMember SET Poin = ? WHERE noHp = ?");
+            $stmtUpdateMember = $koneksi->prepare("UPDATE tmember SET Poin = ? WHERE noHp = ?");
             $stmtUpdateMember->execute([$poinAkhir, $tMember_id]);
         }
 
@@ -158,34 +158,34 @@ try {
 
         $stmtHpp = $koneksi->prepare("
             SELECT r.jumlah, b.harga, b.tSatuan_id AS stok_satuan, r.tSatuan_id AS resep_satuan
-            FROM tResep r
-            JOIN tBahan b ON r.tBahan_kode = b.kode
+            FROM tresep r
+            JOIN tbahan b ON r.tBahan_kode = b.kode
             WHERE r.tProduct_kode = ?
         ");
 
         $stmtResep = $koneksi->prepare("
             SELECT r.tBahan_kode, r.jumlah, b.stok,
                    b.tSatuan_id AS stok_satuan, r.tSatuan_id AS resep_satuan
-            FROM tResep r
-            JOIN tBahan b ON r.tBahan_kode = b.kode
+            FROM tresep r
+            JOIN tbahan b ON r.tBahan_kode = b.kode
             WHERE r.tProduct_kode = ?
         ");
 
-        $updateStok = $koneksi->prepare("UPDATE tBahan SET stok = ? WHERE kode = ?");
+        $updateStok = $koneksi->prepare("UPDATE tbahan SET stok = ? WHERE kode = ?");
         $stmtMutasi = $koneksi->prepare("
-            INSERT INTO tMutasiStok (tanggal, jenis, qty, stokSebelum, stokSesudah, referensi, tBahan_kode, tUser_id)
+            INSERT INTO tmutasistok (tanggal, jenis, qty, stokSebelum, stokSesudah, referensi, tBahan_kode, tUser_id)
             VALUES (NOW(), 'Penjualan', ?, ?, ?, ?, ?, ?)
         ");
 
         // Aggregate kebutuhan bahan
         $totalBahanKeluar = [];
-        $stmtGetStok = $koneksi->prepare("SELECT stok FROM tBahan WHERE kode = ?");
+        $stmtGetStok = $koneksi->prepare("SELECT stok FROM tbahan WHERE kode = ?");
 
         // Proses tiap item di keranjang
         foreach($produkArray as $index => $kodeProduk) {
             $qty = (int)$qtyArray[$index];
 
-            $stmtProdukInfo = $koneksi->prepare("SELECT hargaJual FROM tProduct WHERE kode = ?");
+            $stmtProdukInfo = $koneksi->prepare("SELECT hargaJual FROM tproduct WHERE kode = ?");
             $stmtProdukInfo->execute([$kodeProduk]);
             $hargaJual = $stmtProdukInfo->fetchColumn();
             $subtotal = $hargaJual * $qty;
@@ -505,7 +505,7 @@ require_once '../includes/footer.php';
                 const poinDiskonNominal = <?php 
                     $pdn = 0;
                     try {
-                        $s = $koneksi->query("SELECT setting_value FROM tSetting WHERE setting_key = 'poin_diskon_nominal'");
+                        $s = $koneksi->query("SELECT setting_value FROM tsetting WHERE setting_key = 'poin_diskon_nominal'");
                         if($r = $s->fetch(PDO::FETCH_ASSOC)) $pdn = (float)$r['setting_value'];
                     } catch(Exception $e){}
                     echo $pdn;

@@ -31,8 +31,8 @@ try {
             pr.tanggal,
             pr.status,
             u.username
-        FROM tPurchaseRequest pr
-        INNER JOIN tUser u
+        FROM tpurchaserequest pr
+        INNER JOIN tuser u
             ON pr.reqBy = u.id
         WHERE pr.id = ?
     ");
@@ -56,7 +56,7 @@ try {
         d.konversi,
         (d.jumlah * d.konversi) AS totalKonversi
     FROM tDetailPurchaseRequest d
-    INNER JOIN tBahan b
+    INNER JOIN tbahan b
         ON d.tBahan_kode = b.kode
     WHERE d.tPurchaseRequest_id = ?
 ");

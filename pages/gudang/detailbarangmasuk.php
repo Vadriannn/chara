@@ -22,9 +22,9 @@ $stmt = $koneksi->prepare("
         p.status,
         s.nama AS supplier
 
-    FROM tPembelian p
+    FROM tpembelian p
 
-    JOIN tSupplier s
+    JOIN tsupplier s
         ON p.tSupplier_id = s.id
 
     WHERE p.nomor = ?
@@ -52,7 +52,7 @@ $stmtDetail = $koneksi->prepare("
 
     FROM tDetailPembelian d
 
-    JOIN tBahan b
+    JOIN tbahan b
         ON d.tBahan_kode = b.kode
     WHERE d.tPembelian_nomor = ?
 ");

@@ -36,7 +36,7 @@ try {
 
             // Simpan header PR
             $stmt = $koneksi->prepare("
-                INSERT INTO tPurchaseRequest
+                INSERT INTO tpurchaserequest
                 (
                     id,
                     tanggal,

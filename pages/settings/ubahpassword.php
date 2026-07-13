@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
 
         // Ambil password user saat ini
-        $sql = "SELECT password FROM tUser WHERE id = ?";
+        $sql = "SELECT password FROM tuser WHERE id = ?";
         $stmt = $koneksi->prepare($sql);
         $stmt->execute([$id_user]);
 
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         else {
 
-            $sqlUpdate = "UPDATE tUser
+            $sqlUpdate = "UPDATE tuser
                           SET password = ?
                           WHERE id = ?";
 

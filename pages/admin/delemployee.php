@@ -44,7 +44,7 @@ try {
     */
     $cek = $koneksi->prepare("
         SELECT id
-        FROM tUser
+        FROM tuser
         WHERE id = ?
     ");
     $cek->execute([$id]);
@@ -63,7 +63,7 @@ try {
     |--------------------------------------------------------------------------
     */
     $hapus = $koneksi->prepare("
-        DELETE FROM tUser
+        DELETE FROM tuser
         WHERE id = ?
     ");
     $hapus->execute([$id]);

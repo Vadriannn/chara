@@ -20,8 +20,8 @@ $stmtHeader = $koneksi->prepare("
         p.diskon, 
         p.metbayar, 
         u.username AS kasir 
-    FROM tPenjualan p
-    LEFT JOIN tUser u ON p.tUser_id = u.id
+    FROM tpenjualan p
+    LEFT JOIN tuser u ON p.tUser_id = u.id
     WHERE p.nomor = ?
 ");
 $stmtHeader->execute([$nomor]);
@@ -41,10 +41,10 @@ $stmtDetail = $koneksi->prepare("
         pr.kode AS kode_produk,
         (SELECT GROUP_CONCAT(CONCAT(m.nama, ' ', m.kategori) SEPARATOR ', ')
          FROM tDetailPenjualanModifier dhm
-         JOIN tModifier m ON dhm.tModifier_id = m.id
+         JOIN tmodifier m ON dhm.tModifier_id = m.id
          WHERE dhm.tDetailPenjualan_id = d.id) AS teks_modifier
     FROM tDetailPenjualan d
-    JOIN tProduct pr ON d.tProduct_kode = pr.kode
+    JOIN tproduct pr ON d.tProduct_kode = pr.kode
     WHERE d.tPenjualan_nomor = ?
 ");
 $stmtDetail->execute([$nomor]);

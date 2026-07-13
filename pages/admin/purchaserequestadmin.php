@@ -9,7 +9,7 @@ $error = "";
 try {
     if(isset($_GET['approve'])){
         $stmt = $koneksi->prepare("
-            UPDATE tPurchaseRequest
+            UPDATE tpurchaserequest
             SET
                 status = 'Approved',
                 tanggalApprove = NOW(),
@@ -26,7 +26,7 @@ try {
     }
     if(isset($_GET['reject'])){
         $stmt = $koneksi->prepare("
-            UPDATE tPurchaseRequest
+            UPDATE tpurchaserequest
             SET
                 status = 'Rejected',
                 tanggalReject = NOW(),
@@ -61,18 +61,18 @@ try {
                 SEPARATOR '<br>'
             ) AS detail_bahan
 
-        FROM tPurchaseRequest pr
+        FROM tpurchaserequest pr
 
-        JOIN tUser u
+        JOIN tuser u
           ON pr.reqBy = u.id
 
-        LEFT JOIN tPembelian pb
+        LEFT JOIN tpembelian pb
           ON pb.tPurchaseRequest_id = pr.id
 
         LEFT JOIN tDetailPurchaseRequest d
             ON pr.id = d.tPurchaseRequest_id
 
-        LEFT JOIN tBahan b
+        LEFT JOIN tbahan b
             ON d.tBahan_kode = b.kode
 
         GROUP BY

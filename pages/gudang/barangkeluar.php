@@ -22,7 +22,7 @@ try {
             b.nama AS nama_bahan,
             s.nama AS satuan,
             u.username AS kasir
-        FROM tMutasiStok m
+        FROM tmutasistok m
         JOIN tbahan b ON m.tBahan_kode = b.kode
         JOIN tsatuan s ON b.tSatuan_id = s.id
         LEFT JOIN tuser u ON m.tUser_id = u.id
@@ -51,7 +51,7 @@ try {
             b.nama AS nama_bahan,
             s.nama AS satuan,
             SUM(m.qty) AS total_qty
-        FROM tMutasiStok m
+        FROM tmutasistok m
         JOIN tbahan b ON m.tBahan_kode = b.kode
         JOIN tsatuan s ON b.tSatuan_id = s.id
         WHERE m.jenis = 'Penjualan'

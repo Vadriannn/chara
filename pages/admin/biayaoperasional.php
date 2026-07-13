@@ -15,9 +15,9 @@ try {
             k.jenis as kategori,
             u.username as username
         FROM tBiayaOperasional b
-        LEFT JOIN tKategoriBiaya k
+        LEFT JOIN tkategoribiaya k
             ON b.tKategoriBiaya_id = k.id
-        LEFT JOIN tUser u
+        LEFT JOIN tuser u
             ON b.tUser_id = u.id
         ORDER BY b.tanggal DESC
     ";

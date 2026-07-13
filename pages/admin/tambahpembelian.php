@@ -11,15 +11,15 @@ try {
     // Data supplier
     $supplier = $koneksi->query("
         SELECT id, nama
-        FROM tSupplier
+        FROM tsupplier
         ORDER BY nama
     ");
 
     // Data bahan baku
     $bahan_baku = $koneksi->query("
         SELECT b.kode, b.nama, s.nama AS nama_satuan
-        FROM tBahan b
-        JOIN tSatuan s ON b.tSatuan_id = s.id
+        FROM tbahan b
+        JOIN tsatuan s ON b.tSatuan_id = s.id
         ORDER BY b.nama
     ");
 
@@ -33,13 +33,13 @@ try {
     
     $stmtNomor = $koneksi->query("
         SELECT IFNULL(MAX(nomor),0)+1 AS next_no
-        FROM tPembelian
+        FROM tpembelian
     ");
     $nomor = $stmtNomor->fetch(PDO::FETCH_ASSOC)['next_no'];
 
     $kode = 'PBL-' . date('YmdHis');
     $stmt = $koneksi->prepare("
-        INSERT INTO tPembelian
+        INSERT INTO tpembelian
         (
             nomor,
             tanggal,

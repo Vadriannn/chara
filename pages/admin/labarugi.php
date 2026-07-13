@@ -17,7 +17,7 @@ $qPendapatan = "
     SELECT 
         IFNULL(SUM(total), 0) AS penjualan_bersih, 
         IFNULL(SUM(diskon), 0) AS total_diskon 
-    FROM tPenjualan 
+    FROM tpenjualan 
     WHERE DATE(tanggal) >= ? AND DATE(tanggal) <= ?
 ";
 $stmtPend = $koneksi->prepare($qPendapatan);
@@ -32,7 +32,7 @@ $penjualanKotor = $penjualanBersih + $totalDiskon;
 $qHPP = "
     SELECT IFNULL(SUM(dp.hpp * dp.jumlah), 0) AS total_hpp
     FROM tDetailPenjualan dp
-    JOIN tPenjualan p ON dp.tPenjualan_nomor = p.nomor
+    JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
     WHERE DATE(p.tanggal) >= ? AND DATE(p.tanggal) <= ?
 ";
 $stmtHpp = $koneksi->prepare($qHPP);
@@ -48,7 +48,7 @@ $labaKotor = $penjualanBersih - $totalHPP;
 $qBiaya = "
     SELECT kb.jenis AS kategori, IFNULL(SUM(bo.nominal), 0) AS total_biaya
     FROM tBiayaOperasional bo
-    JOIN tKategoriBiaya kb ON bo.tKategoriBiaya_id = kb.id
+    JOIN tkategoribiaya kb ON bo.tKategoriBiaya_id = kb.id
     WHERE bo.tanggal >= ? AND bo.tanggal <= ?
     GROUP BY kb.jenis
 ";

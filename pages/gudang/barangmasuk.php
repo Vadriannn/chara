@@ -32,7 +32,7 @@ if(isset($_GET['receive'])){
 
             $cekStok = $koneksi->prepare("
                 SELECT stok, harga
-                FROM tBahan
+                FROM tbahan
                 WHERE kode = ?
             ");
             $cekStok->execute([
@@ -55,7 +55,7 @@ if(isset($_GET['receive'])){
             }
 
             $update = $koneksi->prepare("
-                UPDATE tBahan
+                UPDATE tbahan
                 SET stok = ?, harga = ?
                 WHERE kode = ?
             ");
@@ -67,7 +67,7 @@ if(isset($_GET['receive'])){
             ]);
 
             $mutasi = $koneksi->prepare("
-                INSERT INTO tMutasiStok
+                INSERT INTO tmutasistok
                 (
                     tanggal,
                     jenis,
@@ -102,7 +102,7 @@ if(isset($_GET['receive'])){
         }
 
         $penerimaan = $koneksi->prepare("
-            INSERT INTO tPenerimaanBarang
+            INSERT INTO tpenerimaanbarang
             (
                 tanggal,
                 tPembelian_nomor,
@@ -122,7 +122,7 @@ if(isset($_GET['receive'])){
         ]);
         
         $stmt = $koneksi->prepare("
-            UPDATE tPembelian
+            UPDATE tpembelian
             SET status = 'Diterima'
             WHERE nomor = ?
         ");
@@ -154,8 +154,8 @@ $stmt = $koneksi->prepare("
         p.total,
         p.status,
         s.nama AS supplier
-    FROM tPembelian p
-    JOIN tSupplier s
+    FROM tpembelian p
+    JOIN tsupplier s
         ON p.tSupplier_id = s.id
     WHERE p.status = 'Dipesan'
     ORDER BY p.tanggal DESC
@@ -182,10 +182,10 @@ $queryRiwayat = "
         b.nama AS nama_bahan,
         st.nama AS satuan,
         u.username AS penerima
-    FROM tMutasiStok m
-    JOIN tBahan b ON m.tBahan_kode = b.kode
+    FROM tmutasistok m
+    JOIN tbahan b ON m.tBahan_kode = b.kode
     JOIN tsatuan st ON b.tSatuan_id = st.id
-    LEFT JOIN tUser u ON m.tUser_id = u.id
+    LEFT JOIN tuser u ON m.tUser_id = u.id
     WHERE m.jenis = 'Pembelian'
 ";
 $paramsRiwayat = [];

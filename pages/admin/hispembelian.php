@@ -16,10 +16,10 @@ $query = "
         s.nama AS supplier,
         pr.id AS nomor_pr,
         pb.status
-    FROM tPembelian pb
-    JOIN tSupplier s
+    FROM tpembelian pb
+    JOIN tsupplier s
         ON pb.tSupplier_id = s.id
-    LEFT JOIN tPurchaseRequest pr
+    LEFT JOIN tpurchaserequest pr
         ON pb.tPurchaseRequest_id = pr.id
     WHERE pb.status = 'Diterima'
 ";

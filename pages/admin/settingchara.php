@@ -12,7 +12,7 @@ $success = "";
 $poin_kelipatan = 50000;
 $poin_diskon_nominal = 10000;
 try {
-    $stmt = $koneksi->query("SELECT setting_key, setting_value FROM tSetting WHERE setting_key IN ('poin_kelipatan', 'poin_diskon_nominal')");
+    $stmt = $koneksi->query("SELECT setting_key, setting_value FROM tsetting WHERE setting_key IN ('poin_kelipatan', 'poin_diskon_nominal')");
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] == 'poin_kelipatan') $poin_kelipatan = $row['setting_value'];
         if ($row['setting_key'] == 'poin_diskon_nominal') $poin_diskon_nominal = $row['setting_value'];
@@ -29,21 +29,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $koneksi->beginTransaction();
         
         // Update atau Insert poin_kelipatan
-        $sql = "UPDATE tSetting SET setting_value = ? WHERE setting_key = 'poin_kelipatan'";
+        $sql = "UPDATE tsetting SET setting_value = ? WHERE setting_key = 'poin_kelipatan'";
         $stmt = $koneksi->prepare($sql);
         $stmt->execute([$poinBaru]);
         if ($stmt->rowCount() == 0) {
-            $sqlIns = "INSERT INTO tSetting (setting_key, setting_value, keterangan) VALUES ('poin_kelipatan', ?, 'Nominal transaksi untuk mendapatkan 1 poin')";
+            $sqlIns = "INSERT INTO tsetting (setting_key, setting_value, keterangan) VALUES ('poin_kelipatan', ?, 'Nominal transaksi untuk mendapatkan 1 poin')";
             $stmtIns = $koneksi->prepare($sqlIns);
             $stmtIns->execute([$poinBaru]);
         }
         
         // Update atau Insert poin_diskon_nominal
-        $sql2 = "UPDATE tSetting SET setting_value = ? WHERE setting_key = 'poin_diskon_nominal'";
+        $sql2 = "UPDATE tsetting SET setting_value = ? WHERE setting_key = 'poin_diskon_nominal'";
         $stmt2 = $koneksi->prepare($sql2);
         $stmt2->execute([$diskonBaru]);
         if ($stmt2->rowCount() == 0) {
-            $sqlIns2 = "INSERT INTO tSetting (setting_key, setting_value, keterangan) VALUES ('poin_diskon_nominal', ?, 'Nominal potongan (Rp) per 1 poin yang diredeem')";
+            $sqlIns2 = "INSERT INTO tsetting (setting_key, setting_value, keterangan) VALUES ('poin_diskon_nominal', ?, 'Nominal potongan (Rp) per 1 poin yang diredeem')";
             $stmtIns2 = $koneksi->prepare($sqlIns2);
             $stmtIns2->execute([$diskonBaru]);
         }

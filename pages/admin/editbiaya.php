@@ -13,7 +13,7 @@ if(!isset($_GET['id'])){
 $id = $_GET['id'];
 
 // Ambil kategori
-$stmtKategori = $koneksi->prepare("SELECT * FROM tKategoriBiaya ORDER BY jenis ASC");
+$stmtKategori = $koneksi->prepare("SELECT * FROM tkategoribiaya ORDER BY jenis ASC");
 $stmtKategori->execute();
 $kategori = $stmtKategori->fetchAll(PDO::FETCH_ASSOC);
 

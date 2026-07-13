@@ -11,13 +11,13 @@ try {
         $username = trim($_POST['username']);
         $password = trim($_POST['password']);
         $role     = $_POST['role'];
-        $cek = $koneksi->prepare("SELECT COUNT(*) FROM tUser WHERE username = ?");
+        $cek = $koneksi->prepare("SELECT COUNT(*) FROM tuser WHERE username = ?");
         $cek->execute([$username]);
         if ($cek->fetchColumn() > 0) {
             $pesan = "Username sudah digunakan!";
         } else {
             $sql = "
-                INSERT INTO tUser
+                INSERT INTO tuser
                 (username, password, tRole_id)
                 VALUES
                 (?, SHA1(?), ?)
@@ -35,7 +35,7 @@ try {
             exit;
         }
     }
-    $roles = $koneksi->query("SELECT * FROM tRole ORDER BY nama");
+    $roles = $koneksi->query("SELECT * FROM trole ORDER BY nama");
 } catch(PDOException $e) {
     $pesan = $e->getMessage();
 }

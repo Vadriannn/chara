@@ -22,15 +22,15 @@ $stmt = $koneksi->prepare("
         pb.tanggal AS tanggal_terima,
         u.username AS penerima
 
-    FROM tPembelian p
+    FROM tpembelian p
 
-    JOIN tSupplier s
+    JOIN tsupplier s
         ON p.tSupplier_id = s.id
 
-    LEFT JOIN tPenerimaanBarang pb
+    LEFT JOIN tpenerimaanbarang pb
         ON p.nomor = pb.tPembelian_nomor
 
-    LEFT JOIN tUser u
+    LEFT JOIN tuser u
         ON pb.tUser_id = u.id
 
     WHERE p.nomor = ?
@@ -49,7 +49,7 @@ $stmtDetail = $koneksi->prepare("
         d.*,
         b.nama
     FROM tDetailPembelian d
-    JOIN tBahan b
+    JOIN tbahan b
         ON d.tBahan_kode = b.kode
     WHERE d.tPembelian_nomor = ?
 ");
