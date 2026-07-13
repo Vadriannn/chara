@@ -789,8 +789,12 @@ require_once '../includes/footer.php';
 
         let redeemPoin = document.getElementById('redeemPoin').value;
         let selectMember = document.getElementById('memberSelect');
+        let poinTersedia = document.getElementById('poinTersedia').value;
         if (selectMember.value !== '' && redeemPoin !== '' && parseInt(redeemPoin) > 0) {
-            // Validasi redeem poin vs diskon nominal tak perlu di sini karena otomatis
+            if (parseInt(redeemPoin) > parseInt(poinTersedia)) {
+                Swal.fire({icon: 'error', title: 'Poin Tidak Cukup', text: 'Jumlah poin yang ditukarkan melebihi batas poin tersedia!'});
+                return false;
+            }
         }
         
         // Cek jika menggunakan metode bayar Midtrans

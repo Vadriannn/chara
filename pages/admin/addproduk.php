@@ -160,22 +160,22 @@ require_once '../includes/sidebar.php';
                     </div>
                     <div class="form-group">
                       <label>Nama Produk</label>
-                      <input type="text" name="nama" class="form-control" placeholder="Masukkan nama produk" required>
+                      <input type="text" name="nama" class="form-control" placeholder="Masukkan nama produk" value="<?= isset($_POST['nama']) ? htmlspecialchars($_POST['nama']) : '' ?>" required>
                     </div>
                     <div class="form-group">
                       <label>Kategori</label>
-                      <select name="kategori" class="form-control" required>
+                      <select name="kategori" id="kategoriSelect" class="form-control" required>
                         <option value="">-- Pilih Kategori --</option>
                         <?php while($kat = $kategori->fetch(PDO::FETCH_ASSOC)): ?>
-                          <option value="<?= $kat['id']; ?>"><?= $kat['nama']; ?></option>
+                          <option value="<?= $kat['id']; ?>" <?= (isset($_POST['kategori']) && $_POST['kategori'] == $kat['id']) ? 'selected' : '' ?>><?= htmlspecialchars($kat['nama']); ?></option>
                         <?php endwhile; ?>
                       </select>
                     </div>
                     <div class="form-group">
                       <label>Status</label>
                       <select name="status" class="form-control" required>
-                        <option value="Aktif">Aktif</option>
-                        <option value="Nonaktif">Nonaktif</option>
+                        <option value="Aktif" <?= (isset($_POST['status']) && $_POST['status'] == 'Aktif') ? 'selected' : '' ?>>Aktif</option>
+                        <option value="Nonaktif" <?= (isset($_POST['status']) && $_POST['status'] == 'Nonaktif') ? 'selected' : '' ?>>Nonaktif</option>
                       </select>
                     </div>
                     <hr>
@@ -224,9 +224,7 @@ require_once '../includes/sidebar.php';
                           <th width="100">Aksi</th>
                         </tr>
                       </thead>
-                      <table class="table table-bordered">
-                        <tbody id="tabelResepBody"></tbody>
-                      </table>
+                      <tbody id="tabelResepBody"></tbody>
                     </table>
                     <div class="text-right mt-3">
                       <h5>Total HPP : Rp <span id="totalHpp">0</span></h5>
@@ -235,7 +233,7 @@ require_once '../includes/sidebar.php';
                     <div id="hiddenResep"></div>
                     <div class="form-group">
                       <label>Harga Jual</label>
-                      <input type="number" name="hargajual" id="hargaJual" class="form-control" min="0" placeholder="Masukkan harga jual" required>
+                      <input type="number" name="hargajual" id="hargaJual" class="form-control" min="0" placeholder="Masukkan harga jual" value="<?= isset($_POST['hargajual']) ? htmlspecialchars($_POST['hargajual']) : '' ?>" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Simpan</button>
                     <a href="produk.php" class="btn btn-light">Batal</a>
@@ -327,31 +325,11 @@ require_once '../includes/footer.php';
     
     let totalHpp = 0;
     
-    function tambahBahan() {
-        let select = document.getElementById('bahanSelect');
-        if (select.value === '') {
-            alert('Pilih bahan baku terlebih dahulu!');
-            return;
-        }
-
-        let selectSatuan = document.getElementById('satuanBahan');
-        let idSatuanDipilih = selectSatuan.value;
-        if (idSatuanDipilih === '') {
-            alert('Pilih satuan terlebih dahulu!');
-            return;
-        }
-
-        let kode = select.value;
+    function prosesTambahBahan(kode, nama, idSatuanStock, hargaPerSatuanStok, jumlahInput, idSatuanDipilih, namaSatuan) {
         if(document.querySelector(`#row_${kode}`)){
             alert('Bahan baku tersebut sudah ada di resep!');
             return;
         }
-
-        let nama = select.options[select.selectedIndex].dataset.nama;
-        let idSatuanStock = select.options[select.selectedIndex].dataset.satuanid; // Nama unit stock tapi gpp kita butuh ID nya wait, dataset.satuanid di atas diset nama
-        let hargaPerSatuanStok = parseFloat(select.options[select.selectedIndex].dataset.harga) || 0;
-        let jumlahInput = parseFloat(document.getElementById('jumlahBahan').value) || 0;
-        let namaSatuan = selectSatuan.options[selectSatuan.selectedIndex].text;
 
         if(jumlahInput <= 0){
             alert('Jumlah harus lebih dari 0');
@@ -385,10 +363,47 @@ require_once '../includes/footer.php';
                 <input type="hidden" name="resep_satuan[]" value="${idSatuanDipilih}">
             </div>`
         );
+    }
 
-        document.getElementById('bahanSelect').value = '';
+    function tambahBahan() {
+        let select = document.getElementById('bahanSelect');
+        if (select.value === '') {
+            alert('Pilih bahan baku terlebih dahulu!');
+            return;
+        }
+
+        let selectSatuan = document.getElementById('satuanBahan');
+        let idSatuanDipilih = selectSatuan.value;
+        if (idSatuanDipilih === '') {
+            alert('Pilih satuan terlebih dahulu!');
+            return;
+        }
+
+        let kode = select.value;
+        let nama = select.options[select.selectedIndex].dataset.nama;
+        let idSatuanStock = select.options[select.selectedIndex].dataset.satuanid;
+        let hargaPerSatuanStok = parseFloat(select.options[select.selectedIndex].dataset.harga) || 0;
+        let jumlahInput = parseFloat(document.getElementById('jumlahBahan').value) || 0;
+        let namaSatuan = selectSatuan.options[selectSatuan.selectedIndex].text;
+
+        prosesTambahBahan(kode, nama, idSatuanStock, hargaPerSatuanStok, jumlahInput, idSatuanDipilih, namaSatuan);
+
+        $('#bahanSelect').val('').trigger('change');
         document.getElementById('jumlahBahan').value = '1';
-        document.getElementById('satuanBahan').value = '';
+        document.getElementById('satuanBahan').innerHTML = '<option value="">Pilih</option>';
+    }
+
+    function restoreBahan(kode, qty, satuanId) {
+        let select = document.getElementById('bahanSelect');
+        let option = select.querySelector(`option[value="${kode}"]`);
+        if(!option) return;
+        
+        let nama = option.dataset.nama;
+        let idSatuanStock = option.dataset.satuanid;
+        let hargaPerSatuanStok = parseFloat(option.dataset.harga) || 0;
+        let namaSatuan = getNamaSatuan(satuanId);
+        
+        prosesTambahBahan(kode, nama, idSatuanStock, hargaPerSatuanStok, parseFloat(qty), satuanId, namaSatuan);
     }
 
     function hapusBaris(btn, hpp, kode){
@@ -409,5 +424,20 @@ require_once '../includes/footer.php';
 
     document.getElementById('hargaJual').addEventListener('input', function(){
         updateHppDanLaba();
+    });
+
+    $(document).ready(function() {
+        $('#kategoriSelect').select2({ placeholder: '-- Pilih Kategori --' });
+        $('#bahanSelect').select2({ placeholder: '-- Pilih Bahan --' });
+        
+        <?php if(isset($_POST['resep_bahan']) && count($_POST['resep_bahan']) > 0): ?>
+            <?php for($i=0; $i<count($_POST['resep_bahan']); $i++): ?>
+                restoreBahan(
+                    "<?= htmlspecialchars($_POST['resep_bahan'][$i]) ?>", 
+                    "<?= htmlspecialchars($_POST['resep_jumlah'][$i]) ?>", 
+                    "<?= htmlspecialchars($_POST['resep_satuan'][$i]) ?>"
+                );
+            <?php endfor; ?>
+        <?php endif; ?>
     });
     </script>

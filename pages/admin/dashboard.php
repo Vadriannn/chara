@@ -314,7 +314,7 @@ require_once '../includes/sidebar.php';
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="card-title mb-0 font-weight-bold text-dark">Peringatan Stok Kritis</h4>
-                        <a href="../gudang/bahanbaku.php" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>
+                        <a href="../admin/bahanbaku.php" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua</a>
                     </div>
                     <?php if(count($stokKritis) > 0): ?>
                         <div class="table-responsive">
