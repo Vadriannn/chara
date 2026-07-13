@@ -33,7 +33,7 @@ $query = "
         dp.subtotal,
         u.username AS kasir
     FROM tpenjualan p
-    JOIN tDetailPenjualan dp ON p.nomor = dp.tPenjualan_nomor
+    JOIN tdetailpenjualan dp ON p.nomor = dp.tPenjualan_nomor
     JOIN tproduct prod ON dp.tProduct_kode = prod.kode
     LEFT JOIN tuser u ON p.tUser_id = u.id
     WHERE DATE(p.tanggal) >= ? AND DATE(p.tanggal) <= ?

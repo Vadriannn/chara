@@ -35,7 +35,7 @@ try {
     // Sesuai relasi ERD: tDetailPembelian berelasi ke tBahan melalui kode bahan baku
     $stmtDetail = $koneksi->prepare("
         SELECT d.jumlah, d.satuanBeli, d.harga, d.subtotal, b.nama AS nama_bahan
-        FROM tDetailPembelian d
+        FROM tdetailpembelian d
         JOIN tbahan b ON d.tBahan_kode = b.kode
         WHERE d.tPembelian_nomor = ?
     ");

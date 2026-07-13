@@ -14,7 +14,7 @@ try {
             b.nominal,
             k.jenis as kategori,
             u.username as username
-        FROM tBiayaOperasional b
+        FROM tbiayaoperasional b
         LEFT JOIN tkategoribiaya k
             ON b.tKategoriBiaya_id = k.id
         LEFT JOIN tuser u

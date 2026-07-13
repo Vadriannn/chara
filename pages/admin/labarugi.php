@@ -31,7 +31,7 @@ $penjualanKotor = $penjualanBersih + $totalDiskon;
 // 2. Ambil Data HPP
 $qHPP = "
     SELECT IFNULL(SUM(dp.hpp * dp.jumlah), 0) AS total_hpp
-    FROM tDetailPenjualan dp
+    FROM tdetailpenjualan dp
     JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
     WHERE DATE(p.tanggal) >= ? AND DATE(p.tanggal) <= ?
 ";
@@ -47,7 +47,7 @@ $labaKotor = $penjualanBersih - $totalHPP;
 // 3. Ambil Data Biaya Operasional
 $qBiaya = "
     SELECT kb.jenis AS kategori, IFNULL(SUM(bo.nominal), 0) AS total_biaya
-    FROM tBiayaOperasional bo
+    FROM tbiayaoperasional bo
     JOIN tkategoribiaya kb ON bo.tKategoriBiaya_id = kb.id
     WHERE bo.tanggal >= ? AND bo.tanggal <= ?
     GROUP BY kb.jenis

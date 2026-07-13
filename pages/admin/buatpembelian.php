@@ -45,7 +45,7 @@ if(isset($_POST['simpan'])){
         
         $stmtPR = $koneksi->prepare("
             SELECT *
-            FROM tDetailPurchaseRequest
+            FROM tdetailpurchaserequest
             WHERE tPurchaseRequest_id = ?
             ORDER BY tBahan_kode
         ");
@@ -61,7 +61,7 @@ if(isset($_POST['simpan'])){
             $total += $subtotal;
             
             $stmtDetail = $koneksi->prepare("
-                INSERT INTO tDetailPembelian
+                INSERT INTO tdetailpembelian
                 (
                     tBahan_kode,
                     tPembelian_nomor,
@@ -94,7 +94,7 @@ if(isset($_POST['simpan'])){
 
         // Catat ke tArusKas (Pengeluaran)
         $stmtArusKas = $koneksi->prepare("
-            INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tPembelian_nomor)
+            INSERT INTO taruskas (tanggal, jenis, kategori, nominal, sumber, tPembelian_nomor)
             VALUES (NOW(), 'Keluar', 'Pembelian', ?, ?, ?)
         ");
         $stmtArusKas->execute([
@@ -157,7 +157,7 @@ require_once '../includes/sidebar.php';
                                       d.satuanBeli,
                                       d.konversi
                                   FROM tpurchaserequest pr
-                                  JOIN tDetailPurchaseRequest d
+                                  JOIN tdetailpurchaserequest d
                                       ON pr.id = d.tPurchaseRequest_id
                                   JOIN tbahan b
                                       ON d.tBahan_kode = b.kode

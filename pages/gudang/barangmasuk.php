@@ -21,7 +21,7 @@ if(isset($_GET['receive'])){
                 jumlah,
                 konversi,
                 subtotal 
-            FROM tDetailPembelian
+            FROM tdetailpembelian
             WHERE tPembelian_nomor = ?
         ");
         $stmt->execute([$nomor]);

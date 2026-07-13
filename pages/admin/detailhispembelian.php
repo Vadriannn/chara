@@ -48,7 +48,7 @@ $stmtDetail = $koneksi->prepare("
     SELECT
         d.*,
         b.nama
-    FROM tDetailPembelian d
+    FROM tdetailpembelian d
     JOIN tbahan b
         ON d.tBahan_kode = b.kode
     WHERE d.tPembelian_nomor = ?

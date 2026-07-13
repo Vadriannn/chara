@@ -60,7 +60,7 @@ try {
             // Simpan detail barang
             foreach($_POST['detail'] as $kodeBahan => $item){
                 $stmtDetail = $koneksi->prepare("
-                    INSERT INTO tDetailPurchaseRequest
+                    INSERT INTO tdetailpurchaserequest
                     (
                         tBahan_kode,
                         tPurchaseRequest_id,

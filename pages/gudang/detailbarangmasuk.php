@@ -50,7 +50,7 @@ $stmtDetail = $koneksi->prepare("
         d.harga,
         d.subtotal
 
-    FROM tDetailPembelian d
+    FROM tdetailpembelian d
 
     JOIN tbahan b
         ON d.tBahan_kode = b.kode

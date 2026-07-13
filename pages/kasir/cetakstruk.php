@@ -37,10 +37,10 @@ $stmtDetail = $koneksi->prepare("
         d.subtotal, 
         pr.nama AS nama_produk,
         (SELECT GROUP_CONCAT(CONCAT(m.nama, ' ', m.kategori) SEPARATOR ', ')
-         FROM tDetailPenjualanModifier dhm
+         FROM tdetailpenjualanmodifier dhm
          JOIN tmodifier m ON dhm.tModifier_id = m.id
          WHERE dhm.tDetailPenjualan_id = d.id) AS teks_modifier
-    FROM tDetailPenjualan d
+    FROM tdetailpenjualan d
     JOIN tproduct pr ON d.tProduct_kode = pr.kode
     WHERE d.tPenjualan_nomor = ?
 ");

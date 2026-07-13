@@ -19,7 +19,7 @@ try {
         SELECT 
             SUM(CASE WHEN jenis = 'Masuk' THEN nominal ELSE 0 END) - 
             SUM(CASE WHEN jenis = 'Keluar' THEN nominal ELSE 0 END) AS saldo_awal
-        FROM tArusKas
+        FROM taruskas
         WHERE DATE(tanggal) < ?
     ";
     $stmtAwal = $koneksi->prepare($qSaldoAwal);
@@ -37,7 +37,7 @@ $query = "
         sumber AS keterangan, 
         jenis AS tipe, 
         nominal
-    FROM tArusKas
+    FROM taruskas
     WHERE DATE(tanggal) >= ? AND DATE(tanggal) <= ?
     ORDER BY tanggal ASC
 ";

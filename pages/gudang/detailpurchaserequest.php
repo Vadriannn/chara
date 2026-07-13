@@ -55,7 +55,7 @@ try {
         d.satuanBeli,
         d.konversi,
         (d.jumlah * d.konversi) AS totalKonversi
-    FROM tDetailPurchaseRequest d
+    FROM tdetailpurchaserequest d
     INNER JOIN tbahan b
         ON d.tBahan_kode = b.kode
     WHERE d.tPurchaseRequest_id = ?

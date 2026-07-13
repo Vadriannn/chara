@@ -18,7 +18,7 @@ $stmtKategori->execute();
 $kategori = $stmtKategori->fetchAll(PDO::FETCH_ASSOC);
 
 // Ambil data biaya
-$sql = "SELECT * FROM tBiayaOperasional WHERE id = :id";
+$sql = "SELECT * FROM tbiayaoperasional WHERE id = :id";
 $stmt = $koneksi->prepare($sql);
 $stmt->bindParam(':id',$id);
 $stmt->execute();
@@ -41,7 +41,7 @@ if(isset($_POST['update'])){
 
     try{
 
-        $sql = "UPDATE tBiayaOperasional SET
+        $sql = "UPDATE tbiayaoperasional SET
                     tanggal = :tanggal,
                     keterangan = :keterangan,
                     nominal = :nominal,
@@ -62,7 +62,7 @@ if(isset($_POST['update'])){
 
         // Update juga di tArusKas
         $stmtUpdateKas = $koneksi->prepare("
-            UPDATE tArusKas SET
+            UPDATE taruskas SET
                 tanggal = :tanggal,
                 nominal = :nominal,
                 sumber = :sumber

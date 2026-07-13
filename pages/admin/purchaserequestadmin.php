@@ -69,7 +69,7 @@ try {
         LEFT JOIN tpembelian pb
           ON pb.tPurchaseRequest_id = pr.id
 
-        LEFT JOIN tDetailPurchaseRequest d
+        LEFT JOIN tdetailpurchaserequest d
             ON pr.id = d.tPurchaseRequest_id
 
         LEFT JOIN tbahan b

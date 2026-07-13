@@ -76,7 +76,7 @@ try {
             $subtotal    = $jumlahBeli * $hargaSatuan;
             
             $stmtDetail = $koneksi->prepare("
-                INSERT INTO tDetailPembelian
+                INSERT INTO tdetailpembelian
                 (
                     tPembelian_nomor,
                     tBahan_kode,
@@ -103,7 +103,7 @@ try {
 
     // Catat ke tArusKas (Pengeluaran)
     $stmtArusKas = $koneksi->prepare("
-        INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tPembelian_nomor)
+        INSERT INTO taruskas (tanggal, jenis, kategori, nominal, sumber, tPembelian_nomor)
         VALUES (?, 'Keluar', 'Pembelian', ?, ?, ?)
     ");
     $stmtArusKas->execute([

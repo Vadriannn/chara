@@ -24,7 +24,7 @@ $jumlahTransaksi = $stmtTransaksi->fetchColumn() ?: 0;
 // 3. Total Pengeluaran Bulan Ini
 $stmtPengeluaran = $koneksi->query("
     SELECT SUM(nominal) as total 
-    FROM tArusKas 
+    FROM taruskas 
     WHERE jenis = 'Keluar' AND MONTH(tanggal) = MONTH(CURRENT_DATE()) AND YEAR(tanggal) = YEAR(CURRENT_DATE())
 ");
 $pengeluaran = $stmtPengeluaran->fetchColumn() ?: 0;
@@ -65,7 +65,7 @@ $recentSales = $stmtRecentSales->fetchAll(PDO::FETCH_ASSOC);
 // 8. Analisis Performa Bisnis (Bulan Ini)
 $stmtHppDashboard = $koneksi->query("
     SELECT SUM(dp.hpp * dp.jumlah)
-    FROM tDetailPenjualan dp
+    FROM tdetailpenjualan dp
     JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
     WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
 ");
@@ -79,7 +79,7 @@ if ($pendapatan > 0) {
 
 $stmtTerlaris = $koneksi->query("
     SELECT pr.nama, SUM(dp.jumlah) as total_qty
-    FROM tDetailPenjualan dp
+    FROM tdetailpenjualan dp
     JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
     JOIN tproduct pr ON dp.tProduct_kode = pr.kode
     WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())
@@ -91,7 +91,7 @@ $produkTerlaris = $stmtTerlaris->fetch(PDO::FETCH_ASSOC);
 
 $stmtLabaTerbesar = $koneksi->query("
     SELECT pr.nama, SUM((dp.harga_jual - dp.hpp) * dp.jumlah) as total_laba
-    FROM tDetailPenjualan dp
+    FROM tdetailpenjualan dp
     JOIN tpenjualan p ON dp.tPenjualan_nomor = p.nomor
     JOIN tproduct pr ON dp.tProduct_kode = pr.kode
     WHERE MONTH(p.tanggal) = MONTH(CURRENT_DATE()) AND YEAR(p.tanggal) = YEAR(CURRENT_DATE())

@@ -136,7 +136,7 @@ try {
 
         // Catat ke tArusKas (Pemasukan)
         $stmtArusKas = $koneksi->prepare("
-            INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tPenjualan_nomor)
+            INSERT INTO taruskas (tanggal, jenis, kategori, nominal, sumber, tPenjualan_nomor)
             VALUES (NOW(), 'Masuk', 'Penjualan', ?, ?, ?)
         ");
         $stmtArusKas->execute([
@@ -147,12 +147,12 @@ try {
 
         // Siapkan Statement untuk Detail dan Modifier
         $stmtDetail = $koneksi->prepare("
-            INSERT INTO tDetailPenjualan (tProduct_kode, tPenjualan_nomor, hpp, harga_jual, jumlah, subtotal)
+            INSERT INTO tdetailpenjualan (tProduct_kode, tPenjualan_nomor, hpp, harga_jual, jumlah, subtotal)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
         
         $stmtInsertModifier = $koneksi->prepare("
-            INSERT INTO tDetailPenjualanModifier (tDetailPenjualan_id, tModifier_id)
+            INSERT INTO tdetailpenjualanmodifier (tDetailPenjualan_id, tModifier_id)
             VALUES (?, ?)
         ");
 

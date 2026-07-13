@@ -22,7 +22,7 @@ if(isset($_POST['simpan'])){
 
     try{
 
-        $sql = "INSERT INTO tBiayaOperasional
+        $sql = "INSERT INTO tbiayaoperasional
                 (tanggal,keterangan,nominal,tKategoriBiaya_id,tUser_id)
                 VALUES
                 (:tanggal,:keterangan,:nominal,:kategori,:user)";
@@ -41,7 +41,7 @@ if(isset($_POST['simpan'])){
 
         // Catat ke tArusKas (Pengeluaran)
         $stmtArusKas = $koneksi->prepare("
-            INSERT INTO tArusKas (tanggal, jenis, kategori, nominal, sumber, tBiayaOperasional_id)
+            INSERT INTO taruskas (tanggal, jenis, kategori, nominal, sumber, tBiayaOperasional_id)
             VALUES (?, 'Keluar', 'Biaya Operasional', ?, ?, ?)
         ");
         $stmtArusKas->execute([
