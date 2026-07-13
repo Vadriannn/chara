@@ -54,9 +54,6 @@ try {
     $error = $e->getMessage();
 }
 
-// ==========================================
-// PANGGIL TEMPLATE HEADER & SIDEBAR DI SINI
-// ==========================================
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
 ?>
@@ -103,8 +100,5 @@ require_once '../includes/sidebar.php';
 </div>
 
 <?php 
-// ==========================================
-// PANGGIL TEMPLATE FOOTER DI SINI
-// ==========================================
 require_once '../includes/footer.php'; 
 ?>

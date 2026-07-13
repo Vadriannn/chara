@@ -203,9 +203,6 @@ require_once '../includes/sidebar.php';
                         <label>Satuan</label>
                         <select id="satuanBahan" class="form-control">
                             <option value="">Pilih</option>
-                            <?php foreach($satuanList as $s): ?>
-                                <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
-                            <?php endforeach; ?>
                         </select>
                       </div>
                       <div class="col-md-2">
@@ -243,9 +240,6 @@ require_once '../includes/sidebar.php';
             </div>
           </div>
 <?php 
-// ==========================================
-// PANGGIL TEMPLATE FOOTER DI SINI
-// ==========================================
 require_once '../includes/footer.php'; 
 ?>
 <script>
@@ -296,8 +290,10 @@ require_once '../includes/footer.php';
         return '-';
     }
 
-    document.getElementById('bahanSelect').addEventListener('change', function(){
-        let idSatuanStock = this.options[this.selectedIndex].dataset.satuanid;
+    $('#bahanSelect').on('change', function(){
+        let option = this.options[this.selectedIndex];
+        if(!option) return;
+        let idSatuanStock = option.dataset.satuanid;
         let selectSatuan = document.getElementById('satuanBahan');
         selectSatuan.innerHTML = '<option value="">Pilih</option>';
         if (!idSatuanStock) return;

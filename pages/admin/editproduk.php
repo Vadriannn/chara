@@ -179,7 +179,7 @@ require_once '../includes/sidebar.php';
                     </div>
                     <div class="form-group">
                       <label>Kategori</label>
-                      <select name="kategori" class="form-control" required>
+                      <select name="kategori" id="kategoriSelect" class="form-control" required>
                         <?php while($kat = $kategori->fetch(PDO::FETCH_ASSOC)): ?>
                             <option value="<?= $kat['id']; ?>" <?= ($kat['id'] == $product['tKategori_id']) ? 'selected' : ''; ?>>
                                 <?= htmlspecialchars($kat['nama']); ?>
@@ -219,9 +219,6 @@ require_once '../includes/sidebar.php';
                         <label>Satuan</label>
                         <select id="satuanBahan" class="form-control">
                             <option value="">Pilih</option>
-                            <?php foreach($satuanList as $s): ?>
-                                <option value="<?= $s['id'] ?>"><?= $s['nama'] ?></option>
-                            <?php endforeach; ?>
                         </select>
                       </div>
                       <div class="col-md-2">
@@ -424,8 +421,10 @@ require_once '../includes/sidebar.php';
 
     document.getElementById('hargaJual').addEventListener('input', updateHppDanLaba);
     
-    document.getElementById('bahanSelect').addEventListener('change', function(){
-        let idSatuanStock = this.options[this.selectedIndex].dataset.satuanid;
+    $('#bahanSelect').on('change', function(){
+        let option = this.options[this.selectedIndex];
+        if(!option) return;
+        let idSatuanStock = option.dataset.satuanid;
         let selectSatuan = document.getElementById('satuanBahan');
         selectSatuan.innerHTML = '<option value="">Pilih</option>';
         if (!idSatuanStock) return;
@@ -453,4 +452,9 @@ require_once '../includes/sidebar.php';
 
     // Inisialisasi saat load
     initResepLama();
+
+    $(document).ready(function() {
+        $('#kategoriSelect').select2({ placeholder: '-- Pilih Kategori --' });
+        $('#bahanSelect').select2({ placeholder: '-- Pilih Bahan --' });
+    });
 </script>

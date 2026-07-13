@@ -497,9 +497,6 @@ require_once '../includes/sidebar.php';
   </div>
 </div>
 <?php 
-// ==========================================
-// PANGGIL TEMPLATE FOOTER DI SINI
-// ==========================================
 require_once '../includes/footer.php'; 
 ?>
             <script type="text/javascript" src="<?= getMidtransJsUrl() ?>" data-client-key="<?= MIDTRANS_CLIENT_KEY ?>"></script>

@@ -111,8 +111,5 @@ require_once '../includes/sidebar.php';
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
 <?php 
-// ==========================================
-// PANGGIL TEMPLATE FOOTER DI SINI
-// ==========================================
 require_once '../includes/footer.php'; 
 ?>

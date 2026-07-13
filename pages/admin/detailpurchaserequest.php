@@ -195,8 +195,5 @@ require_once '../includes/sidebar.php';
                     </div>
                 </div>
 <?php 
-// ==========================================
-// PANGGIL TEMPLATE FOOTER DI SINI
-// ==========================================
 require_once '../includes/footer.php'; 
 ?>
