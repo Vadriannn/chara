@@ -6,6 +6,8 @@ require_once '../auth_kasir.php';
 require_once '../../includes/konversi_helper.php';
 require_once 'midtrans_config.php';
 
+// AI
+
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

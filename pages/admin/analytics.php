@@ -4,6 +4,7 @@ $page_title = "CHARA - Analytics Dashboard";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 
+// AI
 // Default to "This Month"
 $start_date = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-01');
 $end_date = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-t');

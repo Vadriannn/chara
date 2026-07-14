@@ -86,7 +86,7 @@ require_once '../includes/sidebar.php';
                                         </p>
                                     </div>
                                     <a
-                                        href="purchaserequest.php"
+                                        href="purchaserequestadmin.php"
                                         class="btn btn-secondary">
                                         Kembali
                                     </a>

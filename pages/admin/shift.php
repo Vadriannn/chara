@@ -5,6 +5,8 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
+// AI
+
 try {
     $sql = "SELECT * FROM tshift ORDER BY idShift";
     $stmt = $koneksi->prepare($sql);

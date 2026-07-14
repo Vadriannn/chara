@@ -4,7 +4,7 @@ $page_title = "CHARA - Dashboard";
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
-
+// AI
 // 1. Total Pendapatan Bulan Ini
 $stmtPendapatan = $koneksi->query("
     SELECT SUM(total) as total 

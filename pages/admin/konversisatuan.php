@@ -5,6 +5,7 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_admin.php';
 
+// AI
 
 try {
     $sql = "SELECT k.SatuanBesar_id, k.SatuanKecil_id, k.Konversi,

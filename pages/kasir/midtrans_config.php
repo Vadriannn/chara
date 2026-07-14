@@ -1,4 +1,5 @@
 <?php
+// AI
 // Midtrans Configuration for Chara POS Cashier
 // Replace these keys with your own Sandbox or Production keys from your Midtrans Dashboard (https://dashboard.midtrans.com)
 

@@ -107,7 +107,7 @@ require_once '../includes/sidebar.php';
                                     <button type="submit" class="btn btn-primary">
                                         Simpan Perubahan
                                     </button>
-                                    <a href="../index.php" class="btn btn-secondary">
+                                    <a href="../../index.php" class="btn btn-secondary">
                                         Kembali
                                     </a>
                                 </form>

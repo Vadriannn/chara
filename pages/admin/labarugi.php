@@ -12,6 +12,7 @@ $awalBulan = date('Y-m-01');
 $tglMulai = !empty($_GET['tgl_mulai']) ? $_GET['tgl_mulai'] : $awalBulan;
 $tglSelesai = !empty($_GET['tgl_selesai']) ? $_GET['tgl_selesai'] : $hariIni;
 
+// AI
 // 1. Ambil Data Penjualan (Pendapatan)
 $qPendapatan = "
     SELECT 

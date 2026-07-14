@@ -5,6 +5,8 @@ require_once '../../koneksi.php';
 require_once '../../auth.php';
 require_once '../auth_kasir.php'; // Ensure cashier is logged in
 
+// AI
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
     exit;

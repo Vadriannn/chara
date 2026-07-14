@@ -3,6 +3,8 @@ session_start();
 require_once '../../koneksi.php';
 require_once '../../auth.php';
 
+// AI
+
 if (!isset($_GET['nomor']) || empty($_GET['nomor'])) {
     die("Nomor transaksi tidak valid.");
 }

@@ -10,7 +10,7 @@ $error = "";
 $satuan = []; 
 
 try {
-    // Ambil data satuan
+    // Mengambil data satuan
     $stmtSatuan = $koneksi->query("SELECT * FROM tsatuan ORDER BY nama");
     if ($stmtSatuan) {
         $satuan = $stmtSatuan->fetchAll(PDO::FETCH_ASSOC);
@@ -67,7 +67,6 @@ require_once '../includes/sidebar.php';
                     <?php if($error != "") : ?>
                         <div class="alert alert-danger"><?= $error ?></div>
                     <?php endif; ?>
-                    
                     <form method="POST">
                         <div class="form-group">
                             <label>Kode Bahan</label>
