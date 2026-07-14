@@ -132,6 +132,7 @@ try {
             
             $stmtUpdateMember = $koneksi->prepare("UPDATE tmember SET Poin = ? WHERE noHp = ?");
             $stmtUpdateMember->execute([$poinAkhir, $tMember_id]);
+            catatLog($koneksi, "Update Poin Member", "Poin member " . $tMember_id . " diupdate dari " . $currentPoin . " menjadi " . $poinAkhir, "Kasir", $nomorPenjualan);
         }
 
         // Catat ke tArusKas (Pemasukan)

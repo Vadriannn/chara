@@ -68,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
         $koneksi->commit();
+        catatLog($koneksi, "Edit Resep", "Memperbarui resep untuk produk: " . $kodeProduk, "Master Data");
         echo "
         <script>
             alert('Resep berhasil diperbarui');

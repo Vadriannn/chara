@@ -14,6 +14,7 @@ try {
     ");
 
     $hapus->execute([$id]);
+    catatLog($koneksi, "Hapus Biaya Operasional", "Menghapus biaya operasional ID: " . $id, "Master Data");
 
     header("Location: biayaoperasional.php?success=delete");
     exit;

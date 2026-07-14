@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $koneksi->prepare($sql);
         $stmt->execute([$nama, $gender, $birthdate, $poin, $id]);
         
-        catatLog($koneksi, "Edit Member", "Mengubah data member: " . $nama, "Master Data");
+        catatLog($koneksi, "Edit Member", "Mengubah data member: " . $nama . " (Poin menjadi: " . $poin . ")", "Master Data");
         header("Location: member.php?success=1");
         exit;
     } catch(PDOException $e) {

@@ -68,6 +68,7 @@ try {
                 $satuanId,
                 $kode
             ]);
+            catatLog($koneksi, "Edit Bahan Baku", "Mengubah data bahan baku: " . $nama, "Master Data");
             header("Location: bahanbaku.php?success=edit");
             exit;
         }

@@ -21,6 +21,7 @@ try {
             $_SESSION['id'],
             $_GET['approve']
         ]);
+        catatLog($koneksi, "Approve PR", "Menyetujui Purchase Request ID: " . $_GET['approve'], "Approval");
         header("Location: purchaserequestadmin.php");
         exit;
     }
@@ -38,6 +39,7 @@ try {
             $_SESSION['id'],
             $_GET['reject']
         ]);
+        catatLog($koneksi, "Reject PR", "Menolak Purchase Request ID: " . $_GET['reject'], "Approval");
         header("Location: purchaserequestadmin.php");
         exit;
     }

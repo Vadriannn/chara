@@ -67,6 +67,7 @@ try {
         WHERE id = ?
     ");
     $hapus->execute([$id]);
+    catatLog($koneksi, "Hapus Employee", "Menghapus employee ID: " . $id, "Master Data");
     echo "
         <script>
             alert('User berhasil dihapus!');
